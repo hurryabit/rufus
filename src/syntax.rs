@@ -1,9 +1,7 @@
-#[allow(clippy::vec_box)]
-
 pub enum Expr {
     Num(i64),
     Op(Box<Expr>, Opcode, Box<Expr>),
-    Fun(FunCode, Vec<Box<Expr>>),
+    Fun(FunCode, Vec<Expr>),
 }
 
 pub enum Opcode {

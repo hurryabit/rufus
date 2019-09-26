@@ -28,8 +28,8 @@ Term: Box<Expr> = {
     Num => Box::new(Expr::Num(<>)), // (4)
     "(" <Expr> ")",
     <f:Fun> "(" <xs:(<Expr> ",")*> <x:Expr> ")" => {
-        let mut xs = xs;
-        xs.push(x);
+        let mut xs = xs.into_iter().map(|x| *x).collect::<Vec<Expr>>();
+        xs.push(*x);
         Box::new(Expr::Fun(f, xs))
     },
 };
