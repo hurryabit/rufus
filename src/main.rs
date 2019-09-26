@@ -1,3 +1,4 @@
+#![allow(renamed_and_removed_lints)]
 #[macro_use]
 extern crate lalrpop_util;
 extern crate rustyline;
@@ -7,7 +8,10 @@ use rustyline::Editor;
 
 mod eval;
 mod syntax;
-lalrpop_mod!(parser);
+lalrpop_mod!(
+    #[allow(clippy)]
+    parser
+);
 
 const HISTORY_FILE: &str = ".rufus_history";
 
@@ -50,6 +54,6 @@ fn main() {
 #[test]
 fn parser() {
     let parser = parser::ExprParser::new();
-    assert_eq!(parser.parse("1+2*3").unwrap().eval(), 7);
+    assert_eq!(parser.parse("1+2*3").unwrap().eval().unwrap(), 7);
     assert!(parser.parse("a").is_err());
 }
