@@ -26,7 +26,10 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
                 match parser.parse(&line) {
-                    Ok(expr) => println!("{}", expr.eval()),
+                    Ok(expr) => match expr.eval() {
+                        Ok(val) => println!("{}", val),
+                        Err(err) => println!("Error: {}", err),
+                    },
                     Err(err) => println!("Error: {}", err),
                 }
             }

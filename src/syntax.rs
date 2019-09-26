@@ -1,6 +1,7 @@
 pub enum Expr {
     Num(i64),
     Op(Box<Expr>, Opcode, Box<Expr>),
+    Fun(FunCode, Vec<Box<Expr>>),
 }
 
 pub enum Opcode {
@@ -8,4 +9,10 @@ pub enum Opcode {
     Sub,
     Mul,
     Div,
+}
+
+#[derive(Debug)]
+pub enum FunCode {
+    Fac,
+    Rem,
 }

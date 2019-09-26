@@ -26,7 +26,17 @@ FactorOp: Opcode = {
 
 Term: Box<Expr> = {
     Num => Box::new(Expr::Num(<>)), // (4)
-    "(" <Expr> ")"
+    "(" <Expr> ")",
+    <f:Fun> "(" <xs:(<Expr> ",")*> <x:Expr> ")" => {
+        let mut xs = xs;
+        xs.push(x);
+        Box::new(Expr::Fun(f, xs))
+    },
+};
+
+Fun: FunCode = {
+    "fac" => FunCode::Fac,
+    "mod" => FunCode::Rem,
 };
 
 Num: i64 = {
