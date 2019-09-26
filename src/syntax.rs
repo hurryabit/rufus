@@ -1,9 +1,19 @@
+use std::fmt;
+
+#[derive(Clone, Eq, Hash, PartialEq)]
+pub struct Name(pub String);
+
+#[derive(Clone)]
 pub enum Expr {
     Num(i64),
-    Op(Box<Expr>, Opcode, Box<Expr>),
-    Fun(FunCode, Vec<Expr>),
+    Var(Name),
+    Op(Opcode, Box<Expr>, Box<Expr>),
+    App(Name, Vec<Expr>),
+    Let(Name, Box<Expr>, Box<Expr>),
+    Lam(Vec<Name>, Box<Expr>),
 }
 
+#[derive(Clone)]
 pub enum Opcode {
     Add,
     Sub,
@@ -11,8 +21,8 @@ pub enum Opcode {
     Div,
 }
 
-#[derive(Debug)]
-pub enum FunCode {
-    Fac,
-    Rem,
+impl fmt::Display for Name {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }

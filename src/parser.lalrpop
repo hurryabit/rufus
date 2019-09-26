@@ -4,41 +4,41 @@ use crate::syntax::*;
 
 grammar;
 
-pub Expr: Box<Expr> = { // (1)
-    Expr ExprOp Factor => Box::new(Expr::Op(<>)), // (2)
-    Factor,
+pub Expr = Boxed<ExprUnboxed>;
+
+ExprUnboxed: Expr = {
+    Name => Expr::Var(<>),
+    Num => Expr::Num(<>),
+    <Opcode> "(" <Expr> "," <Expr> ")" => Expr::Op(<>),
+    <Name> "(" <CommaList0<ExprUnboxed>> ")" => Expr::App(<>),
+    "let" <Name> "=" <Expr> ";" <Expr> => Expr::Let(<>),
+    "|" <CommaList0<Name>> "|" "{" <Expr> "}" => Expr::Lam(<>),
+    "(" <ExprUnboxed> ")",
 };
 
-ExprOp: Opcode = { // (3)
-    "+" => Opcode::Add,
-    "-" => Opcode::Sub,
-};
-
-Factor: Box<Expr> = {
-    Factor FactorOp Term => Box::new(Expr::Op(<>)),
-    Term,
-};
-
-FactorOp: Opcode = {
-    "*" => Opcode::Mul,
-    "/" => Opcode::Div,
-};
-
-Term: Box<Expr> = {
-    Num => Box::new(Expr::Num(<>)), // (4)
-    "(" <Expr> ")",
-    <f:Fun> "(" <xs:(<Expr> ",")*> <x:Expr> ")" => {
-        let mut xs = xs.into_iter().map(|x| *x).collect::<Vec<Expr>>();
-        xs.push(*x);
-        Box::new(Expr::Fun(f, xs))
-    },
-};
-
-Fun: FunCode = {
-    "fac" => FunCode::Fac,
-    "mod" => FunCode::Rem,
+Name: Name = {
+    r"[a-z]\w*" => Name(<>.to_string())
 };
 
 Num: i64 = {
     r"[0-9]+" => i64::from_str(<>).unwrap()
 };
+
+Opcode: Opcode = {
+    "+" => Opcode::Add,
+    "-" => Opcode::Sub,
+    "*" => Opcode::Mul,
+    "/" => Opcode::Div,
+}
+
+Boxed<T>: Box<T> = {
+    <T> => Box::new(<>)
+}
+
+CommaList0<T>: Vec<T> = {
+    <ts:(<T> ",")*> <t:T> => {
+        let mut ts = ts;
+        ts.push(t);
+        ts
+    }
+}
