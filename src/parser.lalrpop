@@ -7,13 +7,20 @@ grammar;
 pub Expr = Boxed<ExprUnboxed>;
 
 ExprUnboxed: Expr = {
+    "let" <Name> "=" <Expr> ";" <Expr> => Expr::Let(<>),
+    <SimpleExprUnboxed>,
+};
+
+SimpleExpr = Boxed<SimpleExprUnboxed>;
+
+SimpleExprUnboxed: Expr = {
     Name => Expr::Var(<>),
     Num => Expr::Num(<>),
-    <Opcode> "(" <Expr> "," <Expr> ")" => Expr::Op(<>),
-    <Name> "(" <CommaList0<ExprUnboxed>> ")" => Expr::App(<>),
-    "let" <Name> "=" <Expr> ";" <Expr> => Expr::Let(<>),
-    "|" <CommaList0<Name>> "|" "{" <Expr> "}" => Expr::Lam(<>),
-    "(" <ExprUnboxed> ")",
+    <Opcode> "(" <SimpleExpr> "," <SimpleExpr> ")" => Expr::Op(<>),
+    <Name> "(" <CommaList0<SimpleExprUnboxed>> ")" => Expr::App(<>),
+    "|" <CommaList0<Name>> "|" <Expr> => Expr::Lam(<>),
+    "(" <SimpleExprUnboxed> ")",
+    "{" <ExprUnboxed> "}"
 };
 
 Name: Name = {
