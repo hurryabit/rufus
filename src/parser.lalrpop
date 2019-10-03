@@ -14,10 +14,10 @@ ExprUnboxed: Expr = {
 SimpleExpr = Boxed<SimpleExprUnboxed>;
 
 SimpleExprUnboxed: Expr = {
-    Name => Expr::Var(<>),
+    Name => Expr::Var(<>, None),
     Num => Expr::Num(<>),
     <Opcode> "(" <SimpleExpr> "," <SimpleExpr> ")" => Expr::Op(<>),
-    <Name> "(" <CommaList0<SimpleExprUnboxed>> ")" => Expr::App(<>),
+    <f:Name> "(" <xs:CommaList0<SimpleExprUnboxed>> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
     "|" <CommaList0<Name>> "|" <Expr> => Expr::Lam(<>),
     "(" <SimpleExprUnboxed> ")",
     "{" <ExprUnboxed> "}"

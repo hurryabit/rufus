@@ -13,8 +13,6 @@ lalrpop_mod!(
     parser
 );
 
-use eval::Env;
-
 const HISTORY_FILE: &str = ".rufus_history";
 
 fn main() {
@@ -32,7 +30,7 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
                 match parser.parse(&line) {
-                    Ok(expr) => match expr.eval(Env::new()) {
+                    Ok(expr) => match expr.index().eval() {
                         Ok(val) => println!("{}", val.as_i64().unwrap()),
                         Err(err) => println!("Error: {}", err),
                     },
@@ -56,5 +54,17 @@ fn main() {
 #[test]
 fn parser() {
     let parser = parser::ExprParser::new();
-    assert_eq!(parser.parse("let t = 3; let f = |x| { *(t, x) }; let twice = |f, x| { f(f(x)) }; twice(|x| { twice(f, x) }, 2)").unwrap().eval(Env::new()).unwrap().as_i64().unwrap(), 162);
+    assert_eq!(parser.parse("let t = 3; let f = |x| { *(t, x) }; let twice = |f, x| { f(f(x)) }; twice(|x| { twice(f, x) }, 2)").unwrap().index().eval().unwrap().as_i64().unwrap(), 162);
+
+    assert_eq!(
+        parser
+            .parse("let x = 1; let y = {let z = 2; z}; x")
+            .unwrap()
+            .index()
+            .eval()
+            .unwrap()
+            .as_i64()
+            .unwrap(),
+        1
+    );
 }
