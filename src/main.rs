@@ -6,7 +6,7 @@ extern crate rustyline;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
 
-mod eval;
+mod cek;
 mod syntax;
 lalrpop_mod!(
     #[allow(clippy)]
@@ -30,10 +30,12 @@ fn main() {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
                 match parser.parse(&line) {
-                    Ok(expr) => match expr.index().eval() {
-                        Ok(val) => println!("{}", val.as_i64().unwrap()),
-                        Err(err) => println!("Error: {}", err),
-                    },
+                    Ok(expr) => {
+                        let expr = expr.index();
+                        let state = cek::State::init(&expr);
+                        let value = state.run();
+                        println!("{:?}", value);
+                    }
                     Err(err) => println!("Error: {}", err),
                 }
             }
@@ -52,19 +54,25 @@ fn main() {
 }
 
 #[test]
-fn parser() {
+fn test() {
+    use cek::*;
     let parser = parser::ExprParser::new();
-    assert_eq!(parser.parse("let t = 3; let f = |x| { *(t, x) }; let twice = |f, x| { f(f(x)) }; twice(|x| { twice(f, x) }, 2)").unwrap().index().eval().unwrap().as_i64().unwrap(), 162);
 
-    assert_eq!(
-        parser
-            .parse("let x = 1; let y = {let z = 2; z}; x")
-            .unwrap()
-            .index()
-            .eval()
-            .unwrap()
-            .as_i64()
-            .unwrap(),
-        1
-    );
+    let expr1 = parser
+        .parse(
+            "
+            let t = 3;
+            let f = |x| { *(t, x) };
+            let twice = |f, x| { f(f(x)) };
+            twice(|x| { twice(f, x) }, 2)",
+        )
+        .unwrap()
+        .index();
+    assert_eq!(State::init(&expr1).run().as_i64(), 162);
+
+    let expr2 = parser
+        .parse("let x = 1; let y = {let z = 2; z}; x")
+        .unwrap()
+        .index();
+    assert_eq!(State::init(&expr2).run().as_i64(), 1);
 }
