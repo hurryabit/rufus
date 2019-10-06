@@ -13,6 +13,8 @@ lalrpop_mod!(
     parser
 );
 
+use syntax::Expr;
+
 const HISTORY_FILE: &str = ".rufus_history";
 
 fn main() {
@@ -22,16 +24,19 @@ fn main() {
     if rl.load_history(HISTORY_FILE).is_err() {
         println!("No previous history.");
     }
-    let parser = parser::ExprParser::new();
+    let parser = parser::ExprUnboxedParser::new();
 
     loop {
         let readline = rl.readline("> ");
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str());
-                match parser.parse(&line) {
+                match parser
+                    .parse(&line)
+                    .map_err(|err| lalrpop_util::ParseError::to_string(&err))
+                    .and_then(Expr::index)
+                {
                     Ok(expr) => {
-                        let expr = expr.index();
                         let state = cek::State::init(&expr);
                         let value = state.run();
                         println!("{:?}", value);
@@ -56,7 +61,7 @@ fn main() {
 #[test]
 fn test() {
     use cek::*;
-    let parser = parser::ExprParser::new();
+    let parser = parser::ExprUnboxedParser::new();
 
     let expr1 = parser
         .parse(
@@ -67,12 +72,14 @@ fn test() {
             twice(|x| { twice(f, x) }, 2)",
         )
         .unwrap()
-        .index();
+        .index()
+        .unwrap();
     assert_eq!(State::init(&expr1).run().as_i64(), 162);
 
     let expr2 = parser
         .parse("let x = 1; let y = {let z = 2; z}; x")
         .unwrap()
-        .index();
+        .index()
+        .unwrap();
     assert_eq!(State::init(&expr2).run().as_i64(), 1);
 }

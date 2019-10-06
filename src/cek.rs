@@ -17,6 +17,7 @@ pub struct Env<'a> {
 enum Prim<'a> {
     Builtin(&'a Opcode),
     Lam(&'a Expr, Env<'a>),
+    Print,
 }
 
 #[derive(Debug)]
@@ -140,6 +141,11 @@ impl<'a> State<'a> {
             Expr::Lam(params, body) => {
                 Ctrl::from_value(Value::Lam(params.len(), body, self.env.clone()))
             }
+
+            Expr::Print(arg) => {
+                self.kont.push(Kont::Arg(arg));
+                Ctrl::from_prim(Prim::Print, 1)
+            }
         }
     }
 
@@ -157,6 +163,12 @@ impl<'a> State<'a> {
                 let old_env = std::mem::replace(&mut self.env, new_env);
                 self.kont.push(Kont::Dump(old_env));
                 Ctrl::Expr(body)
+            }
+            Prim::Print => {
+                assert_eq!(args.len(), 1);
+                let arg = &args[0];
+                println!(": {:?}", arg);
+                Ctrl::Value(Rc::clone(arg))
             }
         }
     }

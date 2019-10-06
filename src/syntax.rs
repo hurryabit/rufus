@@ -11,6 +11,7 @@ pub enum Expr {
     App(Box<Expr>, Vec<Expr>),
     Let(Name, Box<Expr>, Box<Expr>),
     Lam(Vec<Name>, Box<Expr>),
+    Print(Box<Expr>),
 }
 
 #[derive(Clone, Debug)]
@@ -28,43 +29,53 @@ impl fmt::Display for Name {
 }
 
 impl Expr {
-    pub fn index(self) -> Self {
+    pub fn index(self) -> Result<Self, String> {
         use debruijn::Indexer;
 
         self.index_aux(&mut Indexer::new())
     }
 
-    fn index_aux(self, indexer: &mut debruijn::Indexer) -> Self {
+    fn index_aux(self, indexer: &mut debruijn::Indexer) -> Result<Self, String> {
         use std::borrow::Borrow;
         match self {
-            Self::Num(n) => Self::Num(n),
+            Self::Num(n) => Ok(Self::Num(n)),
             Self::Var(x, None) => {
-                let i = indexer.get(&x.0);
-                Self::Var(x, i)
+                if let Some(i) = indexer.get(&x.0) {
+                    Ok(Self::Var(x, Some(i)))
+                } else {
+                    Err(format!("unbound variable: {}", x.0))
+                }
             }
             Self::Var(_, Some(_)) => panic!("indexer running on indexed expression"),
             Self::Op(op, e1, e2) => {
-                let e1 = Box::new(e1.index_aux(indexer));
-                let e2 = Box::new(e2.index_aux(indexer));
-                Self::Op(op, e1, e2)
+                let e1 = Box::new(e1.index_aux(indexer)?);
+                let e2 = Box::new(e2.index_aux(indexer)?);
+                Ok(Self::Op(op, e1, e2))
             }
             Self::App(f, es) => {
-                let f = Box::new(f.index_aux(indexer));
-                let es = es.into_iter().map(|e| e.index_aux(indexer)).collect();
-                Self::App(f, es)
+                let f = f.index_aux(indexer)?;
+                let es = es
+                    .into_iter()
+                    .map(|e| e.index_aux(indexer))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(Self::App(Box::new(f), es))
             }
             Self::Let(x, e1, e2) => {
-                let e1 = Box::new(e1.index_aux(indexer));
-                let e2 = indexer.intro(&x.0, |indexer| Box::new(e2.index_aux(indexer)));
-                Self::Let(x, e1, e2)
+                let e1 = e1.index_aux(indexer)?;
+                let e2 = indexer.intro(&x.0, |indexer| e2.index_aux(indexer))?;
+                Ok(Self::Let(x, Box::new(e1), Box::new(e2)))
             }
             Self::Lam(xs, e) => {
                 // TODO(MH): Make this more efficient by using iterators.
                 let e = indexer.intro_many(
                     &xs.iter().map(|x| x.0.borrow()).collect::<Vec<&str>>(),
-                    |indexer| Box::new(e.index_aux(indexer)),
-                );
-                Self::Lam(xs, e)
+                    |indexer| e.index_aux(indexer),
+                )?;
+                Ok(Self::Lam(xs, Box::new(e)))
+            }
+            Self::Print(e) => {
+                let e = Box::new(e.index_aux(indexer)?);
+                Ok(Self::Print(e))
             }
         }
     }

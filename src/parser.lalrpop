@@ -4,9 +4,9 @@ use crate::syntax::*;
 
 grammar;
 
-pub Expr = Boxed<ExprUnboxed>;
+Expr = Boxed<ExprUnboxed>;
 
-ExprUnboxed: Expr = {
+pub ExprUnboxed: Expr = {
     "let" <Name> "=" <Expr> ";" <Expr> => Expr::Let(<>),
     <SimpleExprUnboxed>,
 };
@@ -19,6 +19,7 @@ SimpleExprUnboxed: Expr = {
     <Opcode> "(" <SimpleExpr> "," <SimpleExpr> ")" => Expr::Op(<>),
     <f:Name> "(" <xs:CommaList0<SimpleExprUnboxed>> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
     "|" <CommaList0<Name>> "|" <Expr> => Expr::Lam(<>),
+    "print" "(" <Expr> ")" => Expr::Print(<>),
     "(" <SimpleExprUnboxed> ")",
     "{" <ExprUnboxed> "}"
 };
@@ -43,6 +44,7 @@ Boxed<T>: Box<T> = {
 }
 
 CommaList0<T>: Vec<T> = {
+    => Vec::new(),
     <ts:(<T> ",")*> <t:T> => {
         let mut ts = ts;
         ts.push(t);
