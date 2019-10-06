@@ -67,9 +67,9 @@ fn test() {
         .parse(
             "
             let t = 3;
-            let f = |x| { *(t, x) };
-            let twice = |f, x| { f(f(x)) };
-            twice(|x| { twice(f, x) }, 2)",
+            let f = |x| (t * x);
+            let twice = |f, x| f(f(x));
+            twice(|x| twice(f, x), 2)",
         )
         .unwrap()
         .index()

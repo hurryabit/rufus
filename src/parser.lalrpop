@@ -10,12 +10,21 @@ pub Expr: Expr = {
 };
 
 SimpleExpr: Expr = {
+    <x:Box<SimpleExpr>> <op:SumOp> <y:Box<ProductExpr>> => Expr::Op(op, x, y),
+    ProductExpr,
+}
+
+ProductExpr: Expr = {
+    <x:Box<ProductExpr>> <op:ProductOp> <y:Box<AtomExpr>> => Expr::Op(op, x, y),
+    AtomExpr,
+}
+
+AtomExpr: Expr = {
     Name => Expr::Var(<>, None),
     Num => Expr::Num(<>),
-    <Opcode> "(" <Box<SimpleExpr>> "," <Box<SimpleExpr>> ")" => Expr::Op(<>),
     <f:Name> "(" <xs:CommaList0<SimpleExpr>> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
-    "|" <CommaList0<Name>> "|" <Box<Expr>> => Expr::Lam(<>),
-    "print" "(" <Box<Expr>> ")" => Expr::Print(<>),
+    "|" <CommaList0<Name>> "|" <Box<AtomExpr>> => Expr::Lam(<>),
+    "print" "(" <Box<SimpleExpr>> ")" => Expr::Print(<>),
     "(" <SimpleExpr> ")",
     "{" <Expr> "}"
 };
@@ -28,9 +37,12 @@ Num: i64 = {
     r"[0-9]+" => i64::from_str(<>).unwrap()
 };
 
-Opcode: Opcode = {
+SumOp: Opcode = {
     "+" => Opcode::Add,
     "-" => Opcode::Sub,
+}
+
+ProductOp: Opcode = {
     "*" => Opcode::Mul,
     "/" => Opcode::Div,
 }
