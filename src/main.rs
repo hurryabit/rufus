@@ -24,7 +24,7 @@ fn main() {
     if rl.load_history(HISTORY_FILE).is_err() {
         println!("No previous history.");
     }
-    let parser = parser::ExprUnboxedParser::new();
+    let parser = parser::ExprParser::new();
 
     loop {
         let readline = rl.readline("> ");
@@ -61,7 +61,7 @@ fn main() {
 #[test]
 fn test() {
     use cek::*;
-    let parser = parser::ExprUnboxedParser::new();
+    let parser = parser::ExprParser::new();
 
     let expr1 = parser
         .parse(

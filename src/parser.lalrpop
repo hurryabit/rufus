@@ -4,24 +4,20 @@ use crate::syntax::*;
 
 grammar;
 
-Expr = Boxed<ExprUnboxed>;
-
-pub ExprUnboxed: Expr = {
-    "let" <Name> "=" <Expr> ";" <Expr> => Expr::Let(<>),
-    <SimpleExprUnboxed>,
+pub Expr: Expr = {
+    "let" <Name> "=" <Box<Expr>> ";" <Box<Expr>> => Expr::Let(<>),
+    <SimpleExpr>,
 };
 
-SimpleExpr = Boxed<SimpleExprUnboxed>;
-
-SimpleExprUnboxed: Expr = {
+SimpleExpr: Expr = {
     Name => Expr::Var(<>, None),
     Num => Expr::Num(<>),
-    <Opcode> "(" <SimpleExpr> "," <SimpleExpr> ")" => Expr::Op(<>),
-    <f:Name> "(" <xs:CommaList0<SimpleExprUnboxed>> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
-    "|" <CommaList0<Name>> "|" <Expr> => Expr::Lam(<>),
-    "print" "(" <Expr> ")" => Expr::Print(<>),
-    "(" <SimpleExprUnboxed> ")",
-    "{" <ExprUnboxed> "}"
+    <Opcode> "(" <Box<SimpleExpr>> "," <Box<SimpleExpr>> ")" => Expr::Op(<>),
+    <f:Name> "(" <xs:CommaList0<SimpleExpr>> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
+    "|" <CommaList0<Name>> "|" <Box<Expr>> => Expr::Lam(<>),
+    "print" "(" <Box<Expr>> ")" => Expr::Print(<>),
+    "(" <SimpleExpr> ")",
+    "{" <Expr> "}"
 };
 
 Name: Name = {
@@ -39,7 +35,7 @@ Opcode: Opcode = {
     "/" => Opcode::Div,
 }
 
-Boxed<T>: Box<T> = {
+Box<T>: Box<T> = {
     <T> => Box::new(<>)
 }
 
