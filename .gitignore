@@ -1,4 +1,5 @@
 /target/
+/rufus-ui/build/
 /rufus-ui/node_modules/
 **/*.rs.bk
 .rufus_history

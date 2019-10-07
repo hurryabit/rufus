@@ -242,7 +242,7 @@ impl<'a> Machine<'a> {
                             Ctrl::Error(format!("unmatched tag: {}", tag))
                         }
                     }
-                    _ => Ctrl::Error(format!("expected variant, found {:?}", scrutinee))
+                    _ => Ctrl::Error(format!("expected variant, found {:?}", scrutinee)),
                 }
             }
         }

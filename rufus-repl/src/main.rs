@@ -31,9 +31,7 @@ fn main() {
                     .and_then(|expr| {
                         let machine = cek::Machine::new(&expr);
                         machine.run().map(|value| format!("{:?}", value))
-
-                    })
-                {
+                    }) {
                     Ok(value) => println!("{}", value),
                     Err(err) => println!("Error: {}", err),
                 }
