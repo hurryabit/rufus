@@ -30,8 +30,8 @@ fn main() {
                     .and_then(Expr::index)
                 {
                     Ok(expr) => {
-                        let state = cek::State::init(&expr);
-                        let value = state.run();
+                        let machine = cek::Machine::new(&expr);
+                        let value = machine.run();
                         println!("{:?}", value);
                     }
                     Err(err) => println!("Error: {}", err),
@@ -58,7 +58,7 @@ mod tests {
         use crate::parser::ExprParser;
         let parser = ExprParser::new();
         let expr = parser.parse(expr).unwrap().index().unwrap();
-        assert_eq!(State::init(&expr).run().as_i64(), expected);
+        assert_eq!(Machine::new(&expr).run().as_i64(), expected);
     }
 
     #[test]

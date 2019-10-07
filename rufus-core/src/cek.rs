@@ -46,7 +46,7 @@ enum Kont<'a> {
 }
 
 #[derive(Debug)]
-pub struct State<'a> {
+pub struct Machine<'a> {
     ctrl: Ctrl<'a>,
     env: Env<'a>,
     kont: Vec<Kont<'a>>,
@@ -101,9 +101,9 @@ impl<'a> Ctrl<'a> {
     }
 }
 
-impl<'a> State<'a> {
-    pub fn init(expr: &'a Expr) -> Self {
-        State {
+impl<'a> Machine<'a> {
+    pub fn new(expr: &'a Expr) -> Self {
+        Machine {
             ctrl: Ctrl::Expr(expr),
             env: Env::new(),
             kont: Vec::new(),
@@ -149,7 +149,8 @@ impl<'a> State<'a> {
         }
     }
 
-    fn step_saturated_prim(&mut self, prim: &Prim<'a>, args: &[Rc<Value<'a>>]) -> Ctrl<'a> {
+    /// Step when the control contains a fully applied primitive.
+    fn step_prim(&mut self, prim: &Prim<'a>, args: &[Rc<Value<'a>>]) -> Ctrl<'a> {
         match prim {
             Prim::Builtin(op) => {
                 assert_eq!(args.len(), 2);
@@ -173,7 +174,7 @@ impl<'a> State<'a> {
         }
     }
 
-    /// Step when the control contains a (proper) value.
+    /// Step when the control contains a value.
     fn step_value(&mut self, value: Rc<Value<'a>>) -> Ctrl<'a> {
         let kont = self.kont.pop().expect("Step on final state");
         match kont {
@@ -192,12 +193,13 @@ impl<'a> State<'a> {
                 pap.missing -= 1;
                 Ctrl::PAP(pap)
             }
-            Kont::Exec => match &*value {
-                Value::Lam(arity, ref body, ref env) => {
+            Kont::Exec => {
+                if let Value::Lam(arity, ref body, ref env) = &*value {
                     Ctrl::from_prim(Prim::Lam(body, env.clone()), *arity)
+                } else {
+                    panic!("executing non lambda")
                 }
-                _ => panic!("executing non lambda"),
-            },
+            }
             Kont::Let(_name, body) => {
                 self.kont.push(Kont::Pop(1));
                 self.env.push(value);
@@ -206,18 +208,17 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn step(&mut self) {
+    /// Perform a single step of the machine.
+    fn step(&mut self) {
         let old_ctrl = std::mem::replace(&mut self.ctrl, Ctrl::Evaluating);
 
         let new_ctrl = match old_ctrl {
             Ctrl::Evaluating => panic!("Control was not updated after last step"),
-
             Ctrl::Expr(expr) => self.step_expr(expr),
-
             Ctrl::Value(value) => self.step_value(value),
             Ctrl::PAP(pap) => {
                 if pap.missing == 0 {
-                    self.step_saturated_prim(&pap.prim, &pap.args)
+                    self.step_prim(&pap.prim, &pap.args)
                 } else if let Some(Kont::Arg(arg)) = self.kont.pop() {
                     self.kont.push(Kont::PAP(pap));
                     Ctrl::Expr(arg)
@@ -230,35 +231,27 @@ impl<'a> State<'a> {
         self.ctrl = new_ctrl
     }
 
-    fn is_final(&self) -> bool {
-        match &self.ctrl {
-            Ctrl::Value(_) => self.kont.is_empty(),
-            _ => false,
-        }
-    }
-
     pub fn run(mut self) -> Rc<Value<'a>> {
-        while !self.is_final() {
-            self.step();
-        }
-        match self.ctrl {
-            Ctrl::Value(v) => v,
-            _ => panic!("impossible"),
+        loop {
+            match &self.ctrl {
+                Ctrl::Value(v) if self.kont.is_empty() => return Rc::clone(v),
+                _ => self.step(),
+            }
         }
     }
 
-    //     #[allow(dead_code)]
-    //     pub fn print_debug(&self) {
-    //         println!("ctrl: {:?}", self.ctrl);
-    //         println!("env:");
-    //         for val in self.env.stack.iter().rev() {
-    //             println!("# {:?}", val);
-    //         }
-    //         println!("kont:");
-    //         for kont in self.kont.iter().rev() {
-    //             println!("$ {:?}", kont);
-    //         }
-    //     }
+    #[allow(dead_code)]
+    pub fn print_debug(&self) {
+        println!("ctrl: {:?}", self.ctrl);
+        println!("env:");
+        for val in self.env.stack.iter().rev() {
+            println!("# {:?}", val);
+        }
+        println!("kont:");
+        for kont in self.kont.iter().rev() {
+            println!("$ {:?}", kont);
+        }
+    }
 }
 
 impl Opcode {

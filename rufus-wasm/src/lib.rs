@@ -36,8 +36,8 @@ pub fn exec(program: &str) -> ExecResult {
         .and_then(Expr::index)
     {
         Ok(expr) => {
-            let state = cek::State::init(&expr);
-            let value = state.run();
+            let machine = cek::Machine::new(&expr);
+            let value = machine.run();
             let value = format!("{:?}", value);
             ExecResult {
                 status: ExecResultStatus::Ok,

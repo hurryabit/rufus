@@ -16,7 +16,7 @@ mod tests {
         use crate::parser::ExprParser;
         let parser = ExprParser::new();
         let expr = parser.parse(expr).unwrap().index().unwrap();
-        assert_eq!(State::init(&expr).run().as_i64(), expected);
+        assert_eq!(Machine::new(&expr).run().as_i64(), expected);
     }
 
     #[test]
