@@ -37,6 +37,7 @@ enum Ctrl<'a> {
     Expr(&'a Expr),
     PAP(PAP<'a>),
     Value(Rc<Value<'a>>),
+    Error(String),
 }
 
 #[derive(Debug)]
@@ -65,11 +66,11 @@ impl<'a> Value<'a> {
         }
     }
 
-    fn as_record(&self) -> &HashMap<&'a Name, Rc<Value<'a>>> {
+    fn as_record(&self) -> Result<&HashMap<&'a Name, Rc<Value<'a>>>, String> {
         if let Value::Record(assigns) = self {
-            assigns
+            Ok(assigns)
         } else {
-            panic!("expected records, found {:?}", self)
+            Err(format!("expected record, found {:?}", self))
         }
     }
 }
@@ -159,7 +160,8 @@ impl<'a> Machine<'a> {
                 Ctrl::from_prim(Prim::Print, 1)
             }
             Expr::Record(assigns) => {
-                self.kont.extend(assigns.iter().rev().map(|assign| Kont::Arg(&assign.1)));
+                self.kont
+                    .extend(assigns.iter().rev().map(|assign| Kont::Arg(&assign.1)));
                 let prim = Prim::Record(assigns.iter().map(|assign| &assign.0).collect());
                 Ctrl::from_prim(prim, assigns.len())
             }
@@ -194,12 +196,22 @@ impl<'a> Machine<'a> {
             }
             Prim::Record(names) => {
                 assert_eq!(args.len(), names.len());
-                Ctrl::from_value(Value::Record(names.into_iter().zip(args.into_iter()).collect()))
+                Ctrl::from_value(Value::Record(
+                    names.into_iter().zip(args.into_iter()).collect(),
+                ))
             }
             Prim::Proj(field) => {
                 assert_eq!(args.len(), 1);
-                let record = args[0].as_record();
-                Ctrl::Value(Rc::clone(record.get(field).expect("missing record field")))
+                match args[0].as_record() {
+                    Ok(record) => {
+                        if let Some(value) = record.get(field) {
+                            Ctrl::Value(Rc::clone(value))
+                        } else {
+                            Ctrl::Error(format!("unknown field in record: {}", field))
+                        }
+                    }
+                    Err(msg) => Ctrl::Error(msg),
+                }
             }
         }
     }
@@ -256,15 +268,17 @@ impl<'a> Machine<'a> {
                     panic!("not enough args for PAP")
                 }
             }
+            Ctrl::Error(msg) => panic!("control stepped on error: {}", msg),
         };
 
         self.ctrl = new_ctrl
     }
 
-    pub fn run(mut self) -> Rc<Value<'a>> {
+    pub fn run(mut self) -> Result<Rc<Value<'a>>, String> {
         loop {
             match &self.ctrl {
-                Ctrl::Value(v) if self.kont.is_empty() => return Rc::clone(v),
+                Ctrl::Value(v) if self.kont.is_empty() => return Ok(Rc::clone(v)),
+                Ctrl::Error(msg) => return Err(msg.clone()),
                 _ => self.step(),
             }
         }

@@ -28,12 +28,13 @@ fn main() {
                     .parse(&line)
                     .map_err(|err| lalrpop_util::ParseError::to_string(&err))
                     .and_then(Expr::index)
-                {
-                    Ok(expr) => {
+                    .and_then(|expr| {
                         let machine = cek::Machine::new(&expr);
-                        let value = machine.run();
-                        println!("{:?}", value);
-                    }
+                        machine.run().map(|value| format!("{:?}", value))
+
+                    })
+                {
+                    Ok(value) => println!("{}", value),
                     Err(err) => println!("Error: {}", err),
                 }
             }
