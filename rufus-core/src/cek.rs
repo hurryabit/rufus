@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::syntax::*;
@@ -6,6 +7,7 @@ use crate::syntax::*;
 pub enum Value<'a> {
     Num(i64),
     Lam(usize, &'a Expr, Env<'a>),
+    Record(HashMap<&'a Name, Rc<Value<'a>>>),
 }
 
 #[derive(Clone, Debug)]
@@ -18,6 +20,8 @@ enum Prim<'a> {
     Builtin(&'a Opcode),
     Lam(&'a Expr, Env<'a>),
     Print,
+    Record(Vec<&'a Name>),
+    Proj(&'a Name),
 }
 
 #[derive(Debug)]
@@ -58,6 +62,14 @@ impl<'a> Value<'a> {
             *n
         } else {
             panic!("expected i64, found {:?}", self)
+        }
+    }
+
+    fn as_record(&self) -> &HashMap<&'a Name, Rc<Value<'a>>> {
+        if let Value::Record(assigns) = self {
+            assigns
+        } else {
+            panic!("expected records, found {:?}", self)
         }
     }
 }
@@ -146,6 +158,15 @@ impl<'a> Machine<'a> {
                 self.kont.push(Kont::Arg(arg));
                 Ctrl::from_prim(Prim::Print, 1)
             }
+            Expr::Record(assigns) => {
+                self.kont.extend(assigns.iter().rev().map(|assign| Kont::Arg(&assign.1)));
+                let prim = Prim::Record(assigns.iter().map(|assign| &assign.0).collect());
+                Ctrl::from_prim(prim, assigns.len())
+            }
+            Expr::Proj(record, field) => {
+                self.kont.push(Kont::Arg(record));
+                Ctrl::from_prim(Prim::Proj(field), 1)
+            }
         }
     }
 
@@ -170,6 +191,15 @@ impl<'a> Machine<'a> {
                 let arg = &args[0];
                 println!(": {:?}", arg);
                 Ctrl::Value(Rc::clone(arg))
+            }
+            Prim::Record(names) => {
+                assert_eq!(args.len(), names.len());
+                Ctrl::from_value(Value::Record(names.into_iter().zip(args.into_iter()).collect()))
+            }
+            Prim::Proj(field) => {
+                assert_eq!(args.len(), 1);
+                let record = args[0].as_record();
+                Ctrl::Value(Rc::clone(record.get(field).expect("missing record field")))
             }
         }
     }

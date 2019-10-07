@@ -22,12 +22,18 @@ ProductExpr: Expr = {
 AtomExpr: Expr = {
     Name => Expr::Var(<>, None),
     Num => Expr::Num(<>),
-    <f:Name> "(" <xs:CommaList0<SimpleExpr>> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
-    "|" <CommaList0<Name>> "|" <Box<AtomExpr>> => Expr::Lam(<>),
+    <f:Name> "(" <xs:List0<SimpleExpr, ",">> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
+    "|" <List0<Name, ",">> "|" "{" <Box<Expr>> "}" => Expr::Lam(<>),
     "print" "(" <Box<SimpleExpr>> ")" => Expr::Print(<>),
     "(" <SimpleExpr> ")",
-    "{" <Expr> "}"
+    "{" <Expr> "}",
+    "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
+    <Box<AtomExpr>> "." <Name> => Expr::Proj(<>),
 };
+
+RecordAssign: (Name, Expr) = {
+    <Name> ":" <Expr> => (<>)
+}
 
 Name: Name = {
     r"[a-z]\w*" => Name(<>.to_string())
@@ -51,7 +57,7 @@ Box<T>: Box<T> = {
     <T> => Box::new(<>)
 }
 
-CommaList0<T>: Vec<T> = {
+List0<T, Sep>: Vec<T> = {
     => Vec::new(),
     <ts:(<T> ",")*> <t:T> => {
         let mut ts = ts;

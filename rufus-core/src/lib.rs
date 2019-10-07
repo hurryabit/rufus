@@ -25,9 +25,9 @@ mod tests {
             162,
             "
             let t = 3;
-            let f = |x| (t * x);
-            let twice = |f, x| f(f(x));
-            twice(|x| twice(f, x), 2)",
+            let f = |x| { t * x };
+            let twice = |f, x| { f(f(x)) };
+            twice(|x| { twice(f, x) }, 2)",
         );
     }
 
@@ -38,6 +38,17 @@ mod tests {
 
     #[test]
     fn simple_lambda() {
-        integration_test(5, "let x = 1; let y = 2; let f = |z| (x+z); f(4)");
+        integration_test(5, "let x = 1; let y = 2; let f = |z| { x+z }; f(4)");
+    }
+
+    #[test]
+    fn simple_record() {
+        integration_test(
+            1,
+            "
+            let pair = |x, y| { { x: x, y: y } };
+            let fst = |p| { p.x };
+            fst(pair(1, 2))",
+        );
     }
 }

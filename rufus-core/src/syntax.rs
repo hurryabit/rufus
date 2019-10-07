@@ -12,6 +12,8 @@ pub enum Expr {
     Let(Name, Box<Expr>, Box<Expr>),
     Lam(Vec<Name>, Box<Expr>),
     Print(Box<Expr>),
+    Record(Vec<(Name, Expr)>),
+    Proj(Box<Expr>, Name),
 }
 
 #[derive(Clone, Debug)]
@@ -76,6 +78,17 @@ impl Expr {
             Self::Print(e) => {
                 let e = Box::new(e.index_aux(indexer)?);
                 Ok(Self::Print(e))
+            }
+            Self::Record(assigns) => {
+                let assigns = assigns
+                    .into_iter()
+                    .map(|(f, e)| (e.index_aux(indexer)).map(|e| (f, e)))
+                    .collect::<Result<Vec<(_, _)>, _>>()?;
+                Ok(Self::Record(assigns))
+            }
+            Self::Proj(record, field) => {
+                let record = record.index_aux(indexer)?;
+                Ok(Self::Proj(Box::new(record), field))
             }
         }
     }
