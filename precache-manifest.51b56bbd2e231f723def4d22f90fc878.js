@@ -4,7 +4,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/rufus/aa3f22988c9bbd81106a.module.wasm"
   },
   {
-    "revision": "28da6b4e4d88419413129571a9c85edc",
+    "revision": "d38c7224d30ccdf30db4eb56758b9b20",
     "url": "/rufus/index.html"
   },
   {
@@ -12,7 +12,7 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/rufus/static/css/2.510409cd.chunk.css"
   },
   {
-    "revision": "34b5f0f5f8fddd3a5890",
+    "revision": "a01aef6f85408f59a1b8",
     "url": "/rufus/static/css/main.dfca195d.chunk.css"
   },
   {
@@ -24,8 +24,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/rufus/static/js/3.772ac2df.chunk.js"
   },
   {
-    "revision": "34b5f0f5f8fddd3a5890",
-    "url": "/rufus/static/js/main.886da7cc.chunk.js"
+    "revision": "a01aef6f85408f59a1b8",
+    "url": "/rufus/static/js/main.63940d92.chunk.js"
   },
   {
     "revision": "674f451cbe5fc15143f1",
