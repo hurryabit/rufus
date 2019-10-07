@@ -1,13 +1,5 @@
-[package]
-name = "rufus"
-version = "0.1.0"
-authors = ["Martin Huschenbett <martin.huschenbett@posteo.me>"]
-edition = "2018"
-
-[build-dependencies]
-lalrpop = "0.17.2"
-
-[dependencies]
-lalrpop-util = "0.17.2"
-regex = "0.2.1"
-rustyline="5.0.3"
+[workspace]
+members = [
+    "rufus-core",
+    "rufus-repl",
+]

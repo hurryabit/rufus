@@ -1,17 +1,10 @@
-#![allow(renamed_and_removed_lints)]
-#[macro_use]
 extern crate lalrpop_util;
+extern crate rufus_core;
 extern crate rustyline;
 
+use rufus_core::{cek, parser, syntax};
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
-
-mod cek;
-mod syntax;
-lalrpop_mod!(
-    #[allow(clippy)]
-    parser
-);
 
 use syntax::Expr;
 

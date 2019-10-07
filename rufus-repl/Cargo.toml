@@ -1,0 +1,10 @@
+[package]
+name = "rufus-repl"
+version = "0.1.0"
+authors = ["Martin Huschenbett <martin.huschenbett@posteo.me>"]
+edition = "2018"
+
+[dependencies]
+rufus-core = { path = "../rufus-core" }
+lalrpop-util = "0.17.2"
+rustyline = "5.0.3"
