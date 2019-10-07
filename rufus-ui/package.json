@@ -4,6 +4,7 @@
   "author": "Martin Huschenbett <martin.huschenbett@posteo.me>",
   "homepage": "https://hurryabit.github.io/rufus",
   "license": "Apache 2.0",
+  "repository": "github:hurryabit/rufus",
   "private": true,
   "dependencies": {
     "@types/jest": "24.0.18",
