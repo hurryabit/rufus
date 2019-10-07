@@ -77,8 +77,8 @@ impl<'a> Env<'a> {
         self.stack.push(value);
     }
 
-    pub fn push_many(&mut self, args: &[Rc<Value<'a>>]) {
-        self.stack.extend_from_slice(args);
+    pub fn push_many(&mut self, args: Vec<Rc<Value<'a>>>) {
+        self.stack.extend(args.into_iter());
     }
 
     pub fn pop_many(&mut self, count: usize) {
@@ -150,7 +150,7 @@ impl<'a> Machine<'a> {
     }
 
     /// Step when the control contains a fully applied primitive.
-    fn step_prim(&mut self, prim: &Prim<'a>, args: &[Rc<Value<'a>>]) -> Ctrl<'a> {
+    fn step_prim(&mut self, prim: Prim<'a>, args: Vec<Rc<Value<'a>>>) -> Ctrl<'a> {
         match prim {
             Prim::Builtin(op) => {
                 assert_eq!(args.len(), 2);
@@ -218,7 +218,7 @@ impl<'a> Machine<'a> {
             Ctrl::Value(value) => self.step_value(value),
             Ctrl::PAP(pap) => {
                 if pap.missing == 0 {
-                    self.step_prim(&pap.prim, &pap.args)
+                    self.step_prim(pap.prim, pap.args)
                 } else if let Some(Kont::Arg(arg)) = self.kont.pop() {
                     self.kont.push(Kont::PAP(pap));
                     Ctrl::Expr(arg)
