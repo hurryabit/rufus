@@ -1,27 +1,27 @@
 {
   "files": {
     "main.css": "/rufus/static/css/main.dfca195d.chunk.css",
-    "main.js": "/rufus/static/js/main.63940d92.chunk.js",
-    "main.js.map": "/rufus/static/js/main.63940d92.chunk.js.map",
-    "runtime-main.js": "/rufus/static/js/runtime-main.2d30850d.js",
-    "runtime-main.js.map": "/rufus/static/js/runtime-main.2d30850d.js.map",
-    "static/css/2.510409cd.chunk.css": "/rufus/static/css/2.510409cd.chunk.css",
-    "static/js/2.37152009.chunk.js": "/rufus/static/js/2.37152009.chunk.js",
-    "static/js/2.37152009.chunk.js.map": "/rufus/static/js/2.37152009.chunk.js.map",
-    "static/js/3.772ac2df.chunk.js": "/rufus/static/js/3.772ac2df.chunk.js",
-    "aa3f22988c9bbd81106a.module.wasm": "/rufus/aa3f22988c9bbd81106a.module.wasm",
-    "static/js/3.772ac2df.chunk.js.map": "/rufus/static/js/3.772ac2df.chunk.js.map",
+    "main.js": "/rufus/static/js/main.d10a0049.chunk.js",
+    "main.js.map": "/rufus/static/js/main.d10a0049.chunk.js.map",
+    "runtime-main.js": "/rufus/static/js/runtime-main.d27729ca.js",
+    "runtime-main.js.map": "/rufus/static/js/runtime-main.d27729ca.js.map",
+    "static/css/2.bceae682.chunk.css": "/rufus/static/css/2.bceae682.chunk.css",
+    "static/js/2.4cc6252a.chunk.js": "/rufus/static/js/2.4cc6252a.chunk.js",
+    "static/js/2.4cc6252a.chunk.js.map": "/rufus/static/js/2.4cc6252a.chunk.js.map",
+    "static/js/3.ef421bb6.chunk.js": "/rufus/static/js/3.ef421bb6.chunk.js",
+    "2ba56f201faa0ae6592b.module.wasm": "/rufus/2ba56f201faa0ae6592b.module.wasm",
+    "static/js/3.ef421bb6.chunk.js.map": "/rufus/static/js/3.ef421bb6.chunk.js.map",
     "index.html": "/rufus/index.html",
-    "precache-manifest.51b56bbd2e231f723def4d22f90fc878.js": "/rufus/precache-manifest.51b56bbd2e231f723def4d22f90fc878.js",
+    "precache-manifest.6cf6ee005a9d19d7e48ace02a9b09b84.js": "/rufus/precache-manifest.6cf6ee005a9d19d7e48ace02a9b09b84.js",
     "service-worker.js": "/rufus/service-worker.js",
-    "static/css/2.510409cd.chunk.css.map": "/rufus/static/css/2.510409cd.chunk.css.map",
+    "static/css/2.bceae682.chunk.css.map": "/rufus/static/css/2.bceae682.chunk.css.map",
     "static/css/main.dfca195d.chunk.css.map": "/rufus/static/css/main.dfca195d.chunk.css.map"
   },
   "entrypoints": [
-    "static/js/runtime-main.2d30850d.js",
-    "static/css/2.510409cd.chunk.css",
-    "static/js/2.37152009.chunk.js",
+    "static/js/runtime-main.d27729ca.js",
+    "static/css/2.bceae682.chunk.css",
+    "static/js/2.4cc6252a.chunk.js",
     "static/css/main.dfca195d.chunk.css",
-    "static/js/main.63940d92.chunk.js"
+    "static/js/main.d10a0049.chunk.js"
   ]
 }
