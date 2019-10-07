@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -14,6 +15,8 @@ pub enum Expr {
     Print(Box<Expr>),
     Record(Vec<(Name, Expr)>),
     Proj(Box<Expr>, Name),
+    Variant(Name, Box<Expr>),
+    Match(Box<Expr>, HashMap<Name, (Name, Expr)>),
 }
 
 #[derive(Clone, Debug)]
@@ -82,13 +85,29 @@ impl Expr {
             Self::Record(assigns) => {
                 let assigns = assigns
                     .into_iter()
-                    .map(|(f, e)| (e.index_aux(indexer)).map(|e| (f, e)))
+                    .map(|(f, e)| e.index_aux(indexer).map(|e| (f, e)))
                     .collect::<Result<Vec<(_, _)>, _>>()?;
                 Ok(Self::Record(assigns))
             }
             Self::Proj(record, field) => {
                 let record = record.index_aux(indexer)?;
                 Ok(Self::Proj(Box::new(record), field))
+            }
+            Self::Variant(t, e) => {
+                let e = e.index_aux(indexer)?;
+                Ok(Self::Variant(t, Box::new(e)))
+            }
+            Self::Match(scrutinee, branches) => {
+                let scrutinee = scrutinee.index_aux(indexer)?;
+                let branches = branches
+                    .into_iter()
+                    .map(|(t, (b, e))| {
+                        indexer
+                            .intro(&b.0, |indexer| e.index_aux(indexer))
+                            .map(|e| (t, (b, e)))
+                    })
+                    .collect::<Result<HashMap<_, (_, _)>, _>>()?;
+                Ok(Self::Match(Box::new(scrutinee), branches))
             }
         }
     }

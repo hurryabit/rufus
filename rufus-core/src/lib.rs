@@ -51,4 +51,18 @@ mod tests {
             fst(pair(1, 2))",
         );
     }
+
+    #[test]
+    fn simple_variant() {
+        integration_test(
+            1,
+            "
+            let ok = Ok(1);
+            let x = 2;
+            match ok {
+                Ok(x) => x,
+                Err(e) => e
+            }",
+        );
+    }
 }

@@ -8,6 +8,7 @@ pub enum Value<'a> {
     Num(i64),
     Lam(usize, &'a Expr, Env<'a>),
     Record(HashMap<&'a Name, Rc<Value<'a>>>),
+    Variant(&'a Name, Rc<Value<'a>>),
 }
 
 #[derive(Clone, Debug)]
@@ -22,6 +23,8 @@ enum Prim<'a> {
     Print,
     Record(Vec<&'a Name>),
     Proj(&'a Name),
+    Variant(&'a Name),
+    Match(&'a HashMap<Name, (Name, Expr)>),
 }
 
 #[derive(Debug)]
@@ -169,6 +172,14 @@ impl<'a> Machine<'a> {
                 self.kont.push(Kont::Arg(record));
                 Ctrl::from_prim(Prim::Proj(field), 1)
             }
+            Expr::Variant(tag, payload) => {
+                self.kont.push(Kont::Arg(payload));
+                Ctrl::from_prim(Prim::Variant(tag), 1)
+            }
+            Expr::Match(scrutinee, branches) => {
+                self.kont.push(Kont::Arg(scrutinee));
+                Ctrl::from_prim(Prim::Match(branches), 1)
+            }
         }
     }
 
@@ -211,6 +222,27 @@ impl<'a> Machine<'a> {
                         }
                     }
                     Err(msg) => Ctrl::Error(msg),
+                }
+            }
+            Prim::Variant(tag) => {
+                assert_eq!(args.len(), 1);
+                let payload = args.into_iter().next().unwrap();
+                Ctrl::from_value(Value::Variant(tag, payload))
+            }
+            Prim::Match(branches) => {
+                assert_eq!(args.len(), 1);
+                let scrutinee = args.into_iter().next().unwrap();
+                match &*scrutinee {
+                    Value::Variant(tag, payload) => {
+                        if let Some((_binder, body)) = branches.get(tag) {
+                            self.kont.push(Kont::Pop(1));
+                            self.env.push(Rc::clone(payload));
+                            Ctrl::Expr(body)
+                        } else {
+                            Ctrl::Error(format!("unmatched tag: {}", tag))
+                        }
+                    }
+                    _ => Ctrl::Error(format!("expected variant, found {:?}", scrutinee))
                 }
             }
         }

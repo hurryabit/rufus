@@ -29,15 +29,31 @@ AtomExpr: Expr = {
     "{" <Expr> "}",
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<AtomExpr>> "." <Name> => Expr::Proj(<>),
+    <Tag> "(" <Box<SimpleExpr>> ")" => Expr::Variant(<>),
+    "match" <scrutinee:Box<Expr>> "{" <branches:List0<MatchBranch, ",">> "}" => {
+        let branches = branches
+            .into_iter()
+            .map(|(t, b, e)| (t, (b, e)))
+            .collect();
+        Expr::Match(scrutinee, branches)
+    },
 };
 
 RecordAssign: (Name, Expr) = {
     <Name> ":" <Expr> => (<>)
 }
 
+MatchBranch: (Name, Name, Expr) = {
+    <Tag> "(" <Name> ")" "=>" <Expr> => (<>)
+}
+
 Name: Name = {
     r"[a-z]\w*" => Name(<>.to_string())
 };
+
+Tag: Name = {
+    r"[A-Z]\w*" => Name(<>.to_string())
+}
 
 Num: i64 = {
     r"[0-9]+" => i64::from_str(<>).unwrap()
