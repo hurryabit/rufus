@@ -15,21 +15,20 @@ mod tests {
         use crate::cek::*;
         use crate::parser::ExprParser;
         let parser = ExprParser::new();
-        let expr = parser
-            .parse(expr)
-            .unwrap()
-            .index()
-            .unwrap();
+        let expr = parser.parse(expr).unwrap().index().unwrap();
         assert_eq!(State::init(&expr).run().as_i64(), expected);
     }
 
     #[test]
     fn twice() {
-        integration_test(162, "
+        integration_test(
+            162,
+            "
             let t = 3;
             let f = |x| (t * x);
             let twice = |f, x| f(f(x));
-            twice(|x| twice(f, x), 2)");
+            twice(|x| twice(f, x), 2)",
+        );
     }
 
     #[test]

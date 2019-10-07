@@ -41,12 +41,12 @@ pub fn exec(program: &str) -> ExecResult {
             let value = format!("{:?}", value);
             ExecResult {
                 status: ExecResultStatus::Ok,
-                value: value
+                value,
             }
         }
         Err(msg) => ExecResult {
             status: ExecResultStatus::Err,
             value: msg,
-        }
+        },
     }
 }
