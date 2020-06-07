@@ -5,8 +5,8 @@ import './App.css';
 const EDITOR_ROWS: number = 15;
 
 const DEFAULT_PROGRAM: string =
-`let twice = |f, x| { f(f(x)) };
-let inc = |x| { x + 1 };
+`let twice = fun (f, x) -> f(f(x)) in
+let inc = fun (x) -> x + 1 in
 twice(inc, 0)`;
 
 type Props = {};
