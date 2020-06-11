@@ -160,8 +160,12 @@ impl<'a> Machine<'a> {
                 Ctrl::Expr(cond)
             }
             Record(fields, exprs) => {
-                self.kont.extend(exprs.iter().rev().map(Kont::Arg));
-                Ctrl::from_prim(Prim::Record(fields), fields.len())
+                if fields.len() > 0 {
+                    self.kont.extend(exprs.iter().rev().map(Kont::Arg));
+                    Ctrl::from_prim(Prim::Record(fields), fields.len())
+                } else {
+                    Ctrl::from_value(Value::Record(HashMap::new()))
+                }
             }
             Proj(record, field) => {
                 self.kont.push(Kont::Arg(record));
@@ -303,7 +307,8 @@ impl OpCode {
             Sub => eval_arith(i64::sub, args),
             Mul => eval_arith(i64::mul, args),
             Div => eval_arith(i64::div, args),
-            Equals | NotEq => unimplemented!(),
+            Equals => Ok(Value::Bool(eval_equals(args))),
+            NotEq => Ok(Value::Bool(!eval_equals(args))),
             Less => eval_comp(i64::lt, args),
             LessEq => eval_comp(i64::le, args),
             Greater => eval_comp(i64::gt, args),
@@ -322,6 +327,33 @@ mod op_code {
         let x = args[0].as_i64()?;
         let y = args[1].as_i64()?;
         Ok(Value::Num(f(x, y)))
+    }
+
+    pub fn eval_equals<'a>(args: Vec<Rc<Value<'a>>>) -> bool {
+        eval_equals2(&args[0], &args[1])
+    }
+
+    pub fn eval_equals2<'a>(x: &Rc<Value<'a>>, y: &Rc<Value<'a>>) -> bool {
+        use Value::*;
+        match (&**x, &**y) {
+            (Num(x), Num(y)) => x == y,
+            (Bool(x), Bool(y)) => x == y,
+            (Record(x), Record(y)) => {
+                use std::collections::HashSet;
+                let x_keys = x.keys().collect::<HashSet<_>>();
+                let y_keys = y.keys().collect::<HashSet<_>>();
+                if x_keys != y_keys {
+                    return false;
+                }
+                for key in x_keys {
+                    if !(eval_equals2(x.get(key).unwrap(), y.get(key).unwrap())) {
+                        return false;
+                    }
+                }
+                true
+            }
+            (_, _) => false,
+        }
     }
 
     pub fn eval_comp<'a, F: FnOnce(&i64, &i64) -> bool>(
