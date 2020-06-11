@@ -174,6 +174,7 @@ impl<'a> Machine<'a> {
         }
     }
 
+    /// Enter a fully applied primitived.
     fn enter_prim(&mut self, prim: Prim<'a>, args: Vec<Rc<Value<'a>>>) -> Ctrl<'a> {
         use Prim::*;
         match prim {
@@ -207,6 +208,8 @@ impl<'a> Machine<'a> {
         }
     }
 
+    /// Apply an argument to a PAP. If it is the last argument, enter the
+    /// primitive.
     fn apply_arg(&mut self, mut pap: PAP<'a>, arg: Rc<Value<'a>>) -> Ctrl<'a> {
         assert!(pap.args.len() < pap.arity);
         pap.args.push(arg);
