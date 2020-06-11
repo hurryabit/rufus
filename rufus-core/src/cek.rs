@@ -7,8 +7,8 @@ use crate::syntax::*;
 pub enum Value<'a> {
     Num(i64),
     Bool(bool),
-    Record(HashMap<&'a Name, Rc<Value<'a>>>),
     PAP(PAP<'a>),
+    Record(HashMap<&'a Name, Rc<Value<'a>>>),
 }
 
 #[derive(Clone, Debug)]
@@ -82,6 +82,21 @@ impl<'a> Value<'a> {
     }
 }
 
+impl<'a> Ctrl<'a> {
+    fn from_value(v: Value<'a>) -> Self {
+        Ctrl::Value(Rc::new(v))
+    }
+
+    fn from_prim(prim: Prim<'a>, arity: usize) -> Self {
+        assert!(arity > 0);
+        Self::from_value(Value::PAP(PAP {
+            prim,
+            arity,
+            args: Vec::with_capacity(arity),
+        }))
+    }
+}
+
 impl<'a> Env<'a> {
     fn new() -> Self {
         Env { stack: Vec::new() }
@@ -104,21 +119,6 @@ impl<'a> Env<'a> {
     pub fn pop_many(&mut self, count: usize) {
         let new_len = self.stack.len() - count;
         self.stack.truncate(new_len);
-    }
-}
-
-impl<'a> Ctrl<'a> {
-    fn from_value(v: Value<'a>) -> Self {
-        Ctrl::Value(Rc::new(v))
-    }
-
-    fn from_prim(prim: Prim<'a>, arity: usize) -> Self {
-        assert!(arity > 0);
-        Self::from_value(Value::PAP(PAP {
-            prim,
-            arity,
-            args: Vec::with_capacity(arity),
-        }))
     }
 }
 
@@ -210,7 +210,7 @@ impl<'a> Machine<'a> {
 
     /// Apply an argument to a PAP. If it is the last argument, enter the
     /// primitive.
-    fn apply_arg(&mut self, mut pap: PAP<'a>, arg: Rc<Value<'a>>) -> Ctrl<'a> {
+    fn pap_apply_arg(&mut self, mut pap: PAP<'a>, arg: Rc<Value<'a>>) -> Ctrl<'a> {
         assert!(pap.args.len() < pap.arity);
         pap.args.push(arg);
         if (pap.args.len() == pap.arity) {
@@ -239,11 +239,11 @@ impl<'a> Machine<'a> {
             }
             App(fun) => match Rc::try_unwrap(fun) {
                 Ok(fun) => match fun {
-                    Value::PAP(pap) => self.apply_arg(pap, value),
+                    Value::PAP(pap) => self.pap_apply_arg(pap, value),
                     _ => Ctrl::Error(format!("expected PAP, found {:?}", fun)),
                 },
                 Err(fun) => match &*fun {
-                    Value::PAP(pap) => self.apply_arg(pap.clone(), value),
+                    Value::PAP(pap) => self.pap_apply_arg(pap.clone(), value),
                     _ => Ctrl::Error(format!("expected PAP, found {:?}", fun)),
                 },
             },
