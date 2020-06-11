@@ -162,11 +162,11 @@ impl<'a> Machine<'a> {
                 Ctrl::Expr(cond)
             }
             Record(fields, exprs) => {
-                if fields.len() > 0 {
+                if fields.is_empty() {
+                    Ctrl::from_value(Value::Record(HashMap::new()))
+                } else {
                     self.kont.extend(exprs.iter().rev().map(Kont::Arg));
                     Ctrl::from_prim(Prim::Record(fields), fields.len())
-                } else {
-                    Ctrl::from_value(Value::Record(HashMap::new()))
                 }
             }
             Proj(record, field) => {
@@ -195,7 +195,7 @@ impl<'a> Machine<'a> {
                 Ctrl::Expr(body)
             }
             Record(names) => Ctrl::from_value(Value::Record(
-                names.into_iter().zip(args.into_iter()).collect(),
+                names.iter().zip(args.into_iter()).collect(),
             )),
             Proj(field) => match args[0].as_record() {
                 Ok(record) => {
