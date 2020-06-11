@@ -44,7 +44,7 @@ RecordAssign: (Name, Expr) = {
 }
 
 Name: Name = {
-    r"[a-z]\w*" => Name(<>.to_string()),
+    r"[a-z]\w*" => <>.to_string(),
 }
 
 Num: i64 = {

@@ -14,14 +14,14 @@ impl Indexer {
     }
 
     pub fn intro<T>(&mut self, x: &str, f: impl FnOnce(&mut Self) -> T) -> T {
-        self.intro_many(&[x], f)
+        self.intro_many(&[x.to_owned()], f)
     }
 
-    pub fn intro_many<T>(&mut self, xs: &[&str], f: impl FnOnce(&mut Self) -> T) -> T {
-        let old_indices: Vec<(&str, Option<usize>)> = xs
+    pub fn intro_many<T>(&mut self, xs: &[String], f: impl FnOnce(&mut Self) -> T) -> T {
+        let old_indices: Vec<(&String, Option<usize>)> = xs
             .iter()
-            .map(|&x| {
-                let old_index = self.indices.insert(x.to_string(), self.next_index);
+            .map(|x| {
+                let old_index = self.indices.insert(x.to_owned(), self.next_index);
                 self.next_index += 1;
                 (x, old_index)
             })
@@ -45,9 +45,11 @@ impl Indexer {
 
 #[cfg(test)]
 mod tests {
+    use super::Indexer;
+
     #[test]
     fn test_xy() {
-        let mut idx = super::Indexer::new();
+        let mut idx = Indexer::new();
 
         assert_eq!(idx.get("x"), None);
         assert_eq!(idx.get("y"), None);
@@ -87,8 +89,8 @@ mod tests {
 
     #[test]
     fn test_many() {
-        let mut idx = super::Indexer::new();
-        idx.intro_many(&["x", "y"], |idx| {
+        let mut idx = Indexer::new();
+        idx.intro_many(&["x".to_string(), "y".to_string()], |idx| {
             assert_eq!(idx.get("x"), Some(2));
             assert_eq!(idx.get("y"), Some(1));
         });
@@ -99,8 +101,8 @@ mod tests {
 
     #[test]
     fn test_many_shadowing() {
-        let mut idx = super::Indexer::new();
-        idx.intro_many(&["x", "x"], |idx| {
+        let mut idx = Indexer::new();
+        idx.intro_many(&["x".to_string(), "x".to_string()], |idx| {
             assert_eq!(idx.get("x"), Some(1));
         });
         assert_eq!(idx.get("x"), None);

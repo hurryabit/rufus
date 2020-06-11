@@ -1,12 +1,9 @@
-use std::fmt;
-
 mod debruijn;
 mod iter;
 
 use debruijn::Indexer;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Name(pub String);
+pub type Name = String;
 
 #[derive(Clone, Debug)]
 pub enum Expr {
@@ -36,12 +33,6 @@ pub enum OpCode {
     GreaterEq,
 }
 
-impl fmt::Display for Name {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 impl Expr {
     pub fn index(mut self) -> Result<Self, String> {
         self.index_aux(&mut Indexer::new())?;
@@ -52,23 +43,23 @@ impl Expr {
         use Expr::*;
         match self {
             Var(x, i @ None) => {
-                if let Some(j) = indexer.get(&x.0) {
+                if let Some(j) = indexer.get(&x) {
                     *i = Some(j);
                 } else {
-                    return Err(format!("unbound variable: {}", x.0));
+                    return Err(format!("unbound variable: {}", x));
                 }
             }
             Var(_, Some(_)) => panic!("indexer running on indexed expression"),
             Lam(xs, e) => {
                 // TODO(MH): Make this more efficient by using iterators.
                 indexer.intro_many(
-                    &xs.iter().map(|x| x.0.as_ref()).collect::<Vec<&str>>(),
+                    &xs,
                     |indexer| e.index_aux(indexer),
                 )?;
             }
             Let(x, e1, e2) => {
                 e1.index_aux(indexer)?;
-                indexer.intro(&x.0, |indexer| e2.index_aux(indexer))?;
+                indexer.intro(&x, |indexer| e2.index_aux(indexer))?;
             }
             _ => {
                 for e in self.children_mut() {
