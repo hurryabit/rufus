@@ -97,6 +97,7 @@ class App extends React.Component<Props, State> {
                   <div className="control">
                     <textarea
                       className="textarea is-family-code"
+                      spellCheck={false}
                       rows={EDITOR_ROWS}
                       value={state.program}
                       onChange={this.handleProgramChange}
