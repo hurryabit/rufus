@@ -194,9 +194,9 @@ impl<'a> Machine<'a> {
                 self.kont.push(Kont::Dump(old_env));
                 Ctrl::Expr(body)
             }
-            Record(names) => Ctrl::from_value(Value::Record(
-                names.iter().zip(args.into_iter()).collect(),
-            )),
+            Record(names) => {
+                Ctrl::from_value(Value::Record(names.iter().zip(args.into_iter()).collect()))
+            }
             Proj(field) => match args[0].as_record() {
                 Ok(record) => {
                     if let Some(value) = record.get(field) {
