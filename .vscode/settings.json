@@ -1,0 +1,10 @@
+{
+    "files.exclude": {
+        "rufus-wasm/pkg/**/*": true,
+        "target/": true,
+        "rufus-ui/build/": true,
+        "rufus-ui/node_modules/": true,
+        "**/*.rs.bk": true,
+        "**/.rufus_history": true
+    }
+}

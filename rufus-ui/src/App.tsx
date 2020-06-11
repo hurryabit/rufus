@@ -5,9 +5,9 @@ import './App.css';
 const EDITOR_ROWS: number = 15;
 
 const DEFAULT_PROGRAM: string =
-`let twice = |f, x| { f(f(x)) };
-let inc = |x| { x + 1 };
-twice(inc, 0)`;
+`let twice = fun f x -> f (f x) in
+let inc = fun x -> x + 1 in
+twice inc 0`;
 
 type Props = {};
 
@@ -97,6 +97,7 @@ class App extends React.Component<Props, State> {
                   <div className="control">
                     <textarea
                       className="textarea is-family-code"
+                      spellCheck={false}
                       rows={EDITOR_ROWS}
                       value={state.program}
                       onChange={this.handleProgramChange}
