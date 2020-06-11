@@ -218,9 +218,8 @@ impl<'a> Machine<'a> {
     }
 
     /// Step when the control contains a value.
-    fn step_value(&mut self, value: Rc<Value<'a>>) -> Ctrl<'a> {
+    fn step_value(&mut self, value: Rc<Value<'a>>, kont: Kont<'a>) -> Ctrl<'a> {
         use Kont::*;
-        let kont = self.kont.pop().expect("value step without continuations");
 
         match kont {
             Dump(env) => {
@@ -258,27 +257,21 @@ impl<'a> Machine<'a> {
         }
     }
 
-    /// Perform a single step of the machine.
-    fn step(&mut self) {
-        use Ctrl::*;
-        let old_ctrl = std::mem::replace(&mut self.ctrl, Ctrl::Evaluating);
-        let new_ctrl = match old_ctrl {
-            Evaluating => panic!("Control was not updated after last step"),
-            Expr(expr) => self.step_expr(expr),
-            Value(value) => self.step_value(value),
-            Error(e) => panic!("control stepped on error: {}", e),
-        };
-        self.ctrl = new_ctrl
-    }
-
+    /// Step through the machine until completion.
     pub fn run(mut self) -> Result<Rc<Value<'a>>, String> {
         use Ctrl::*;
         loop {
-            match &self.ctrl {
-                Value(v) if self.kont.is_empty() => return Ok(Rc::clone(v)),
-                Error(msg) => return Err(msg.clone()),
-                _ => self.step(),
-            }
+            let old_ctrl = std::mem::replace(&mut self.ctrl, Ctrl::Evaluating);
+            let new_ctrl = match old_ctrl {
+                Evaluating => panic!("control was not updated after last step"),
+                Expr(expr) => self.step_expr(expr),
+                Value(value) => match self.kont.pop() {
+                    None => return Ok(value),
+                    Some(kont) => self.step_value(value, kont),
+                },
+                Error(e) => return Err(e),
+            };
+            self.ctrl = new_ctrl
         }
     }
 
