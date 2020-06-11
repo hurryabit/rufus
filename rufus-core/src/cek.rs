@@ -8,11 +8,14 @@ pub enum Value<'a> {
     Num(i64),
     Bool(bool),
     Record(HashMap<&'a Name, Rc<Value<'a>>>),
-    PAP {
-        prim: Prim<'a>,
-        arity: usize,
-        args: Vec<Rc<Value<'a>>>,
-    },
+    PAP(PAP<'a>),
+}
+
+#[derive(Clone, Debug)]
+pub struct PAP<'a> {
+    prim: Prim<'a>,
+    arity: usize,
+    args: Vec<Rc<Value<'a>>>,
 }
 
 #[derive(Clone, Debug)]
@@ -111,11 +114,11 @@ impl<'a> Ctrl<'a> {
 
     fn from_prim(prim: Prim<'a>, arity: usize) -> Self {
         assert!(arity > 0);
-        Self::from_value(Value::PAP {
+        Self::from_value(Value::PAP(PAP {
             prim,
             arity,
             args: Vec::with_capacity(arity),
-        })
+        }))
     }
 }
 
@@ -195,6 +198,16 @@ impl<'a> Machine<'a> {
         }
     }
 
+    fn apply_arg(&mut self, mut pap: PAP<'a>, arg: Rc<Value<'a>>) -> Ctrl<'a> {
+        assert!(pap.args.len() < pap.arity);
+        pap.args.push(arg);
+        if (pap.args.len() == pap.arity) {
+            self.enter_prim(pap.prim, pap.args)
+        } else {
+            Ctrl::from_value(Value::PAP(pap))
+        }
+    }
+
     /// Step when the control contains a value.
     fn step_value(&mut self, value: Rc<Value<'a>>) -> Ctrl<'a> {
         use Kont::*;
@@ -213,25 +226,16 @@ impl<'a> Machine<'a> {
                 self.kont.push(App(value));
                 Ctrl::Expr(arg)
             }
-            App(fun) => {
-                if let Value::PAP { prim, arity, args } = &*fun {
-                    assert!(args.len() < *arity);
-                    let prim = prim.clone();
-                    let mut args = args.clone();
-                    args.push(value);
-                    if (args.len() == *arity) {
-                        self.enter_prim(prim, args)
-                    } else {
-                        Ctrl::from_value(Value::PAP {
-                            prim: prim,
-                            arity: *arity,
-                            args,
-                        })
-                    }
-                } else {
-                    Ctrl::Error(format!("expected PAP, found {:?}", fun))
-                }
-            }
+            App(fun) => match Rc::try_unwrap(fun) {
+                Ok(fun) => match fun {
+                    Value::PAP(pap) => self.apply_arg(pap, value),
+                    _ => Ctrl::Error(format!("expected PAP, found {:?}", fun)),
+                },
+                Err(fun) => match &*fun {
+                    Value::PAP(pap) => self.apply_arg(pap.clone(), value),
+                    _ => Ctrl::Error(format!("expected PAP, found {:?}", fun)),
+                },
+            },
             Let(_name, body) => {
                 self.kont.push(Kont::Pop(1));
                 self.env.push(value);
