@@ -224,7 +224,8 @@ impl<'a> Machine<'a> {
 
     fn fix_apply_arg(&mut self, fun: Rc<Value<'a>>, arg: Rc<Value<'a>>) -> Ctrl<'a> {
         self.kont.push(Kont::ArgValue(arg));
-        self.kont.push(Kont::ArgValue(Rc::new(Value::Fix(Rc::clone(&fun)))));
+        self.kont
+            .push(Kont::ArgValue(Rc::new(Value::Fix(Rc::clone(&fun)))));
         Ctrl::Value(fun)
     }
 

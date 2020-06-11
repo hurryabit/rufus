@@ -53,10 +53,7 @@ impl Expr {
             Var(_, Some(_)) => panic!("indexer running on indexed expression"),
             Lam(xs, e) => {
                 // TODO(MH): Make this more efficient by using iterators.
-                indexer.intro_many(
-                    &xs,
-                    |indexer| e.index_aux(indexer),
-                )?;
+                indexer.intro_many(&xs, |indexer| e.index_aux(indexer))?;
             }
             Let(x, e1, e2) => {
                 e1.index_aux(indexer)?;
