@@ -21,7 +21,7 @@ pub struct PAP<'a> {
 #[derive(Clone, Debug)]
 pub enum Prim<'a> {
     Builtin(OpCode),
-    Lam(&'a Expr, Env<'a>),
+    Lam(&'a Expr, Rc<Env<'a>>),
     Record(&'a Vec<Name>),
     Proj(&'a Name),
 }
@@ -148,7 +148,9 @@ impl<'a> Machine<'a> {
                 self.kont.extend(args.iter().rev().map(Kont::Arg));
                 Ctrl::Expr(fun)
             }
-            Lam(params, body) => Ctrl::from_prim(Prim::Lam(body, self.env.clone()), params.len()),
+            Lam(params, body) => {
+                Ctrl::from_prim(Prim::Lam(body, Rc::new(self.env.clone())), params.len())
+            }
             Let(binder, bound, body) => {
                 self.kont.push(Kont::Let(binder, body));
                 Ctrl::Expr(bound)
@@ -176,7 +178,10 @@ impl<'a> Machine<'a> {
                 Err(e) => Ctrl::Error(e),
             },
             Lam(body, env) => {
-                let mut new_env = env;
+                let mut new_env = match Rc::try_unwrap(env) {
+                    Ok(env) => env,
+                    Err(env) => env.as_ref().clone(),
+                };
                 new_env.push_many(args);
                 let old_env = std::mem::replace(&mut self.env, new_env);
                 self.kont.push(Kont::Dump(old_env));
