@@ -6,9 +6,29 @@ use crate::syntax::*;
 #[derive(Debug)]
 pub enum Value<'a> {
     Num(i64),
-    Lam(usize, &'a Expr, Env<'a>),
+    Bool(bool),
     Record(HashMap<&'a Name, Rc<Value<'a>>>),
-    Variant(&'a Name, Rc<Value<'a>>),
+    PAP {
+        prim: Prim<'a>,
+        arity: usize,
+        args: Vec<Rc<Value<'a>>>,
+    },
+}
+
+#[derive(Clone, Debug)]
+pub enum Prim<'a> {
+    Builtin(OpCode),
+    Lam(&'a Expr, Env<'a>),
+    Record(&'a Vec<Name>),
+    Proj(&'a Name),
+}
+
+#[derive(Debug)]
+enum Ctrl<'a> {
+    Evaluating,
+    Expr(&'a Expr),
+    Value(Rc<Value<'a>>),
+    Error(String),
 }
 
 #[derive(Clone, Debug)]
@@ -17,40 +37,13 @@ pub struct Env<'a> {
 }
 
 #[derive(Debug)]
-enum Prim<'a> {
-    Builtin(&'a Opcode),
-    Lam(&'a Expr, Env<'a>),
-    Print,
-    Record(Vec<&'a Name>),
-    Proj(&'a Name),
-    Variant(&'a Name),
-    Match(&'a HashMap<Name, (Name, Expr)>),
-}
-
-#[derive(Debug)]
-struct PAP<'a> {
-    prim: Prim<'a>,
-    args: Vec<Rc<Value<'a>>>,
-    missing: usize,
-}
-
-#[derive(Debug)]
-enum Ctrl<'a> {
-    Evaluating,
-    Expr(&'a Expr),
-    PAP(PAP<'a>),
-    Value(Rc<Value<'a>>),
-    Error(String),
-}
-
-#[derive(Debug)]
 enum Kont<'a> {
     Dump(Env<'a>),
     Pop(usize),
     Arg(&'a Expr),
-    PAP(PAP<'a>),
-    Exec,
+    App(Rc<Value<'a>>),
     Let(&'a Name, &'a Expr),
+    If(&'a Expr, &'a Expr),
 }
 
 #[derive(Debug)]
@@ -61,11 +54,19 @@ pub struct Machine<'a> {
 }
 
 impl<'a> Value<'a> {
-    pub fn as_i64(&self) -> i64 {
+    pub fn as_i64(&self) -> Result<i64, String> {
         if let Value::Num(n) = self {
-            *n
+            Ok(*n)
         } else {
-            panic!("expected i64, found {:?}", self)
+            Err(format!("expected i64, found {:?}", self))
+        }
+    }
+
+    pub fn as_bool(&self) -> Result<bool, String> {
+        if let Value::Bool(b) = self {
+            Ok(*b)
+        } else {
+            Err(format!("expected bool, found {:?}", self))
         }
     }
 
@@ -109,10 +110,11 @@ impl<'a> Ctrl<'a> {
     }
 
     fn from_prim(prim: Prim<'a>, arity: usize) -> Self {
-        Ctrl::PAP(PAP {
+        assert!(arity > 0);
+        Self::from_value(Value::PAP {
             prim,
-            args: Vec::new(),
-            missing: arity,
+            arity,
+            args: Vec::with_capacity(arity),
         })
     }
 }
@@ -128,216 +130,197 @@ impl<'a> Machine<'a> {
 
     /// Step when the control contains an expression.
     fn step_expr(&mut self, ctrl_expr: &'a Expr) -> Ctrl<'a> {
-        match ctrl_expr {
-            Expr::Num(n) => Ctrl::from_value(Value::Num(*n)),
+        use Expr::*;
 
-            Expr::Var(_, None) => panic!("unindexed variable"),
-            Expr::Var(_, Some(index)) => {
+        match ctrl_expr {
+            Var(_, None) => panic!("unindexed variable"),
+            Var(_, Some(index)) => {
                 let v = self.env.get(*index);
                 Ctrl::Value(Rc::clone(v))
             }
-
-            Expr::Op(op, x, y) => {
-                self.kont.push(Kont::Arg(y));
-                self.kont.push(Kont::Arg(x));
-                Ctrl::from_prim(Prim::Builtin(op), 2)
-            }
-
-            Expr::App(fun, args) => {
+            Num(n) => Ctrl::from_value(Value::Num(*n)),
+            Bool(b) => Ctrl::from_value(Value::Bool(*b)),
+            PrimOp(op) => Ctrl::from_prim(Prim::Builtin(*op), op.arity()),
+            App(fun, args) => {
                 self.kont.extend(args.iter().rev().map(Kont::Arg));
-                self.kont.push(Kont::Exec);
                 Ctrl::Expr(fun)
             }
-
-            Expr::Let(binder, bound, body) => {
+            Lam(params, body) => Ctrl::from_prim(Prim::Lam(body, self.env.clone()), params.len()),
+            Let(binder, bound, body) => {
                 self.kont.push(Kont::Let(binder, body));
                 Ctrl::Expr(bound)
             }
-
-            Expr::Lam(params, body) => {
-                Ctrl::from_value(Value::Lam(params.len(), body, self.env.clone()))
+            If(cond, then, elze) => {
+                self.kont.push(Kont::If(then, elze));
+                Ctrl::Expr(cond)
             }
-
-            Expr::Print(arg) => {
-                self.kont.push(Kont::Arg(arg));
-                Ctrl::from_prim(Prim::Print, 1)
+            Record(fields, exprs) => {
+                self.kont.extend(exprs.iter().rev().map(Kont::Arg));
+                Ctrl::from_prim(Prim::Record(fields), fields.len())
             }
-            Expr::Record(assigns) => {
-                self.kont
-                    .extend(assigns.iter().rev().map(|assign| Kont::Arg(&assign.1)));
-                let prim = Prim::Record(assigns.iter().map(|assign| &assign.0).collect());
-                Ctrl::from_prim(prim, assigns.len())
-            }
-            Expr::Proj(record, field) => {
+            Proj(record, field) => {
                 self.kont.push(Kont::Arg(record));
                 Ctrl::from_prim(Prim::Proj(field), 1)
-            }
-            Expr::Variant(tag, payload) => {
-                self.kont.push(Kont::Arg(payload));
-                Ctrl::from_prim(Prim::Variant(tag), 1)
-            }
-            Expr::Match(scrutinee, branches) => {
-                self.kont.push(Kont::Arg(scrutinee));
-                Ctrl::from_prim(Prim::Match(branches), 1)
             }
         }
     }
 
-    /// Step when the control contains a fully applied primitive.
-    fn step_prim(&mut self, prim: Prim<'a>, args: Vec<Rc<Value<'a>>>) -> Ctrl<'a> {
+    fn enter_prim(&mut self, prim: Prim<'a>, args: Vec<Rc<Value<'a>>>) -> Ctrl<'a> {
+        use Prim::*;
         match prim {
-            Prim::Builtin(op) => {
-                assert_eq!(args.len(), 2);
-                let x = args[0].as_i64();
-                let y = args[1].as_i64();
-                Ctrl::from_value(Value::Num(op.eval(x, y).expect("failing prim op")))
-            }
-            Prim::Lam(body, env) => {
-                let mut new_env = env.clone();
+            Builtin(op) => match op.eval(args) {
+                Ok(v) => Ctrl::from_value(v),
+                Err(e) => Ctrl::Error(e),
+            },
+            Lam(body, env) => {
+                let mut new_env = env;
                 new_env.push_many(args);
                 let old_env = std::mem::replace(&mut self.env, new_env);
                 self.kont.push(Kont::Dump(old_env));
                 Ctrl::Expr(body)
             }
-            Prim::Print => {
-                assert_eq!(args.len(), 1);
-                let arg = &args[0];
-                println!(": {:?}", arg);
-                Ctrl::Value(Rc::clone(arg))
-            }
-            Prim::Record(names) => {
-                assert_eq!(args.len(), names.len());
-                Ctrl::from_value(Value::Record(
-                    names.into_iter().zip(args.into_iter()).collect(),
-                ))
-            }
-            Prim::Proj(field) => {
-                assert_eq!(args.len(), 1);
-                match args[0].as_record() {
-                    Ok(record) => {
-                        if let Some(value) = record.get(field) {
-                            Ctrl::Value(Rc::clone(value))
-                        } else {
-                            Ctrl::Error(format!("unknown field in record: {}", field))
-                        }
+            Record(names) => Ctrl::from_value(Value::Record(
+                names.into_iter().zip(args.into_iter()).collect(),
+            )),
+            Proj(field) => match args[0].as_record() {
+                Ok(record) => {
+                    if let Some(value) = record.get(field) {
+                        Ctrl::Value(Rc::clone(value))
+                    } else {
+                        Ctrl::Error(format!("unknown field in record: {}", field))
                     }
-                    Err(msg) => Ctrl::Error(msg),
                 }
-            }
-            Prim::Variant(tag) => {
-                assert_eq!(args.len(), 1);
-                let payload = args.into_iter().next().unwrap();
-                Ctrl::from_value(Value::Variant(tag, payload))
-            }
-            Prim::Match(branches) => {
-                assert_eq!(args.len(), 1);
-                let scrutinee = args.into_iter().next().unwrap();
-                match &*scrutinee {
-                    Value::Variant(tag, payload) => {
-                        if let Some((_binder, body)) = branches.get(tag) {
-                            self.kont.push(Kont::Pop(1));
-                            self.env.push(Rc::clone(payload));
-                            Ctrl::Expr(body)
-                        } else {
-                            Ctrl::Error(format!("unmatched tag: {}", tag))
-                        }
-                    }
-                    _ => Ctrl::Error(format!("expected variant, found {:?}", scrutinee)),
-                }
-            }
+                Err(msg) => Ctrl::Error(msg),
+            },
         }
     }
 
     /// Step when the control contains a value.
     fn step_value(&mut self, value: Rc<Value<'a>>) -> Ctrl<'a> {
-        let kont = self.kont.pop().expect("Step on final state");
+        use Kont::*;
+        let kont = self.kont.pop().expect("value step without continuations");
+
         match kont {
-            Kont::Dump(env) => {
+            Dump(env) => {
                 self.env = env;
                 Ctrl::Value(value)
             }
-            Kont::Pop(count) => {
+            Pop(count) => {
                 self.env.pop_many(count);
                 Ctrl::Value(value)
             }
-            Kont::Arg(_) => panic!("applying value"),
-            Kont::PAP(mut pap) => {
-                assert!(pap.missing > 0);
-                pap.args.push(value);
-                pap.missing -= 1;
-                Ctrl::PAP(pap)
+            Arg(arg) => {
+                self.kont.push(App(value));
+                Ctrl::Expr(arg)
             }
-            Kont::Exec => {
-                if let Value::Lam(arity, ref body, ref env) = &*value {
-                    Ctrl::from_prim(Prim::Lam(body, env.clone()), *arity)
+            App(fun) => {
+                if let Value::PAP { prim, arity, args } = &*fun {
+                    assert!(args.len() < *arity);
+                    let prim = prim.clone();
+                    let mut args = args.clone();
+                    args.push(value);
+                    if (args.len() == *arity) {
+                        self.enter_prim(prim, args)
+                    } else {
+                        Ctrl::from_value(Value::PAP {
+                            prim: prim,
+                            arity: *arity,
+                            args,
+                        })
+                    }
                 } else {
-                    panic!("executing non lambda")
+                    Ctrl::Error(format!("expected PAP, found {:?}", fun))
                 }
             }
-            Kont::Let(_name, body) => {
+            Let(_name, body) => {
                 self.kont.push(Kont::Pop(1));
                 self.env.push(value);
                 Ctrl::Expr(body)
             }
+            If(then, elze) => match value.as_bool() {
+                Ok(true) => Ctrl::Expr(then),
+                Ok(false) => Ctrl::Expr(elze),
+                Err(e) => Ctrl::Error(e),
+            },
         }
     }
 
     /// Perform a single step of the machine.
     fn step(&mut self) {
+        use Ctrl::*;
         let old_ctrl = std::mem::replace(&mut self.ctrl, Ctrl::Evaluating);
-
         let new_ctrl = match old_ctrl {
-            Ctrl::Evaluating => panic!("Control was not updated after last step"),
-            Ctrl::Expr(expr) => self.step_expr(expr),
-            Ctrl::Value(value) => self.step_value(value),
-            Ctrl::PAP(pap) => {
-                if pap.missing == 0 {
-                    self.step_prim(pap.prim, pap.args)
-                } else if let Some(Kont::Arg(arg)) = self.kont.pop() {
-                    self.kont.push(Kont::PAP(pap));
-                    Ctrl::Expr(arg)
-                } else {
-                    panic!("not enough args for PAP")
-                }
-            }
-            Ctrl::Error(msg) => panic!("control stepped on error: {}", msg),
+            Evaluating => panic!("Control was not updated after last step"),
+            Expr(expr) => self.step_expr(expr),
+            Value(value) => self.step_value(value),
+            Error(e) => panic!("control stepped on error: {}", e),
         };
-
         self.ctrl = new_ctrl
     }
 
     pub fn run(mut self) -> Result<Rc<Value<'a>>, String> {
+        use Ctrl::*;
         loop {
             match &self.ctrl {
-                Ctrl::Value(v) if self.kont.is_empty() => return Ok(Rc::clone(v)),
-                Ctrl::Error(msg) => return Err(msg.clone()),
+                Value(v) if self.kont.is_empty() => return Ok(Rc::clone(v)),
+                Error(msg) => return Err(msg.clone()),
                 _ => self.step(),
             }
         }
     }
 
-    #[allow(dead_code)]
-    pub fn print_debug(&self) {
-        println!("ctrl: {:?}", self.ctrl);
-        println!("env:");
-        for val in self.env.stack.iter().rev() {
-            println!("# {:?}", val);
-        }
-        println!("kont:");
-        for kont in self.kont.iter().rev() {
-            println!("$ {:?}", kont);
+    //     #[allow(dead_code)]
+    //     pub fn print_debug(&self) {
+    //         println!("ctrl: {:?}", self.ctrl);
+    //         println!("env:");
+    //         for val in self.env.stack.iter().rev() {
+    //             println!("# {:?}", val);
+    //         }
+    //         println!("kont:");
+    //         for kont in self.kont.iter().rev() {
+    //             println!("$ {:?}", kont);
+    //         }
+    //     }
+}
+
+impl OpCode {
+    pub fn eval<'a>(self, args: Vec<Rc<Value<'a>>>) -> Result<Value<'a>, String> {
+        use op_code::*;
+        use std::ops::{Add, Div, Mul, Sub};
+        use OpCode::*;
+
+        match self {
+            Add => eval_arith(i64::add, args),
+            Sub => eval_arith(i64::sub, args),
+            Mul => eval_arith(i64::mul, args),
+            Div => eval_arith(i64::div, args),
+            Equals | NotEq => unimplemented!(),
+            Less => eval_comp(i64::lt, args),
+            LessEq => eval_comp(i64::le, args),
+            Greater => eval_comp(i64::gt, args),
+            GreaterEq => eval_comp(i64::ge, args),
         }
     }
 }
 
-impl Opcode {
-    pub fn eval(&self, x: i64, y: i64) -> Result<i64, String> {
-        use Opcode::*;
-        Ok(match self {
-            Add => x + y,
-            Sub => x - y,
-            Mul => x * y,
-            Div => x / y,
-        })
+mod op_code {
+    use super::*;
+
+    pub fn eval_arith<'a, F: FnOnce(i64, i64) -> i64>(
+        f: F,
+        args: Vec<Rc<Value<'a>>>,
+    ) -> Result<Value<'a>, String> {
+        let x = args[0].as_i64()?;
+        let y = args[1].as_i64()?;
+        Ok(Value::Num(f(x, y)))
+    }
+
+    pub fn eval_comp<'a, F: FnOnce(&i64, &i64) -> bool>(
+        f: F,
+        args: Vec<Rc<Value<'a>>>,
+    ) -> Result<Value<'a>, String> {
+        let x = args[0].as_i64()?;
+        let y = args[1].as_i64()?;
+        Ok(Value::Bool(f(&x, &y)))
     }
 }

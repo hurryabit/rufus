@@ -5,71 +5,78 @@ use crate::syntax::*;
 grammar;
 
 pub Expr: Expr = {
-    <SumExpr>,
-    "fun" "(" <List0<Name, ",">> ")" "->" <Box<Expr>> => Expr::Lam(<>),
+    SumExpr,
+    "fun" <Name+> "->" <Box<Expr>> => Expr::Lam(<>),
     "let" <Name> "=" <Box<Expr>> "in" <Box<Expr>> => Expr::Let(<>),
-    "match" <scrutinee:Box<Expr>> "with" <branches:MatchBranch+> "end" => {
-        let branches = branches
-            .into_iter()
-            .map(|(t, b, e)| (t, (b, e)))
-            .collect();
-        Expr::Match(scrutinee, branches)
-    },
-};
+    "if" <Box<Expr>> "then" <Box<Expr>> "else" <Box<Expr>> => Expr::If(<>),
+    BinOp<SumExpr, CompOp, SumExpr>,
+}
 
 SumExpr: Expr = {
-    <x:Box<SumExpr>> <op:SumOp> <y:Box<ProductExpr>> => Expr::Op(op, x, y),
+    BinOp<SumExpr, SumOp, ProductExpr>,
     ProductExpr,
 }
 
 ProductExpr: Expr = {
-    <x:Box<ProductExpr>> <op:ProductOp> <y:Box<AtomExpr>> => Expr::Op(op, x, y),
+    BinOp<ProductExpr, ProductOp, AppExpr>,
+    AppExpr,
+}
+
+AppExpr: Expr = {
     AtomExpr,
+    Box<AtomExpr> AtomExpr+ => Expr::App(<>),
 }
 
 AtomExpr: Expr = {
     Name => Expr::Var(<>, None),
     Num => Expr::Num(<>),
-    <f:Name> "(" <xs:List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::Var( f, None)), xs),
-    "print" "(" <Box<Expr>> ")" => Expr::Print(<>),
+    Bool => Expr::Bool(<>),
     "(" <Expr> ")",
-    "{" <List0<RecordAssign, ";">> "}" => Expr::Record(<>),
+    "{" <fes:List0<RecordAssign, ";">> "}" => {
+        let (fs, es) = fes.into_iter().unzip();
+        Expr::Record(fs, es)
+    },
     <Box<AtomExpr>> "." <Name> => Expr::Proj(<>),
-    <Tag> "(" <Box<Expr>> ")" => Expr::Variant(<>),
-};
-
-RecordAssign: (Name, Expr) = {
-    <Name> "=" <Expr> => (<>)
 }
 
-MatchBranch: (Name, Name, Expr) = {
-    "|" <Tag> "(" <Name> ")" "->" <Expr> => (<>)
+RecordAssign: (Name, Expr) = {
+    <Name> "=" <Expr> => (<>),
 }
 
 Name: Name = {
-    r"[a-z]\w*" => Name(<>.to_string())
-};
-
-Tag: Name = {
-    r"[A-Z]\w*" => Name(<>.to_string())
+    r"[a-z]\w*" => Name(<>.to_string()),
 }
 
 Num: i64 = {
-    r"[0-9]+" => i64::from_str(<>).unwrap()
-};
-
-SumOp: Opcode = {
-    "+" => Opcode::Add,
-    "-" => Opcode::Sub,
+    r"[0-9]+" => i64::from_str(<>).unwrap(),
 }
 
-ProductOp: Opcode = {
-    "*" => Opcode::Mul,
-    "/" => Opcode::Div,
+Bool: bool = {
+    "false" => false,
+    "true" => true,
+}
+
+SumOp: OpCode = {
+    "+" => OpCode::Add,
+    "-" => OpCode::Sub,
+}
+
+ProductOp: OpCode = {
+    "*" => OpCode::Mul,
+    "/" => OpCode::Div,
+}
+
+CompOp: OpCode = {
+    "==" => OpCode::Equals,
+    "!=" => OpCode::NotEq,
+    "<" => OpCode::Less,
+    "<=" => OpCode::LessEq,
+    ">" => OpCode::Greater,
+    ">=" => OpCode::GreaterEq,
 }
 
 Box<T>: Box<T> = {
-    <T> => Box::new(<>)
+    <T> => Box::new(<>),
 }
 
 List0<T, Sep>: Vec<T> = {
@@ -78,5 +85,9 @@ List0<T, Sep>: Vec<T> = {
         let mut ts = ts;
         ts.push(t);
         ts
-    }
+    },
+}
+
+BinOp<X, Op, Y>: Expr = {
+    <x:X> <op:Op> <y:Y> => Expr::App(Box::new(Expr::PrimOp(op)), vec![x, y]),
 }
