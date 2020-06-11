@@ -9,6 +9,7 @@ pub enum Value<'a> {
     Bool(bool),
     PAP(PAP<'a>),
     Record(HashMap<&'a Name, Rc<Value<'a>>>),
+    Fix(Rc<Value<'a>>),
 }
 
 #[derive(Clone, Debug)]
@@ -44,6 +45,7 @@ enum Kont<'a> {
     Dump(Env<'a>),
     Pop(usize),
     Arg(&'a Expr),
+    ArgValue(Rc<Value<'a>>),
     App(Rc<Value<'a>>),
     Let(&'a Name, &'a Expr),
     If(&'a Expr, &'a Expr),
@@ -220,6 +222,12 @@ impl<'a> Machine<'a> {
         }
     }
 
+    fn fix_apply_arg(&mut self, fun: Rc<Value<'a>>, arg: Rc<Value<'a>>) -> Ctrl<'a> {
+        self.kont.push(Kont::ArgValue(arg));
+        self.kont.push(Kont::ArgValue(Rc::new(Value::Fix(Rc::clone(&fun)))));
+        Ctrl::Value(fun)
+    }
+
     /// Step when the control contains a value.
     fn step_value(&mut self, value: Rc<Value<'a>>, kont: Kont<'a>) -> Ctrl<'a> {
         use Kont::*;
@@ -237,13 +245,19 @@ impl<'a> Machine<'a> {
                 self.kont.push(App(value));
                 Ctrl::Expr(arg)
             }
+            ArgValue(arg) => {
+                self.kont.push(App(value));
+                Ctrl::Value(arg)
+            }
             App(fun) => match Rc::try_unwrap(fun) {
                 Ok(fun) => match fun {
                     Value::PAP(pap) => self.pap_apply_arg(pap, value),
+                    Value::Fix(fun) => self.fix_apply_arg(fun, value),
                     _ => Ctrl::Error(format!("expected PAP, found {:?}", fun)),
                 },
                 Err(fun) => match &*fun {
                     Value::PAP(pap) => self.pap_apply_arg(pap.clone(), value),
+                    Value::Fix(fun) => self.fix_apply_arg(Rc::clone(fun), value),
                     _ => Ctrl::Error(format!("expected PAP, found {:?}", fun)),
                 },
             },
@@ -309,6 +323,7 @@ impl OpCode {
             LessEq => eval_comp(i64::le, args),
             Greater => eval_comp(i64::gt, args),
             GreaterEq => eval_comp(i64::ge, args),
+            Fix => Ok(Value::Fix(Rc::clone(&args[0]))),
         }
     }
 }

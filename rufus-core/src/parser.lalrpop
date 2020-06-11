@@ -9,6 +9,14 @@ pub Expr: Expr = {
     "fun" <Name+> "->" <Box<Expr>> => Expr::Lam(<>),
     "let" <Name> "=" <Box<Expr>> "in" <Box<Expr>> => Expr::Let(<>),
     "if" <Box<Expr>> "then" <Box<Expr>> "else" <Box<Expr>> => Expr::If(<>),
+    "let" "rec" <f:Name> "=" "fun" <xs:Name+> "->" <e1:Box<Expr>> "in" <e2:Box<Expr>> => {
+        let mut ys = vec![f.clone()];
+        ys.extend(xs);
+        let lam = Expr::Lam(ys, e1);
+        let fix = Box::new(Expr::PrimOp(OpCode::Fix));
+        let e1 = Box::new(Expr::App(fix, vec![lam]));
+        Expr::Let(f, e1, e2)
+    },
     BinOp<SumExpr, CompOp, SumExpr>,
 }
 
@@ -32,6 +40,7 @@ AtomExpr: Expr = {
     Num => Expr::Num(<>),
     Bool => Expr::Bool(<>),
     "(" <Expr> ")",
+    "fix" => Expr::PrimOp(OpCode::Fix),
     "{" <fes:List0<RecordAssign, ";">> "}" => {
         let (fs, es) = fes.into_iter().unzip();
         Expr::Record(fs, es)

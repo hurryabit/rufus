@@ -31,6 +31,7 @@ pub enum OpCode {
     LessEq,
     Greater,
     GreaterEq,
+    Fix,
 }
 
 impl Expr {
@@ -76,6 +77,7 @@ impl OpCode {
         use OpCode::*;
         match self {
             Add | Sub | Mul | Div | Equals | NotEq | Less | LessEq | Greater | GreaterEq => 2,
+            Fix => 1,
         }
     }
 }
