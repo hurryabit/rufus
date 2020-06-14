@@ -215,7 +215,7 @@ impl<'a> Machine<'a> {
     fn pap_apply_arg(&mut self, mut pap: PAP<'a>, arg: Rc<Value<'a>>) -> Ctrl<'a> {
         assert!(pap.args.len() < pap.arity);
         pap.args.push(arg);
-        if (pap.args.len() == pap.arity) {
+        if pap.args.len() == pap.arity {
             self.enter_prim(pap.prim, pap.args)
         } else {
             Ctrl::from_value(Value::PAP(pap))

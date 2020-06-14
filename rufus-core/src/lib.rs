@@ -1,12 +1,9 @@
-#![allow(renamed_and_removed_lints)]
-#![allow(unused_parens)]
 #[macro_use]
 extern crate lalrpop_util;
 
 pub mod cek;
 pub mod syntax;
 lalrpop_mod!(
-    #[allow(clippy)]
     pub parser
 );
 
