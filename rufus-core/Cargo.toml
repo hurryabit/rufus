@@ -13,5 +13,6 @@ license = "Apache 2.0"
 lalrpop = "0.17.2"
 
 [dependencies]
+genawaiter = "0.99.1"
 lalrpop-util = "0.17.2"
 regex = "0.2.1"
