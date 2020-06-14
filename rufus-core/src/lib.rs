@@ -23,6 +23,14 @@ mod tests {
         );
     }
 
+    fn example_test(expected: i64, path: &str) {
+        use std::io::Read;
+        let mut file = std::fs::File::open(path).unwrap();
+        let mut expr = String::new();
+        file.read_to_string(&mut expr).unwrap();
+        integration_test(expected, &expr)
+    }
+
     #[test]
     fn twice() {
         integration_test(
@@ -76,17 +84,13 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn simple_variant() {
-    //     integration_test(
-    //         1,
-    //         "
-    //         let ok = Ok(1);
-    //         let x = 2;
-    //         match ok {
-    //             Ok(x) => x,
-    //             Err(e) => e
-    //         }",
-    //     );
-    // }
+    #[test]
+    fn fib() {
+        example_test(55, "../examples/fib.ml")
+    }
+
+    #[test]
+    fn list() {
+        example_test(55, "../examples/list.ml")
+    }
 }
