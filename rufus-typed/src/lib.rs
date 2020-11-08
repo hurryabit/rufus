@@ -28,6 +28,7 @@ mod tests {
                 ("(Int,) -> Int", Fun(vec![Int], Box::new(Int))),
                 ("A<Int>", App(TypeCon::new("A"), vec![Int])),
                 ("A<Int,>", App(TypeCon::new("A"), vec![Int])),
+                ("A<Int,Bool>", App(TypeCon::new("A"), vec![Int, Bool])),
                 ("{}", Record(vec![])),
                 ("{a: Int}", Record(vec![(ExprVar::new("a"), Int)])),
                 ("{a: Int,}", Record(vec![(ExprVar::new("a"), Int)])),
@@ -1243,6 +1244,251 @@ mod tests {
                         },
                     ],
                 )
+                "###);
+            }
+        }
+
+        mod decl {
+            use crate::*;
+            use syntax::*;
+
+            fn parse(input: &str) -> Decl {
+                let parser = parser::DeclParser::new();
+                parser.parse(input).unwrap()
+            }
+
+            #[test]
+            fn type_mono() {
+                insta::assert_debug_snapshot!(parse("type T = Int"), @r###"
+                Type(
+                    TypeDecl {
+                        name: TypeCon(
+                            "T",
+                        ),
+                        body: Abs(
+                            [],
+                            Int,
+                        ),
+                    },
+                )
+                "###);
+            }
+
+            #[test]
+            fn type_poly() {
+                insta::assert_debug_snapshot!(parse("type T<a> = a"), @r###"
+                Type(
+                    TypeDecl {
+                        name: TypeCon(
+                            "T",
+                        ),
+                        body: Abs(
+                            [
+                                TypeVar(
+                                    "a",
+                                ),
+                            ],
+                            Var(
+                                TypeVar(
+                                    "a",
+                                ),
+                            ),
+                        ),
+                    },
+                )
+                "###);
+            }
+
+            #[test]
+            fn func_mono() {
+                insta::assert_debug_snapshot!(parse("fn id(x: Int) -> Int { x }"), @r###"
+                Func(
+                    FuncDecl {
+                        name: ExprVar(
+                            "id",
+                        ),
+                        type_params: [],
+                        expr_params: [
+                            (
+                                ExprVar(
+                                    "x",
+                                ),
+                                Int,
+                            ),
+                        ],
+                        return_type: Int,
+                        body: Var(
+                            ExprVar(
+                                "x",
+                            ),
+                        ),
+                    },
+                )
+                "###);
+            }
+
+            #[test]
+            fn func_poly() {
+                insta::assert_debug_snapshot!(parse("fn id<a>(x: a) -> a { x }"), @r###"
+                Func(
+                    FuncDecl {
+                        name: ExprVar(
+                            "id",
+                        ),
+                        type_params: [
+                            TypeVar(
+                                "a",
+                            ),
+                        ],
+                        expr_params: [
+                            (
+                                ExprVar(
+                                    "x",
+                                ),
+                                Var(
+                                    TypeVar(
+                                        "a",
+                                    ),
+                                ),
+                            ),
+                        ],
+                        return_type: Var(
+                            TypeVar(
+                                "a",
+                            ),
+                        ),
+                        body: Var(
+                            ExprVar(
+                                "x",
+                            ),
+                        ),
+                    },
+                )
+                "###);
+            }
+        }
+
+        mod module {
+            use crate::*;
+            use syntax::*;
+
+            fn parse(input: &str) -> Module {
+                let parser = parser::ModuleParser::new();
+                parser.parse(input).unwrap()
+            }
+
+            #[test]
+            fn module() {
+                insta::assert_debug_snapshot!(parse(r#"
+                type Mono = Int
+
+                fn mono(x: Int) -> Mono { x }
+
+                type Poly<a> = a
+
+                fn poly<a>(x: a) -> Poly<a> { x }
+                "#), @r###"
+                Module {
+                    decls: [
+                        Type(
+                            TypeDecl {
+                                name: TypeCon(
+                                    "Mono",
+                                ),
+                                body: Abs(
+                                    [],
+                                    Int,
+                                ),
+                            },
+                        ),
+                        Func(
+                            FuncDecl {
+                                name: ExprVar(
+                                    "mono",
+                                ),
+                                type_params: [],
+                                expr_params: [
+                                    (
+                                        ExprVar(
+                                            "x",
+                                        ),
+                                        Int,
+                                    ),
+                                ],
+                                return_type: Synonym(
+                                    TypeCon(
+                                        "Mono",
+                                    ),
+                                ),
+                                body: Var(
+                                    ExprVar(
+                                        "x",
+                                    ),
+                                ),
+                            },
+                        ),
+                        Type(
+                            TypeDecl {
+                                name: TypeCon(
+                                    "Poly",
+                                ),
+                                body: Abs(
+                                    [
+                                        TypeVar(
+                                            "a",
+                                        ),
+                                    ],
+                                    Var(
+                                        TypeVar(
+                                            "a",
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        Func(
+                            FuncDecl {
+                                name: ExprVar(
+                                    "poly",
+                                ),
+                                type_params: [
+                                    TypeVar(
+                                        "a",
+                                    ),
+                                ],
+                                expr_params: [
+                                    (
+                                        ExprVar(
+                                            "x",
+                                        ),
+                                        Var(
+                                            TypeVar(
+                                                "a",
+                                            ),
+                                        ),
+                                    ),
+                                ],
+                                return_type: App(
+                                    TypeCon(
+                                        "Poly",
+                                    ),
+                                    [
+                                        Var(
+                                            TypeVar(
+                                                "a",
+                                            ),
+                                        ),
+                                    ],
+                                ),
+                                body: Var(
+                                    ExprVar(
+                                        "x",
+                                    ),
+                                ),
+                            },
+                        ),
+                    ],
+                }
                 "###);
             }
         }

@@ -4,19 +4,39 @@ use crate::syntax::*;
 
 grammar;
 
-pub Type: Type  = {
+pub Module: Module = {
+    <decls: Decl*> => Module { decls },
+}
+
+pub Decl: Decl = {
+    TypeDecl => Decl::Type(<>),
+    FuncDecl => Decl::Func(<>),
+}
+
+TypeDecl: TypeDecl = {
+    "type" <name: TypeCon> <params: TypeParams> "=" <rhs: Box<Type>> =>
+        TypeDecl { name, body: Type::Abs(params, rhs) },
+}
+
+FuncDecl: FuncDecl = {
+    "fn" <name: ExprVar> <type_params: TypeParams> "(" <expr_params: List0<Param<TypeAnn>, ",">> ")" "->" <return_type: Type> <body: BlockExpr> =>
+        FuncDecl { name, type_params, expr_params, return_type, body },
+}
+
+TypeParams: Vec<TypeVar> = {
+    => vec![],
+    "<" <List1<TypeVar, ",">> ">" => <>,
+}
+
+pub Type: Type = {
     TypeVar => Type::Var(<>),
     "Int" => Type::Int,
     "Bool" => Type::Bool,
     TypeCon => Type::Synonym(<>),
     "(" <List0<Type, ",">> ")" "->" <Box<Type>> => Type::Fun(<>),
     <TypeCon> "<" <List1<Type, ",">> ">" => Type::App(<>),
-    "{" <List0<RecordFieldType, ",">> "}" => Type::Record(<>),
+    "{" <List0<Param<TypeAnn>, ",">> "}" => Type::Record(<>),
     "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
-}
-
-RecordFieldType: (ExprVar, Type) = {
-    <ExprVar> ":" <Type> => (<>),
 }
 
 VariantCaseType: (ExprCon, Option<Type>) = {
@@ -67,6 +87,10 @@ AtomExpr: Expr = {
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
     <ExprCon> <Box<InParens<Expr>>?> => Expr::Variant(<>),
+}
+
+TypeAnn: Type = {
+    ":" <Type> => <>,
 }
 
 OptTypeAnn: Option<Type> = {

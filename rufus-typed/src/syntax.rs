@@ -1,6 +1,32 @@
 mod debruijn;
 mod iter;
 
+#[derive(Clone, Debug)]
+pub struct Module {
+    pub decls: Vec<Decl>,
+}
+
+#[derive(Clone, Debug)]
+pub enum Decl {
+    Type(TypeDecl),
+    Func(FuncDecl),
+}
+
+#[derive(Clone, Debug)]
+pub struct TypeDecl {
+    pub name: TypeCon,
+    pub body: Type,
+}
+
+#[derive(Clone, Debug)]
+pub struct FuncDecl {
+    pub name: ExprVar,
+    pub type_params: Vec<TypeVar>,
+    pub expr_params: Vec<(ExprVar, Type)>,
+    pub return_type: Type,
+    pub body: Expr,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TypeVar(String);
 
