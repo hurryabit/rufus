@@ -21,14 +21,13 @@ mod tests {
             let cases = &[
                 ("Int", Int),
                 ("Bool", Bool),
-                ("a", Var(TypeVar::new("a"))),
-                ("A", Synonym(TypeCon::new("A"))),
+                ("A", Var(TypeVar::new("A"))),
                 ("() -> Int", Fun(vec![], Box::new(Int))),
                 ("(Int) -> Int", Fun(vec![Int], Box::new(Int))),
                 ("(Int,) -> Int", Fun(vec![Int], Box::new(Int))),
-                ("A<Int>", App(TypeCon::new("A"), vec![Int])),
-                ("A<Int,>", App(TypeCon::new("A"), vec![Int])),
-                ("A<Int,Bool>", App(TypeCon::new("A"), vec![Int, Bool])),
+                ("A<Int>", App(TypeVar::new("A"), vec![Int])),
+                ("A<Int,>", App(TypeVar::new("A"), vec![Int])),
+                ("A<Int,Bool>", App(TypeVar::new("A"), vec![Int, Bool])),
                 ("{}", Record(vec![])),
                 ("{a: Int}", Record(vec![(ExprVar::new("a"), Int)])),
                 ("{a: Int,}", Record(vec![(ExprVar::new("a"), Int)])),
@@ -75,8 +74,6 @@ mod tests {
                 // This would not kind check but might give bad error messages
                 // because `Int` cannot be resolved.
                 "Int<Bool>",
-                // We don't have higher-kinded type variables.
-                "a<Int>",
                 // We don't support empty variants.
                 "[]",
             ];
@@ -805,36 +802,36 @@ mod tests {
 
             #[test]
             fn lam1_poly() {
-                insta::assert_debug_snapshot!(parse("fn<a>(x: a) { x }"), @r###"
-            TypeAbs(
-                [
-                    TypeVar(
-                        "a",
-                    ),
-                ],
-                Lam(
+                insta::assert_debug_snapshot!(parse("fn<A>(x: A) { x }"), @r###"
+                TypeAbs(
                     [
-                        (
-                            ExprVar(
-                                "x",
-                            ),
-                            Some(
-                                Var(
-                                    TypeVar(
-                                        "a",
+                        TypeVar(
+                            "A",
+                        ),
+                    ],
+                    Lam(
+                        [
+                            (
+                                ExprVar(
+                                    "x",
+                                ),
+                                Some(
+                                    Var(
+                                        TypeVar(
+                                            "A",
+                                        ),
                                     ),
                                 ),
                             ),
-                        ),
-                    ],
-                    Var(
-                        ExprVar(
-                            "x",
+                        ],
+                        Var(
+                            ExprVar(
+                                "x",
+                            ),
                         ),
                     ),
-                ),
-            )
-            "###);
+                )
+                "###);
             }
 
             #[test]
@@ -1262,7 +1259,7 @@ mod tests {
                 insta::assert_debug_snapshot!(parse("type T = Int"), @r###"
                 Type(
                     TypeDecl {
-                        name: TypeCon(
+                        name: TypeVar(
                             "T",
                         ),
                         body: Abs(
@@ -1276,21 +1273,21 @@ mod tests {
 
             #[test]
             fn type_poly() {
-                insta::assert_debug_snapshot!(parse("type T<a> = a"), @r###"
+                insta::assert_debug_snapshot!(parse("type T<A> = A"), @r###"
                 Type(
                     TypeDecl {
-                        name: TypeCon(
+                        name: TypeVar(
                             "T",
                         ),
                         body: Abs(
                             [
                                 TypeVar(
-                                    "a",
+                                    "A",
                                 ),
                             ],
                             Var(
                                 TypeVar(
-                                    "a",
+                                    "A",
                                 ),
                             ),
                         ),
@@ -1329,7 +1326,7 @@ mod tests {
 
             #[test]
             fn func_poly() {
-                insta::assert_debug_snapshot!(parse("fn id<a>(x: a) -> a { x }"), @r###"
+                insta::assert_debug_snapshot!(parse("fn id<A>(x: A) -> A { x }"), @r###"
                 Func(
                     FuncDecl {
                         name: ExprVar(
@@ -1337,7 +1334,7 @@ mod tests {
                         ),
                         type_params: [
                             TypeVar(
-                                "a",
+                                "A",
                             ),
                         ],
                         expr_params: [
@@ -1347,14 +1344,14 @@ mod tests {
                                 ),
                                 Var(
                                     TypeVar(
-                                        "a",
+                                        "A",
                                     ),
                                 ),
                             ),
                         ],
                         return_type: Var(
                             TypeVar(
-                                "a",
+                                "A",
                             ),
                         ),
                         body: Var(
@@ -1381,18 +1378,15 @@ mod tests {
             fn module() {
                 insta::assert_debug_snapshot!(parse(r#"
                 type Mono = Int
-
                 fn mono(x: Int) -> Mono { x }
-
-                type Poly<a> = a
-
-                fn poly<a>(x: a) -> Poly<a> { x }
+                type Poly<A> = A
+                fn poly<A>(x: A) -> Poly<A> { x }
                 "#), @r###"
                 Module {
                     decls: [
                         Type(
                             TypeDecl {
-                                name: TypeCon(
+                                name: TypeVar(
                                     "Mono",
                                 ),
                                 body: Abs(
@@ -1415,8 +1409,8 @@ mod tests {
                                         Int,
                                     ),
                                 ],
-                                return_type: Synonym(
-                                    TypeCon(
+                                return_type: Var(
+                                    TypeVar(
                                         "Mono",
                                     ),
                                 ),
@@ -1429,18 +1423,18 @@ mod tests {
                         ),
                         Type(
                             TypeDecl {
-                                name: TypeCon(
+                                name: TypeVar(
                                     "Poly",
                                 ),
                                 body: Abs(
                                     [
                                         TypeVar(
-                                            "a",
+                                            "A",
                                         ),
                                     ],
                                     Var(
                                         TypeVar(
-                                            "a",
+                                            "A",
                                         ),
                                     ),
                                 ),
@@ -1453,7 +1447,7 @@ mod tests {
                                 ),
                                 type_params: [
                                     TypeVar(
-                                        "a",
+                                        "A",
                                     ),
                                 ],
                                 expr_params: [
@@ -1463,19 +1457,19 @@ mod tests {
                                         ),
                                         Var(
                                             TypeVar(
-                                                "a",
+                                                "A",
                                             ),
                                         ),
                                     ),
                                 ],
                                 return_type: App(
-                                    TypeCon(
+                                    TypeVar(
                                         "Poly",
                                     ),
                                     [
                                         Var(
                                             TypeVar(
-                                                "a",
+                                                "A",
                                             ),
                                         ),
                                     ],

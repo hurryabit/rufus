@@ -14,7 +14,7 @@ pub enum Decl {
 
 #[derive(Clone, Debug)]
 pub struct TypeDecl {
-    pub name: TypeCon,
+    pub name: TypeVar,
     pub body: Type,
 }
 
@@ -31,9 +31,6 @@ pub struct FuncDecl {
 pub struct TypeVar(String);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct TypeCon(String);
-
-#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ExprVar(String);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -42,11 +39,11 @@ pub struct ExprCon(String);
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Type {
     Var(TypeVar),
-    Synonym(TypeCon),
+    Syn(TypeVar),
     Int,
     Bool,
     Fun(Vec<Type>, Box<Type>),
-    App(TypeCon, Vec<Type>),
+    App(TypeVar, Vec<Type>),
     Abs(Vec<TypeVar>, Box<Type>),
     Record(Vec<(ExprVar, Type)>),
     Variant(Vec<(ExprCon, Option<Type>)>),
@@ -92,12 +89,6 @@ pub enum OpCode {
 }
 
 impl TypeVar {
-    pub fn new(x: &str) -> Self {
-        Self(x.to_owned())
-    }
-}
-
-impl TypeCon {
     pub fn new(x: &str) -> Self {
         Self(x.to_owned())
     }

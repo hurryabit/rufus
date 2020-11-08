@@ -14,7 +14,7 @@ pub Decl: Decl = {
 }
 
 TypeDecl: TypeDecl = {
-    "type" <name: TypeCon> <params: TypeParams> "=" <rhs: Box<Type>> =>
+    "type" <name: TypeVar> <params: TypeParams> "=" <rhs: Box<Type>> =>
         TypeDecl { name, body: Type::Abs(params, rhs) },
 }
 
@@ -32,9 +32,8 @@ pub Type: Type = {
     TypeVar => Type::Var(<>),
     "Int" => Type::Int,
     "Bool" => Type::Bool,
-    TypeCon => Type::Synonym(<>),
     "(" <List0<Type, ",">> ")" "->" <Box<Type>> => Type::Fun(<>),
-    <TypeCon> "<" <List1<Type, ",">> ">" => Type::App(<>),
+    <TypeVar> "<" <List1<Type, ",">> ">" => Type::App(<>),
     "{" <List0<Param<TypeAnn>, ",">> "}" => Type::Record(<>),
     "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
 }
@@ -112,11 +111,7 @@ Branch: Branch = {
 }
 
 TypeVar: TypeVar = {
-    r"[a-z]\w*" => TypeVar::new(<>),
-}
-
-TypeCon: TypeCon = {
-    r"[A-Z]\w*" => TypeCon::new(<>),
+    r"[A-Z]\w*" => TypeVar::new(<>),
 }
 
 ExprVar: ExprVar = {
