@@ -30,8 +30,6 @@ TypeParams: Vec<TypeVar> = {
 
 pub Type: Type = {
     TypeVar => Type::Var(<>),
-    "Int" => Type::Int,
-    "Bool" => Type::Bool,
     "(" <List0<Type, ",">> ")" "->" <Box<Type>> => Type::Fun(<>),
     <TypeVar> "<" <List1<Type, ",">> ">" => Type::App(<>),
     "{" <List0<Param<TypeAnn>, ",">> "}" => Type::Record(<>),
@@ -120,8 +118,6 @@ ExprVar: ExprVar = {
 
 ExprCon: ExprCon = {
     r"[A-Z]\w*" => ExprCon::new(<>),
-    "Int" => ExprCon::new(<>),
-    "Bool" => ExprCon::new(<>),
 }
 
 Num: i64 = {

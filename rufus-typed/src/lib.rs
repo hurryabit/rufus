@@ -13,38 +13,44 @@ mod tests {
         use crate::*;
         use syntax::*;
 
+        fn int() -> Type {
+            Type::Var(TypeVar::new("Int"))
+        }
+
+        fn bool() -> Type {
+            Type::Var(TypeVar::new("Bool"))
+        }
+
         #[test]
         fn types_positive() {
             use syntax::Type::*;
             let parser = parser::TypeParser::new();
 
             let cases = &[
-                ("Int", Int),
-                ("Bool", Bool),
                 ("A", Var(TypeVar::new("A"))),
-                ("() -> Int", Fun(vec![], Box::new(Int))),
-                ("(Int) -> Int", Fun(vec![Int], Box::new(Int))),
-                ("(Int,) -> Int", Fun(vec![Int], Box::new(Int))),
-                ("A<Int>", App(TypeVar::new("A"), vec![Int])),
-                ("A<Int,>", App(TypeVar::new("A"), vec![Int])),
-                ("A<Int,Bool>", App(TypeVar::new("A"), vec![Int, Bool])),
+                ("() -> Int", Fun(vec![], Box::new(int()))),
+                ("(Int) -> Int", Fun(vec![int()], Box::new(int()))),
+                ("(Int,) -> Int", Fun(vec![int()], Box::new(int()))),
+                ("A<Int>", App(TypeVar::new("A"), vec![int()])),
+                ("A<Int,>", App(TypeVar::new("A"), vec![int()])),
+                ("A<Int,Bool>", App(TypeVar::new("A"), vec![int(), bool()])),
                 ("{}", Record(vec![])),
-                ("{a: Int}", Record(vec![(ExprVar::new("a"), Int)])),
-                ("{a: Int,}", Record(vec![(ExprVar::new("a"), Int)])),
+                ("{a: Int}", Record(vec![(ExprVar::new("a"), int())])),
+                ("{a: Int,}", Record(vec![(ExprVar::new("a"), int())])),
                 (
                     "[A | B(Int)]",
                     Variant(vec![
                         (ExprCon::new("A"), None),
-                        (ExprCon::new("B"), Some(Int)),
+                        (ExprCon::new("B"), Some(int())),
                     ]),
                 ),
                 (
                     "[Int(Int)]",
-                    Variant(vec![(ExprCon::new("Int"), Some(Int))]),
+                    Variant(vec![(ExprCon::new("Int"), Some(int()))]),
                 ),
                 (
                     "[Bool(Bool)]",
-                    Variant(vec![(ExprCon::new("Bool"), Some(Bool))]),
+                    Variant(vec![(ExprCon::new("Bool"), Some(bool()))]),
                 ),
                 // TODO(MH): We want to allow an optional leading "|" rather
                 // than a trailing one.
@@ -52,7 +58,7 @@ mod tests {
                     "[A | B(Int) |]",
                     Variant(vec![
                         (ExprCon::new("A"), None),
-                        (ExprCon::new("B"), Some(Int)),
+                        (ExprCon::new("B"), Some(int())),
                     ]),
                 ),
             ];
@@ -71,9 +77,6 @@ mod tests {
                 "(,) -> Int",
                 "A<>",
                 "{,}",
-                // This would not kind check but might give bad error messages
-                // because `Int` cannot be resolved.
-                "Int<Bool>",
                 // We don't support empty variants.
                 "[]",
             ];
@@ -221,7 +224,11 @@ mod tests {
                             ),
                         ),
                         [
-                            Int,
+                            Var(
+                                TypeVar(
+                                    "Int",
+                                ),
+                            ),
                         ],
                     ),
                     [
@@ -780,24 +787,28 @@ mod tests {
             #[test]
             fn lam1_typed() {
                 insta::assert_debug_snapshot!(parse("fn(x: Int) { x }"), @r###"
-            Lam(
-                [
-                    (
+                Lam(
+                    [
+                        (
+                            ExprVar(
+                                "x",
+                            ),
+                            Some(
+                                Var(
+                                    TypeVar(
+                                        "Int",
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ],
+                    Var(
                         ExprVar(
                             "x",
                         ),
-                        Some(
-                            Int,
-                        ),
                     ),
-                ],
-                Var(
-                    ExprVar(
-                        "x",
-                    ),
-                ),
-            )
-            "###);
+                )
+                "###);
             }
 
             #[test]
@@ -961,7 +972,11 @@ mod tests {
                         "x",
                     ),
                     Some(
-                        Int,
+                        Var(
+                            TypeVar(
+                                "Int",
+                            ),
+                        ),
                     ),
                     Num(
                         1,
@@ -1109,7 +1124,7 @@ mod tests {
 
             #[test]
             fn match1_block_comma() {
-                insta::assert_debug_snapshot!(parse_err("match x { A => { 1 }, }"), @r###""Unrecognized token `,` found at 20:21\nExpected one of \"Bool\", \"Int\", \"}\" or r#\"[A-Z]\\\\w*\"#""###);
+                insta::assert_debug_snapshot!(parse_err("match x { A => { 1 }, }"), @r###""Unrecognized token `,` found at 20:21\nExpected one of \"}\" or r#\"[A-Z]\\\\w*\"#""###);
             }
 
             #[test]
@@ -1264,7 +1279,11 @@ mod tests {
                         ),
                         body: Abs(
                             [],
-                            Int,
+                            Var(
+                                TypeVar(
+                                    "Int",
+                                ),
+                            ),
                         ),
                     },
                 )
@@ -1310,10 +1329,18 @@ mod tests {
                                 ExprVar(
                                     "x",
                                 ),
-                                Int,
+                                Var(
+                                    TypeVar(
+                                        "Int",
+                                    ),
+                                ),
                             ),
                         ],
-                        return_type: Int,
+                        return_type: Var(
+                            TypeVar(
+                                "Int",
+                            ),
+                        ),
                         body: Var(
                             ExprVar(
                                 "x",
@@ -1391,7 +1418,11 @@ mod tests {
                                 ),
                                 body: Abs(
                                     [],
-                                    Int,
+                                    Var(
+                                        TypeVar(
+                                            "Int",
+                                        ),
+                                    ),
                                 ),
                             },
                         ),
@@ -1406,7 +1437,11 @@ mod tests {
                                         ExprVar(
                                             "x",
                                         ),
-                                        Int,
+                                        Var(
+                                            TypeVar(
+                                                "Int",
+                                            ),
+                                        ),
                                     ),
                                 ],
                                 return_type: Var(
