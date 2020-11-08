@@ -30,9 +30,13 @@ VariantCaseType: (ExprCon, Option<Type>) = {
 pub Expr: Expr = {
     SumExpr,
     BinOp<SumExpr, CompOp, SumExpr>,
+    // TODO(MH): Merge the two rules below.
+    "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<BlockExpr>> => Expr::Lam(<>),
+    "fn" "<" <tyvars: List1<TypeVar, ",">> ">" "(" <exvars: List0<Param<OptTypeAnn>, ",">> ")" <body: Box<BlockExpr>> => Expr::TypeAbs(tyvars, Box::new(Expr::Lam(exvars, body))),
+    "if" <Box<Expr>> <Box<BlockExpr>> "else" <Box<BlockExpr>> => Expr::If(<>),
 }
 
-BlockExpr: Expr = {
+pub BlockExpr: Expr = {
     "{" <Statements> "}" => <>,
 }
 
@@ -58,15 +62,11 @@ AtomExpr: Expr = {
     Num => Expr::Num(<>),
     Bool => Expr::Bool(<>),
     // TODO(MH): Merge the two rules below.
-    "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<BlockExpr>> => Expr::Lam(<>),
-    "fn" "<" <tyvars: List1<TypeVar, ",">> ">" "(" <exvars: List0<Param<OptTypeAnn>, ",">> ")" <body: Box<BlockExpr>> => Expr::TypeAbs(tyvars, Box::new(Expr::Lam(exvars, body))),
-    // TODO(MH): Merge the two rules below.
     <fun: ExprVar> "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::Var(fun)), args),
     // NOTE(MH): Ideally, we would not have the "@" symbol before the angle
     // brackets, but that would make the expression `f(g<a, b>(c))` ambiguous
     // to parse. With `f(g@<a, b>(c))` there's no ambiguity.
     <fun: ExprVar> "@" "<" <tyargs: List1<Type, ",">> ">" "(" <exargs: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::TypeApp(Box::new(Expr::Var(fun)), tyargs)), exargs),
-    "if" <Box<Expr>> <Box<BlockExpr>> "else" <Box<BlockExpr>> => Expr::If(<>),
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
     <ExprCon> <Box<ExprInParens>?> => Expr::Variant(<>),
@@ -103,6 +103,8 @@ ExprVar: ExprVar = {
 
 ExprCon: ExprCon = {
     r"[A-Z]\w*" => ExprCon::new(<>),
+    "Int" => ExprCon::new(<>),
+    "Bool" => ExprCon::new(<>),
 }
 
 Num: i64 = {
