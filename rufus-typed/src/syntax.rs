@@ -1,43 +1,53 @@
 mod debruijn;
 mod iter;
 
-pub type Name = String;
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TypeVar(String);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TypeCon(String);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExprVar(String);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExprCon(String);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Type {
-    Var(Name),
-    Synonym(Name),
+    Var(TypeVar),
+    Synonym(TypeCon),
     Int,
     Bool,
     Fun(Vec<Type>, Box<Type>),
-    App(Name, Vec<Type>),
-    Abs(Vec<Name>, Box<Type>),
-    Record(Vec<(Name, Type)>),
-    Variant(Vec<(Name, Option<Type>)>),
+    App(TypeCon, Vec<Type>),
+    Abs(Vec<TypeVar>, Box<Type>),
+    Record(Vec<(ExprVar, Type)>),
+    Variant(Vec<(ExprCon, Option<Type>)>),
 }
 
 #[derive(Clone, Debug)]
 pub enum Expr {
-    Var(Name),
+    Var(ExprVar),
     Num(i64),
     Bool(bool),
-    Lam(Vec<(Name, Option<Type>)>, Box<Expr>),
+    Lam(Vec<(ExprVar, Option<Type>)>, Box<Expr>),
     App(Box<Expr>, Vec<Expr>),
     BinOp(Box<Expr>, OpCode, Box<Expr>),
-    TypeAbs(Vec<Name>, Box<Expr>),
+    TypeAbs(Vec<TypeVar>, Box<Expr>),
     TypeApp(Box<Expr>, Vec<Type>),
-    Let(Name, Option<Type>, Box<Expr>, Box<Expr>),
+    Let(ExprVar, Option<Type>, Box<Expr>, Box<Expr>),
     If(Box<Expr>, Box<Expr>, Box<Expr>),
-    Record(Vec<(Name, Expr)>),
-    Proj(Box<Expr>, Name),
-    Variant(Name, Option<Box<Expr>>),
+    Record(Vec<(ExprVar, Expr)>),
+    Proj(Box<Expr>, ExprVar),
+    Variant(ExprCon, Option<Box<Expr>>),
     Match(Box<Expr>, Vec<Branch>),
 }
 
 #[derive(Clone, Debug)]
 pub struct Branch {
-    con: Name,
-    var: Option<Name>,
+    con: ExprCon,
+    var: Option<ExprVar>,
     rhs: Expr,
 }
 
@@ -53,4 +63,28 @@ pub enum OpCode {
     LessEq,
     Greater,
     GreaterEq,
+}
+
+impl TypeVar {
+    pub fn new(x: &str) -> Self {
+        Self(x.to_owned())
+    }
+}
+
+impl TypeCon {
+    pub fn new(x: &str) -> Self {
+        Self(x.to_owned())
+    }
+}
+
+impl ExprVar {
+    pub fn new(x: &str) -> Self {
+        Self(x.to_owned())
+    }
+}
+
+impl ExprCon {
+    pub fn new(x: &str) -> Self {
+        Self(x.to_owned())
+    }
 }

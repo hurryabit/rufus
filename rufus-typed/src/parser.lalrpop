@@ -5,12 +5,12 @@ use crate::syntax::*;
 grammar;
 
 pub Type: Type  = {
-    TypeVarName => Type::Var(<>),
+    TypeVar => Type::Var(<>),
     "Int" => Type::Int,
     "Bool" => Type::Bool,
-    TypeConName => Type::Synonym(<>),
+    TypeCon => Type::Synonym(<>),
     "(" <List0<Type, ",">> ")" "->" <Box<Type>> => Type::Fun(<>),
-    <TypeConName> "<" <List1<Type, ",">> ">" => Type::App(<>),
+    <TypeCon> "<" <List1<Type, ",">> ">" => Type::App(<>),
     "{" <List0<RecordFieldType, ",">> "}" => Type::Record(<>),
     "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
 }
@@ -19,12 +19,12 @@ TypeInParens: Type = {
     "(" <Type> ")" => <>,
 }
 
-RecordFieldType: (Name, Type) = {
-    <ExprVarName> ":" <Type> => (<>),
+RecordFieldType: (ExprVar, Type) = {
+    <ExprVar> ":" <Type> => (<>),
 }
 
-VariantCaseType: (Name, Option<Type>) = {
-    ExprConName TypeInParens? => (<>),
+VariantCaseType: (ExprCon, Option<Type>) = {
+    ExprCon TypeInParens? => (<>),
 }
 
 pub Expr: Expr = {
@@ -38,8 +38,8 @@ BlockExpr: Expr = {
 
 Statements: Expr = {
     Expr => <>,
-    "let" <ExprVarName> <OptTypeAnn> "=" <Box<Expr>> ";" <Box<Statements>> => Expr::Let(<>),
-    "let" <ExprVarName> <OptTypeAnn> "=" <Box<BlockExpr>> ";" <Box<Statements>> => Expr::Let(<>),
+    "let" <ExprVar> <OptTypeAnn> "=" <Box<Expr>> ";" <Box<Statements>> => Expr::Let(<>),
+    "let" <ExprVar> <OptTypeAnn> "=" <Box<BlockExpr>> ";" <Box<Statements>> => Expr::Let(<>),
 }
 
 SumExpr: Expr = {
@@ -54,22 +54,22 @@ ProductExpr: Expr = {
 
 AtomExpr: Expr = {
     ExprInParens => <>,
-    ExprVarName => Expr::Var(<>),
+    ExprVar => Expr::Var(<>),
     Num => Expr::Num(<>),
     Bool => Expr::Bool(<>),
     // TODO(MH): Merge the two rules below.
     "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<BlockExpr>> => Expr::Lam(<>),
-    "fn" "<" <tyvars: List1<TypeVarName, ",">> ">" "(" <exvars: List0<Param<OptTypeAnn>, ",">> ")" <body: Box<BlockExpr>> => Expr::TypeAbs(tyvars, Box::new(Expr::Lam(exvars, body))),
+    "fn" "<" <tyvars: List1<TypeVar, ",">> ">" "(" <exvars: List0<Param<OptTypeAnn>, ",">> ")" <body: Box<BlockExpr>> => Expr::TypeAbs(tyvars, Box::new(Expr::Lam(exvars, body))),
     // TODO(MH): Merge the two rules below.
-    <fun: ExprVarName> "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::Var(fun)), args),
+    <fun: ExprVar> "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::Var(fun)), args),
     // NOTE(MH): Ideally, we would not have the "@" symbol before the angle
     // brackets, but that would make the expression `f(g<a, b>(c))` ambiguous
     // to parse. With `f(g@<a, b>(c))` there's no ambiguity.
-    <fun: ExprVarName> "@" "<" <tyargs: List1<Type, ",">> ">" "(" <exargs: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::TypeApp(Box::new(Expr::Var(fun)), tyargs)), exargs),
+    <fun: ExprVar> "@" "<" <tyargs: List1<Type, ",">> ">" "(" <exargs: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::TypeApp(Box::new(Expr::Var(fun)), tyargs)), exargs),
     "if" <Box<Expr>> <Box<BlockExpr>> "else" <Box<BlockExpr>> => Expr::If(<>),
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
-    <Box<AtomExpr>> "." <ExprVarName> => Expr::Proj(<>),
-    <ExprConName> <Box<ExprInParens>?> => Expr::Variant(<>),
+    <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
+    <ExprCon> <Box<ExprInParens>?> => Expr::Variant(<>),
 }
 
 ExprInParens: Expr = {
@@ -81,28 +81,28 @@ OptTypeAnn: Option<Type> = {
     ":" <Type> => Some(<>),
 }
 
-Param<T>: (Name, T) = {
-    ExprVarName T => (<>),
+Param<T>: (ExprVar, T) = {
+    ExprVar T => (<>),
 }
 
-RecordAssign: (Name, Expr) = {
-    <ExprVarName> "=" <Expr> => (<>),
+RecordAssign: (ExprVar, Expr) = {
+    <ExprVar> "=" <Expr> => (<>),
 }
 
-TypeVarName: Name = {
-    r"[a-z]\w*" => <>.to_string(),
+TypeVar: TypeVar = {
+    r"[a-z]\w*" => TypeVar::new(<>),
 }
 
-TypeConName: Name = {
-    r"[A-Z]\w*" => <>.to_string(),
+TypeCon: TypeCon = {
+    r"[A-Z]\w*" => TypeCon::new(<>),
 }
 
-ExprVarName: Name = {
-    r"[a-z]\w*" => <>.to_string(),
+ExprVar: ExprVar = {
+    r"[a-z]\w*" => ExprVar::new(<>),
 }
 
-ExprConName: Name = {
-    r"[A-Z]\w*" => <>.to_string(),
+ExprCon: ExprCon = {
+    r"[A-Z]\w*" => ExprCon::new(<>),
 }
 
 Num: i64 = {

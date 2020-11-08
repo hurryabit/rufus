@@ -12,6 +12,7 @@ lalrpop_mod!(
 mod tests {
     mod parser {
         use crate::*;
+        use syntax::*;
 
         #[test]
         fn types_positive() {
@@ -21,20 +22,20 @@ mod tests {
             let cases = &[
                 ("Int", Int),
                 ("Bool", Bool),
-                ("a", Var("a".to_string())),
-                ("A", Synonym("A".to_string())),
+                ("a", Var(TypeVar::new("a"))),
+                ("A", Synonym(TypeCon::new("A"))),
                 ("() -> Int", Fun(vec![], Box::new(Int))),
                 ("(Int) -> Int", Fun(vec![Int], Box::new(Int))),
                 ("(Int,) -> Int", Fun(vec![Int], Box::new(Int))),
-                ("A<Int>", App("A".to_string(), vec![Int])),
-                ("A<Int,>", App("A".to_string(), vec![Int])),
+                ("A<Int>", App(TypeCon::new("A"), vec![Int])),
+                ("A<Int,>", App(TypeCon::new("A"), vec![Int])),
                 ("{}", Record(vec![])),
-                ("{a: Int}", Record(vec![("a".to_string(), Int)])),
-                ("{a: Int,}", Record(vec![("a".to_string(), Int)])),
-                ("[A | B(Int)]", Variant(vec![("A".to_string(), None), ("B".to_string(), Some(Int))])),
+                ("{a: Int}", Record(vec![(ExprVar::new("a"), Int)])),
+                ("{a: Int,}", Record(vec![(ExprVar::new("a"), Int)])),
+                ("[A | B(Int)]", Variant(vec![(ExprCon::new("A"), None), (ExprCon::new("B"), Some(Int))])),
                 // TODO(MH): We want to allow an optional leading "|" rather
                 // than a trailing one.
-                ("[A | B(Int) |]", Variant(vec![("A".to_string(), None), ("B".to_string(), Some(Int))])),
+                ("[A | B(Int) |]", Variant(vec![(ExprCon::new("A"), None), (ExprCon::new("B"), Some(Int))])),
             ];
 
             for (input, expected) in cases {
