@@ -25,10 +25,16 @@ mod tests {
                 ("A", Synonym("A".to_string())),
                 ("() -> Int", Fun(vec![], Box::new(Int))),
                 ("(Int) -> Int", Fun(vec![Int], Box::new(Int))),
+                ("(Int,) -> Int", Fun(vec![Int], Box::new(Int))),
                 ("A<Int>", App("A".to_string(), vec![Int])),
+                ("A<Int,>", App("A".to_string(), vec![Int])),
                 ("{}", Record(vec![])),
                 ("{a: Int}", Record(vec![("a".to_string(), Int)])),
+                ("{a: Int,}", Record(vec![("a".to_string(), Int)])),
                 ("[A | B(Int)]", Variant(vec![("A".to_string(), None), ("B".to_string(), Some(Int))])),
+                // TODO(MH): We want to allow an optional leading "|" rather
+                // than a trailing one.
+                ("[A | B(Int) |]", Variant(vec![("A".to_string(), None), ("B".to_string(), Some(Int))])),
             ];
 
             for (input, expected) in cases {
@@ -41,9 +47,16 @@ mod tests {
             let parser = parser::TypeParser::new();
 
             let cases = &[
+                // These makes no sense.
+                "(,) -> Int",
                 "A<>",
+                "{,}",
+                // This would not kind check but might give bad error messages
+                // because `Int` cannot be resolved.
                 "Int<Bool>",
+                // We don't have higher-kinded type variables.
                 "a<Int>",
+                // We don't support empty variants.
                 "[]",
             ];
 

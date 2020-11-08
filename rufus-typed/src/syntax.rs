@@ -1,6 +1,8 @@
 mod debruijn;
 mod iter;
 
+pub type Name = String;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Type {
     Var(Name),
@@ -14,21 +16,19 @@ pub enum Type {
     Variant(Vec<(Name, Option<Type>)>),
 }
 
-pub type Name = String;
-
 #[derive(Clone, Debug)]
 pub enum Expr {
     Var(Name),
     Num(i64),
     Bool(bool),
-    Lam(Vec<Name>, Box<Expr>),
-    FunApp(Box<Expr>, Vec<Expr>),
-    OpApp(Box<Expr>, OpCode, Box<Expr>),
-    TyLam(Vec<Name>, Box<Expr>),
-    TyApp(Box<Expr>, Vec<Type>),
-    Let(Name, Box<Expr>, Box<Expr>),
+    Lam(Vec<(Name, Option<Type>)>, Box<Expr>),
+    App(Box<Expr>, Vec<Expr>),
+    BinOp(Box<Expr>, OpCode, Box<Expr>),
+    TypeAbs(Vec<Name>, Box<Expr>),
+    TypeApp(Box<Expr>, Vec<Type>),
+    Let(Name, Option<Type>, Box<Expr>, Box<Expr>),
     If(Box<Expr>, Box<Expr>, Box<Expr>),
-    Record(Vec<Name>, Vec<Expr>),
+    Record(Vec<(Name, Expr)>),
     Proj(Box<Expr>, Name),
     Variant(Name, Option<Box<Expr>>),
     Match(Box<Expr>, Vec<Branch>),

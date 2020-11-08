@@ -1,121 +1,140 @@
+use std::str::FromStr;
+use lalrpop_util::ParseError;
 use crate::syntax::*;
 
 grammar;
 
 pub Type: Type  = {
-    TyVarName => Type::Var(<>),
+    TypeVarName => Type::Var(<>),
     "Int" => Type::Int,
     "Bool" => Type::Bool,
-    TyConName => Type::Synonym(<>),
+    TypeConName => Type::Synonym(<>),
     "(" <List0<Type, ",">> ")" "->" <Box<Type>> => Type::Fun(<>),
-    <TyConName> "<" <List1<Type, ",">> ">" => Type::App(<>),
-    "{" <List0<FieldType, ",">> "}" => Type::Record(<>),
-    "[" <List1<VariantConType, "|">> "]" => Type::Variant(<>),
-}
-
-FieldType: (Name, Type) = {
-    <TmVarName> ":" <Type> => (<>),
+    <TypeConName> "<" <List1<Type, ",">> ">" => Type::App(<>),
+    "{" <List0<RecordFieldType, ",">> "}" => Type::Record(<>),
+    "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
 }
 
 TypeInParens: Type = {
     "(" <Type> ")" => <>,
 }
 
-VariantConType: (Name, Option<Type>) = {
-    TmConName TypeInParens? => (<>),
+RecordFieldType: (Name, Type) = {
+    <ExprVarName> ":" <Type> => (<>),
 }
 
-// pub Expr: Expr = {
-//     SumExpr,
-//     "fun" <Name+> "->" <Box<Expr>> => Expr::Lam(<>),
-//     "let" <Name> "=" <Box<Expr>> "in" <Box<Expr>> => Expr::Let(<>),
-//     "if" <Box<Expr>> "then" <Box<Expr>> "else" <Box<Expr>> => Expr::If(<>),
-//     "let" "rec" <f:Name> "=" "fun" <xs:Name+> "->" <e1:Box<Expr>> "in" <e2:Box<Expr>> => {
-//         let mut ys = vec![f.clone()];
-//         ys.extend(xs);
-//         let lam = Expr::Lam(ys, e1);
-//         let fix = Box::new(Expr::PrimOp(OpCode::Fix));
-//         let e1 = Box::new(Expr::App(fix, vec![lam]));
-//         Expr::Let(f, e1, e2)
-//     },
-//     BinOp<SumExpr, CompOp, SumExpr>,
-// }
+VariantCaseType: (Name, Option<Type>) = {
+    ExprConName TypeInParens? => (<>),
+}
 
-// SumExpr: Expr = {
-//     BinOp<SumExpr, SumOp, ProductExpr>,
-//     ProductExpr,
-// }
+pub Expr: Expr = {
+    SumExpr,
+    BinOp<SumExpr, CompOp, SumExpr>,
+}
 
-// ProductExpr: Expr = {
-//     BinOp<ProductExpr, ProductOp, AppExpr>,
-//     AppExpr,
-// }
+BlockExpr: Expr = {
+    "{" <Statements> "}" => <>,
+}
 
-// AppExpr: Expr = {
-//     AtomExpr,
-//     Box<AtomExpr> AtomExpr+ => Expr::App(<>),
-// }
+Statements: Expr = {
+    Expr => <>,
+    "let" <ExprVarName> <OptTypeAnn> "=" <Box<Expr>> ";" <Box<Statements>> => Expr::Let(<>),
+    "let" <ExprVarName> <OptTypeAnn> "=" <Box<BlockExpr>> ";" <Box<Statements>> => Expr::Let(<>),
+}
 
-// AtomExpr: Expr = {
-//     Name => Expr::Var(<>, None),
-//     Num => Expr::Num(<>),
-//     Bool => Expr::Bool(<>),
-//     "(" <Expr> ")",
-//     "fix" => Expr::PrimOp(OpCode::Fix),
-//     "{" <fes:List0<RecordAssign, ";">> "}" => {
-//         let (fs, es) = fes.into_iter().unzip();
-//         Expr::Record(fs, es)
-//     },
-//     <Box<AtomExpr>> "." <Name> => Expr::Proj(<>),
-// }
+SumExpr: Expr = {
+    BinOp<SumExpr, SumOp, ProductExpr>,
+    ProductExpr,
+}
 
-// RecordAssign: (Name, Expr) = {
-//     <Name> "=" <Expr> => (<>),
-// }
+ProductExpr: Expr = {
+    BinOp<ProductExpr, ProductOp, AtomExpr>,
+    AtomExpr,
+}
 
-TyVarName: Name = {
+AtomExpr: Expr = {
+    ExprInParens => <>,
+    ExprVarName => Expr::Var(<>),
+    Num => Expr::Num(<>),
+    Bool => Expr::Bool(<>),
+    // TODO(MH): Merge the two rules below.
+    "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<BlockExpr>> => Expr::Lam(<>),
+    "fn" "<" <tyvars: List1<TypeVarName, ",">> ">" "(" <exvars: List0<Param<OptTypeAnn>, ",">> ")" <body: Box<BlockExpr>> => Expr::TypeAbs(tyvars, Box::new(Expr::Lam(exvars, body))),
+    // TODO(MH): Merge the two rules below.
+    <fun: ExprVarName> "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::Var(fun)), args),
+    // NOTE(MH): Ideally, we would not have the "@" symbol before the angle
+    // brackets, but that would make the expression `f(g<a, b>(c))` ambiguous
+    // to parse. With `f(g@<a, b>(c))` there's no ambiguity.
+    <fun: ExprVarName> "@" "<" <tyargs: List1<Type, ",">> ">" "(" <exargs: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::TypeApp(Box::new(Expr::Var(fun)), tyargs)), exargs),
+    "if" <Box<Expr>> <Box<BlockExpr>> "else" <Box<BlockExpr>> => Expr::If(<>),
+    "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
+    <Box<AtomExpr>> "." <ExprVarName> => Expr::Proj(<>),
+    <ExprConName> <Box<ExprInParens>?> => Expr::Variant(<>),
+}
+
+ExprInParens: Expr = {
+    "(" <Expr> ")" => <>,
+}
+
+OptTypeAnn: Option<Type> = {
+    => None,
+    ":" <Type> => Some(<>),
+}
+
+Param<T>: (Name, T) = {
+    ExprVarName T => (<>),
+}
+
+RecordAssign: (Name, Expr) = {
+    <ExprVarName> "=" <Expr> => (<>),
+}
+
+TypeVarName: Name = {
     r"[a-z]\w*" => <>.to_string(),
 }
 
-TyConName: Name = {
+TypeConName: Name = {
     r"[A-Z]\w*" => <>.to_string(),
 }
 
-TmVarName: Name = {
+ExprVarName: Name = {
     r"[a-z]\w*" => <>.to_string(),
 }
 
-TmConName: Name = {
+ExprConName: Name = {
     r"[A-Z]\w*" => <>.to_string(),
 }
 
-// Num: i64 = {
-//     r"[0-9]+" => i64::from_str(<>).unwrap(),
-// }
+Num: i64 = {
+    r"[0-9]+" =>? i64::from_str(<>)
+        .map_err(|_| ParseError::User {
+            error: "number literal is too big"
+        })
+};
 
-// Bool: bool = {
-//     "false" => false,
-//     "true" => true,
-// }
+Bool: bool = {
+    "false" => false,
+    "true" => true,
+}
 
-// SumOp: OpCode = {
-//     "+" => OpCode::Add,
-//     "-" => OpCode::Sub,
-// }
+SumOp: OpCode = {
+    "+" => OpCode::Add,
+    "-" => OpCode::Sub,
+}
 
-// ProductOp: OpCode = {
-//     "*" => OpCode::Mul,
-//     "/" => OpCode::Div,
-// }
+ProductOp: OpCode = {
+    "*" => OpCode::Mul,
+    "/" => OpCode::Div,
+}
 
-// CompOp: OpCode = {
-//     "==" => OpCode::Equals,
-//     "!=" => OpCode::NotEq,
-//     "<" => OpCode::Less,
-//     "<=" => OpCode::LessEq,
-//     ">" => OpCode::Greater,
-//     ">=" => OpCode::GreaterEq,
-// }
+CompOp: OpCode = {
+    "==" => OpCode::Equals,
+    "!=" => OpCode::NotEq,
+    "<" => OpCode::Less,
+    "<=" => OpCode::LessEq,
+    ">" => OpCode::Greater,
+    ">=" => OpCode::GreaterEq,
+}
 
 Box<T>: Box<T> = {
     <T> => Box::new(<>),
@@ -127,14 +146,13 @@ List0<T, Sep>: Vec<T> = {
 }
 
 List1<T, Sep>: Vec<T> = {
-    <ts:(<T> Sep)*> <t:T> Sep? => {
+    <ts: (<T> Sep)*> <t: T> Sep? => {
         let mut ts = ts;
         ts.push(t);
         ts
     },
 }
 
-
-// BinOp<X, Op, Y>: Expr = {
-//     <x:X> <op:Op> <y:Y> => Expr::App(Box::new(Expr::PrimOp(op)), vec![x, y]),
-// }
+BinOp<X, Op, Y>: Expr = {
+    <x: Box<X>> <op: Op> <y: Box<Y>> => Expr::BinOp(<>),
+}
