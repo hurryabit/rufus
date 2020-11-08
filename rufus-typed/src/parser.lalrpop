@@ -15,16 +15,12 @@ pub Type: Type  = {
     "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
 }
 
-TypeInParens: Type = {
-    "(" <Type> ")" => <>,
-}
-
 RecordFieldType: (ExprVar, Type) = {
     <ExprVar> ":" <Type> => (<>),
 }
 
 VariantCaseType: (ExprCon, Option<Type>) = {
-    ExprCon TypeInParens? => (<>),
+    ExprCon InParens<Type>? => (<>),
 }
 
 pub Expr: Expr = {
@@ -34,6 +30,7 @@ pub Expr: Expr = {
     "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<BlockExpr>> => Expr::Lam(<>),
     "fn" "<" <tyvars: List1<TypeVar, ",">> ">" "(" <exvars: List0<Param<OptTypeAnn>, ",">> ")" <body: Box<BlockExpr>> => Expr::TypeAbs(tyvars, Box::new(Expr::Lam(exvars, body))),
     "if" <Box<Expr>> <Box<BlockExpr>> "else" <Box<BlockExpr>> => Expr::If(<>),
+    "match" <Box<Expr>> "{" <Branch+> "}" => Expr::Match(<>),
 }
 
 pub BlockExpr: Expr = {
@@ -57,7 +54,7 @@ ProductExpr: Expr = {
 }
 
 AtomExpr: Expr = {
-    ExprInParens => <>,
+    InParens<Expr> => <>,
     ExprVar => Expr::Var(<>),
     Num => Expr::Num(<>),
     Bool => Expr::Bool(<>),
@@ -69,11 +66,7 @@ AtomExpr: Expr = {
     <fun: ExprVar> "@" "<" <tyargs: List1<Type, ",">> ">" "(" <exargs: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::TypeApp(Box::new(Expr::Var(fun)), tyargs)), exargs),
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
-    <ExprCon> <Box<ExprInParens>?> => Expr::Variant(<>),
-}
-
-ExprInParens: Expr = {
-    "(" <Expr> ")" => <>,
+    <ExprCon> <Box<InParens<Expr>>?> => Expr::Variant(<>),
 }
 
 OptTypeAnn: Option<Type> = {
@@ -87,6 +80,11 @@ Param<T>: (ExprVar, T) = {
 
 RecordAssign: (ExprVar, Expr) = {
     <ExprVar> "=" <Expr> => (<>),
+}
+
+Branch: Branch = {
+    <con: ExprCon> <var: InParens<ExprVar>?> "=>" <rhs: BlockExpr> => Branch { con, var, rhs },
+    <con: ExprCon> <var: InParens<ExprVar>?> "=>" <rhs: Expr> "," => Branch { con, var, rhs },
 }
 
 TypeVar: TypeVar = {
@@ -157,4 +155,8 @@ List1<T, Sep>: Vec<T> = {
 
 BinOp<X, Op, Y>: Expr = {
     <x: Box<X>> <op: Op> <y: Box<Y>> => Expr::BinOp(<>),
+}
+
+InParens<X>: X = {
+    "(" <X> ")" => <>,
 }

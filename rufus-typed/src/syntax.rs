@@ -46,9 +46,9 @@ pub enum Expr {
 
 #[derive(Clone, Debug)]
 pub struct Branch {
-    con: ExprCon,
-    var: Option<ExprVar>,
-    rhs: Expr,
+    pub con: ExprCon,
+    pub var: Option<ExprVar>,
+    pub rhs: Expr,
 }
 
 #[derive(Clone, Copy, Debug)]

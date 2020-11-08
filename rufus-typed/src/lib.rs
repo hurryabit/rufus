@@ -1027,6 +1027,224 @@ mod tests {
                 )
                 "###);
             }
+
+            #[test]
+            fn match1_novar() {
+                insta::assert_debug_snapshot!(parse("match x { A => 1, }"), @r###"
+                Match(
+                    Var(
+                        ExprVar(
+                            "x",
+                        ),
+                    ),
+                    [
+                        Branch {
+                            con: ExprCon(
+                                "A",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                1,
+                            ),
+                        },
+                    ],
+                )
+                "###);
+            }
+
+            #[test]
+            fn match1_var() {
+                insta::assert_debug_snapshot!(parse("match x { A(y) => 1, }"), @r###"
+                Match(
+                    Var(
+                        ExprVar(
+                            "x",
+                        ),
+                    ),
+                    [
+                        Branch {
+                            con: ExprCon(
+                                "A",
+                            ),
+                            var: Some(
+                                ExprVar(
+                                    "y",
+                                ),
+                            ),
+                            rhs: Num(
+                                1,
+                            ),
+                        },
+                    ],
+                )
+                "###);
+            }
+
+            #[test]
+            fn match1_block() {
+                insta::assert_debug_snapshot!(parse("match x { A => { 1 } }"), @r###"
+                Match(
+                    Var(
+                        ExprVar(
+                            "x",
+                        ),
+                    ),
+                    [
+                        Branch {
+                            con: ExprCon(
+                                "A",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                1,
+                            ),
+                        },
+                    ],
+                )
+                "###);
+            }
+
+            #[test]
+            fn match1_expr_nocomma() {
+                insta::assert_debug_snapshot!(parse_err("match x { A => 1 }"), @r###""Unrecognized token `}` found at 17:18\nExpected one of \",\"""###);
+            }
+
+            #[test]
+            fn match1_block_comma() {
+                insta::assert_debug_snapshot!(parse_err("match x { A => { 1 }, }"), @r###""Unrecognized token `,` found at 20:21\nExpected one of \"Bool\", \"Int\", \"}\" or r#\"[A-Z]\\\\w*\"#""###);
+            }
+
+            #[test]
+            fn match2_exprs() {
+                insta::assert_debug_snapshot!(parse("match x { A => 1, B => 2, }"), @r###"
+                Match(
+                    Var(
+                        ExprVar(
+                            "x",
+                        ),
+                    ),
+                    [
+                        Branch {
+                            con: ExprCon(
+                                "A",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                1,
+                            ),
+                        },
+                        Branch {
+                            con: ExprCon(
+                                "B",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                2,
+                            ),
+                        },
+                    ],
+                )
+                "###);
+            }
+
+            #[test]
+            fn match2_expr_block() {
+                insta::assert_debug_snapshot!(parse("match x { A => 1, B => { 2 } }"), @r###"
+                Match(
+                    Var(
+                        ExprVar(
+                            "x",
+                        ),
+                    ),
+                    [
+                        Branch {
+                            con: ExprCon(
+                                "A",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                1,
+                            ),
+                        },
+                        Branch {
+                            con: ExprCon(
+                                "B",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                2,
+                            ),
+                        },
+                    ],
+                )
+                "###);
+            }
+
+            #[test]
+            fn match2_block_expr() {
+                insta::assert_debug_snapshot!(parse("match x { A => { 1 } B => 2, }"), @r###"
+                Match(
+                    Var(
+                        ExprVar(
+                            "x",
+                        ),
+                    ),
+                    [
+                        Branch {
+                            con: ExprCon(
+                                "A",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                1,
+                            ),
+                        },
+                        Branch {
+                            con: ExprCon(
+                                "B",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                2,
+                            ),
+                        },
+                    ],
+                )
+                "###);
+            }
+
+            #[test]
+            fn match2_blocks() {
+                insta::assert_debug_snapshot!(parse("match x { A => { 1 } B => { 2 } }"), @r###"
+                Match(
+                    Var(
+                        ExprVar(
+                            "x",
+                        ),
+                    ),
+                    [
+                        Branch {
+                            con: ExprCon(
+                                "A",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                1,
+                            ),
+                        },
+                        Branch {
+                            con: ExprCon(
+                                "B",
+                            ),
+                            var: None,
+                            rhs: Num(
+                                2,
+                            ),
+                        },
+                    ],
+                )
+                "###);
+            }
         }
     }
 }
