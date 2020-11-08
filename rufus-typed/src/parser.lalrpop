@@ -1,0 +1,140 @@
+use crate::syntax::*;
+
+grammar;
+
+pub Type: Type  = {
+    TyVarName => Type::Var(<>),
+    "Int" => Type::Int,
+    "Bool" => Type::Bool,
+    TyConName => Type::Synonym(<>),
+    "(" <List0<Type, ",">> ")" "->" <Box<Type>> => Type::Fun(<>),
+    <TyConName> "<" <List1<Type, ",">> ">" => Type::App(<>),
+    "{" <List0<FieldType, ",">> "}" => Type::Record(<>),
+    "[" <List1<VariantConType, "|">> "]" => Type::Variant(<>),
+}
+
+FieldType: (Name, Type) = {
+    <TmVarName> ":" <Type> => (<>),
+}
+
+TypeInParens: Type = {
+    "(" <Type> ")" => <>,
+}
+
+VariantConType: (Name, Option<Type>) = {
+    TmConName TypeInParens? => (<>),
+}
+
+// pub Expr: Expr = {
+//     SumExpr,
+//     "fun" <Name+> "->" <Box<Expr>> => Expr::Lam(<>),
+//     "let" <Name> "=" <Box<Expr>> "in" <Box<Expr>> => Expr::Let(<>),
+//     "if" <Box<Expr>> "then" <Box<Expr>> "else" <Box<Expr>> => Expr::If(<>),
+//     "let" "rec" <f:Name> "=" "fun" <xs:Name+> "->" <e1:Box<Expr>> "in" <e2:Box<Expr>> => {
+//         let mut ys = vec![f.clone()];
+//         ys.extend(xs);
+//         let lam = Expr::Lam(ys, e1);
+//         let fix = Box::new(Expr::PrimOp(OpCode::Fix));
+//         let e1 = Box::new(Expr::App(fix, vec![lam]));
+//         Expr::Let(f, e1, e2)
+//     },
+//     BinOp<SumExpr, CompOp, SumExpr>,
+// }
+
+// SumExpr: Expr = {
+//     BinOp<SumExpr, SumOp, ProductExpr>,
+//     ProductExpr,
+// }
+
+// ProductExpr: Expr = {
+//     BinOp<ProductExpr, ProductOp, AppExpr>,
+//     AppExpr,
+// }
+
+// AppExpr: Expr = {
+//     AtomExpr,
+//     Box<AtomExpr> AtomExpr+ => Expr::App(<>),
+// }
+
+// AtomExpr: Expr = {
+//     Name => Expr::Var(<>, None),
+//     Num => Expr::Num(<>),
+//     Bool => Expr::Bool(<>),
+//     "(" <Expr> ")",
+//     "fix" => Expr::PrimOp(OpCode::Fix),
+//     "{" <fes:List0<RecordAssign, ";">> "}" => {
+//         let (fs, es) = fes.into_iter().unzip();
+//         Expr::Record(fs, es)
+//     },
+//     <Box<AtomExpr>> "." <Name> => Expr::Proj(<>),
+// }
+
+// RecordAssign: (Name, Expr) = {
+//     <Name> "=" <Expr> => (<>),
+// }
+
+TyVarName: Name = {
+    r"[a-z]\w*" => <>.to_string(),
+}
+
+TyConName: Name = {
+    r"[A-Z]\w*" => <>.to_string(),
+}
+
+TmVarName: Name = {
+    r"[a-z]\w*" => <>.to_string(),
+}
+
+TmConName: Name = {
+    r"[A-Z]\w*" => <>.to_string(),
+}
+
+// Num: i64 = {
+//     r"[0-9]+" => i64::from_str(<>).unwrap(),
+// }
+
+// Bool: bool = {
+//     "false" => false,
+//     "true" => true,
+// }
+
+// SumOp: OpCode = {
+//     "+" => OpCode::Add,
+//     "-" => OpCode::Sub,
+// }
+
+// ProductOp: OpCode = {
+//     "*" => OpCode::Mul,
+//     "/" => OpCode::Div,
+// }
+
+// CompOp: OpCode = {
+//     "==" => OpCode::Equals,
+//     "!=" => OpCode::NotEq,
+//     "<" => OpCode::Less,
+//     "<=" => OpCode::LessEq,
+//     ">" => OpCode::Greater,
+//     ">=" => OpCode::GreaterEq,
+// }
+
+Box<T>: Box<T> = {
+    <T> => Box::new(<>),
+}
+
+List0<T, Sep>: Vec<T> = {
+    => Vec::new(),
+    List1<T, Sep> => <>,
+}
+
+List1<T, Sep>: Vec<T> = {
+    <ts:(<T> Sep)*> <t:T> Sep? => {
+        let mut ts = ts;
+        ts.push(t);
+        ts
+    },
+}
+
+
+// BinOp<X, Op, Y>: Expr = {
+//     <x:X> <op:Op> <y:Y> => Expr::App(Box::new(Expr::PrimOp(op)), vec![x, y]),
+// }
