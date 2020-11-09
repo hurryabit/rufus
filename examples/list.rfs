@@ -1,0 +1,8 @@
+type List<A> = [ Nil | Cons({ head: A, tail: List<A> }) ]
+
+fn map<A, B>(l: List<A>, f: (A) -> B) -> List<B> {
+    match l {
+        Nil => Nil,
+        Cons(l) => Cons({ head = f(l.head), tail = map(f, l.tail) }),
+    }
+}
