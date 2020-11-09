@@ -23,7 +23,8 @@
                 "id": "rufus",
                 "extensions": [
                     ".rfs"
-                ]
+                ],
+                "configuration": "./language-configuration.json"
             }
         ],
         "grammars": [
