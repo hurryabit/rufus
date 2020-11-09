@@ -1,14 +1,15 @@
 {
+	"private": true,
 	"name": "rufus-vscode",
 	"description": "Rufus VSCode Extension",
 	"author": "Martin Huschenbett <martin.huschenbett@posteo.me>",
+	"publisher": "hurryabit",
 	"license": "Apache-2.0",
 	"version": "0.1.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/hurryabit/rufus"
 	},
-	"publisher": "hurryabit",
 	"engines": {
 		"vscode": "^1.43.0"
 	},
