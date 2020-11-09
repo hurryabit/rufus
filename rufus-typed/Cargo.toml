@@ -16,6 +16,7 @@ lalrpop = { version = "0.19.0", features = ["lexer"] }
 genawaiter = "0.99.1"
 lalrpop-util = "0.19.0"
 regex = "1.3.9"
+serde = "1.0.117"
 
 [dev-dependencies]
 insta = "1.1.0"

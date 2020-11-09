@@ -8,118 +8,60 @@ fn parse(input: &str) -> Decl {
 
 #[test]
 fn type_mono() {
-    insta::assert_debug_snapshot!(parse("type T = Int"), @r###"
-    Type(
-        TypeDecl {
-            name: TypeVar(
-                "T",
-            ),
-            params: [],
-            body: Var(
-                TypeVar(
-                    "Int",
-                ),
-            ),
-        },
-    )
+    insta::assert_yaml_snapshot!(parse("type T = Int"), @r###"
+    ---
+    Type:
+      name: T
+      params: []
+      body:
+        Var: Int
     "###);
 }
 
 #[test]
 fn type_poly() {
-    insta::assert_debug_snapshot!(parse("type T<A> = A"), @r###"
-    Type(
-        TypeDecl {
-            name: TypeVar(
-                "T",
-            ),
-            params: [
-                TypeVar(
-                    "A",
-                ),
-            ],
-            body: Var(
-                TypeVar(
-                    "A",
-                ),
-            ),
-        },
-    )
+    insta::assert_yaml_snapshot!(parse("type T<A> = A"), @r###"
+    ---
+    Type:
+      name: T
+      params:
+        - A
+      body:
+        Var: A
     "###);
 }
 
 #[test]
 fn func_mono() {
-    insta::assert_debug_snapshot!(parse("fn id(x: Int) -> Int { x }"), @r###"
-    Func(
-        FuncDecl {
-            name: ExprVar(
-                "id",
-            ),
-            type_params: [],
-            expr_params: [
-                (
-                    ExprVar(
-                        "x",
-                    ),
-                    Var(
-                        TypeVar(
-                            "Int",
-                        ),
-                    ),
-                ),
-            ],
-            return_type: Var(
-                TypeVar(
-                    "Int",
-                ),
-            ),
-            body: Var(
-                ExprVar(
-                    "x",
-                ),
-            ),
-        },
-    )
+    insta::assert_yaml_snapshot!(parse("fn id(x: Int) -> Int { x }"), @r###"
+    ---
+    Func:
+      name: id
+      type_params: []
+      expr_params:
+        - - x
+          - Var: Int
+      return_type:
+        Var: Int
+      body:
+        Var: x
     "###);
 }
 
 #[test]
 fn func_poly() {
-    insta::assert_debug_snapshot!(parse("fn id<A>(x: A) -> A { x }"), @r###"
-    Func(
-        FuncDecl {
-            name: ExprVar(
-                "id",
-            ),
-            type_params: [
-                TypeVar(
-                    "A",
-                ),
-            ],
-            expr_params: [
-                (
-                    ExprVar(
-                        "x",
-                    ),
-                    Var(
-                        TypeVar(
-                            "A",
-                        ),
-                    ),
-                ),
-            ],
-            return_type: Var(
-                TypeVar(
-                    "A",
-                ),
-            ),
-            body: Var(
-                ExprVar(
-                    "x",
-                ),
-            ),
-        },
-    )
+    insta::assert_yaml_snapshot!(parse("fn id<A>(x: A) -> A { x }"), @r###"
+    ---
+    Func:
+      name: id
+      type_params:
+        - A
+      expr_params:
+        - - x
+          - Var: A
+      return_type:
+        Var: A
+      body:
+        Var: x
     "###);
 }

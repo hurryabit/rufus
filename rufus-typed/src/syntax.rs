@@ -1,25 +1,27 @@
+use serde::Serialize;
+
 mod debruijn;
 mod iter;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Module {
     pub decls: Vec<Decl>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Decl {
     Type(TypeDecl),
     Func(FuncDecl),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct TypeDecl {
     pub name: TypeVar,
     pub params: Vec<TypeVar>,
     pub body: Type,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct FuncDecl {
     pub name: ExprVar,
     pub type_params: Vec<TypeVar>,
@@ -28,16 +30,16 @@ pub struct FuncDecl {
     pub body: Expr,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct TypeVar(String);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ExprVar(String);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ExprCon(String);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub enum Type {
     Var(TypeVar),
     Syn(TypeVar),
@@ -50,7 +52,7 @@ pub enum Type {
     Variant(Vec<(ExprCon, Option<Type>)>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Expr {
     Var(ExprVar),
     Num(i64),
@@ -68,14 +70,14 @@ pub enum Expr {
     Match(Box<Expr>, Vec<Branch>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct Branch {
     pub con: ExprCon,
     pub var: Option<ExprVar>,
     pub rhs: Expr,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub enum OpCode {
     Add,
     Sub,
