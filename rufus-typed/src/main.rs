@@ -7,7 +7,7 @@ use lsp_types::{
         PublishDiagnostics,
     },
     request::GotoDefinition,
-    Diagnostic, DiagnosticSeverity, GotoDefinitionResponse, InitializeParams, Position,
+    Diagnostic, DiagnosticSeverity, GotoDefinitionResponse, InitializeParams,
     PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities, TextDocumentItem,
     TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
     TextDocumentSyncSaveOptions, Url,
@@ -15,7 +15,7 @@ use lsp_types::{
 
 use lsp_server::{Connection, Message, Request, RequestId, Response};
 
-use rufus_typed::parser;
+use rufus_typed::{parser, util};
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Set up logging. Because `stdio_transport` gets a lock on stdout and stdin, we must have
@@ -128,8 +128,25 @@ fn validate_document(
     let diagnostics = match parser.parse(&input) {
         Ok(_ast) => vec![],
         Err(err) => {
+            use lalrpop_util::ParseError::*;
+            use util::Position;
+            let trans = util::PositionTranslator::new(&input);
+            let err = err.map_location(|index| trans.position(index));
+            let (start, end) = match err {
+                InvalidToken { location } | UnrecognizedEOF { location, .. } => {
+                    (location, location)
+                }
+                UnrecognizedToken {
+                    token: (start, _, end),
+                    ..
+                }
+                | ExtraToken {
+                    token: (start, _, end),
+                } => (start, end),
+                User { .. } => (Position::ORIGIN, Position::ORIGIN),
+            };
             let diagnostic = Diagnostic {
-                range: Range::new(Position::new(0, 0), Position::new(0, 0)),
+                range: Range::new(start.to_lsp(), end.to_lsp()),
                 severity: Some(DiagnosticSeverity::Error),
                 source: Some("rufus".to_string()),
                 message: format!("{}", err),

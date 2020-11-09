@@ -7,6 +7,8 @@ lalrpop_mod!(
     pub parser
 );
 
+pub mod util;
+
 #[cfg(test)]
 mod tests {
     mod parser;
