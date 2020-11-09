@@ -14,10 +14,11 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	// If the extension is launched in debug mode then the debug server options are used
-	// Otherwise the run options are used
+	let config = workspace.getConfiguration('rufus');
+	let serverExecutable = config.get('serverExecutable') as string;
 	let serverOptions: ServerOptions = {
-		command: '/Users/martin/GitHub/rufus/target/debug/rufus-typed'
+		// command: '/Users/martin/GitHub/rufus/target/debug/rufus-typed'
+		command: serverExecutable,
 	};
 
 	// Options to control the language client

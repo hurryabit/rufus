@@ -25,7 +25,18 @@
 					".rfs"
 				]
 			}
-		]
+		],
+        "configuration": {
+            "type": "object",
+            "title": "Rufus Configuration",
+            "properties": {
+                "rufus.serverExecutable": {
+                    "type": "string",
+                    "default": "rufus",
+                    "description": "Path to the Rufus Language Server executable"
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
