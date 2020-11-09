@@ -107,8 +107,10 @@ fn module() {
                         ),
                     ],
                     return_type: App(
-                        TypeVar(
-                            "Poly",
+                        Var(
+                            TypeVar(
+                                "Poly",
+                            ),
                         ),
                         [
                             Var(

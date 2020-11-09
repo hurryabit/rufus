@@ -43,7 +43,7 @@ pub enum Type {
     Int,
     Bool,
     Fun(Vec<Type>, Box<Type>),
-    App(TypeVar, Vec<Type>),
+    App(Box<Type>, Vec<Type>),
     Abs(Vec<TypeVar>, Box<Type>),
     Record(Vec<(ExprVar, Type)>),
     Variant(Vec<(ExprCon, Option<Type>)>),
@@ -86,6 +86,13 @@ pub enum OpCode {
     LessEq,
     Greater,
     GreaterEq,
+}
+
+impl Type {
+    pub fn var_app(var: TypeVar, args: Vec<Self>) -> Self {
+        use Type::*;
+        App(Box::new(Var(var)), args)
+    }
 }
 
 impl TypeVar {
