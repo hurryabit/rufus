@@ -1,12 +1,10 @@
 use rufus_typed::parser;
 
-type ParseErrorRaw<'a> = lalrpop_util::ParseError<usize, parser::Token<'a>, &'static str>;
-type ParseError = lalrpop_util::ParseError<usize, String, &'static str>;
-
 #[derive(Debug)]
 enum Error {
     Io(std::io::Error),
-    Parse(ParseError),
+    Parse(lalrpop_util::ParseError<usize, String, &'static str>),
+    Yaml(serde_yaml::Error),
 }
 
 impl From<std::io::Error> for Error {
@@ -15,11 +13,16 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<ParseErrorRaw<'_>> for Error {
-    fn from(err: ParseErrorRaw) -> Self {
+impl From<lalrpop_util::ParseError<usize, parser::Token<'_>, &'static str>> for Error {
+    fn from(err: lalrpop_util::ParseError<usize, parser::Token<'_>, &'static str>) -> Self {
         Self::Parse(err.map_token(|t| format!("{}", t)))
     }
+}
 
+impl From<serde_yaml::Error> for Error {
+    fn from(err: serde_yaml::Error) -> Self {
+        Self::Yaml(err)
+    }
 }
 
 fn main() -> Result<(), Error> {
@@ -31,6 +34,6 @@ fn main() -> Result<(), Error> {
     let input = std::fs::read_to_string(path)?;
     let parser = parser::ModuleParser::new();
     let ast = parser.parse(&input)?;
-    println!("{:#?}", ast);
+    serde_yaml::to_writer(std::io::stdout(), &ast)?;
     Ok(())
 }
