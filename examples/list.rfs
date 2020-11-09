@@ -1,5 +1,7 @@
+// A type for lists.
 type List<A> = [ Nil | Cons({ head: A, tail: List<A> }) ]
 
+// Mapping a function over a list.
 fn map<A, B>(l: List<A>, f: (A) -> B) -> List<B> {
     match l {
         Nil => Nil,

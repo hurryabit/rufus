@@ -175,3 +175,45 @@ BinOp<X, Op, Y>: Expr = {
 InParens<X>: X = {
     "(" <X> ")" => <>,
 }
+
+match {
+    "type",
+    "fn",
+    "let",
+    "if",
+    "else",
+    "match",
+    "true",
+    "false",
+    "(",
+    ")",
+    "{",
+    "}",
+    "[",
+    "]",
+    "<",
+    ">",
+    "->",
+    "=>",
+    ":",
+    ".",
+    ",",
+    ";",
+    "|",
+    "@",
+    "=",
+    "==",
+    "!=",
+    "<=",
+    ">=",
+    "+",
+    "-",
+    "*",
+    "/",
+    r"[A-Z]\w*",
+    r"[a-z]\w*",
+    r"[0-9]+",
+    r"\s*" => { }, // The default whitespace skipping is disabled an `ignore pattern` is specified
+    r"//[^\n\r]*[\n\r]*" => { }, // Skip `// comments`
+    r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  // Skip `/* comments */`
+}
