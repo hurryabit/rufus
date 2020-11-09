@@ -25,7 +25,7 @@ FuncDecl: FuncDecl = {
 
 TypeParams: Vec<TypeVar> = {
     => vec![],
-    "<" <List1<TypeVar, ",">> ">" => <>,
+    "<" <List1<TypeVar, ",">> ">",
 }
 
 pub Type: Type = {
@@ -51,11 +51,11 @@ pub Expr: Expr = {
 }
 
 pub BlockExpr: Expr = {
-    "{" <Statements> "}" => <>,
+    "{" <Statements> "}",
 }
 
 Statements: Expr = {
-    Expr => <>,
+    Expr,
     "let" <ExprVar> <OptTypeAnn> "=" <Box<Expr>> ";" <Box<Statements>> => Expr::Let(<>),
     "let" <ExprVar> <OptTypeAnn> "=" <Box<BlockExpr>> ";" <Box<Statements>> => Expr::Let(<>),
 }
@@ -71,7 +71,7 @@ ProductExpr: Expr = {
 }
 
 AtomExpr: Expr = {
-    InParens<Expr> => <>,
+    InParens<Expr>,
     ExprVar => Expr::Var(<>),
     Num => Expr::Num(<>),
     Bool => Expr::Bool(<>),
@@ -87,7 +87,7 @@ AtomExpr: Expr = {
 }
 
 TypeAnn: Type = {
-    ":" <Type> => <>,
+    ":" <Type>,
 }
 
 OptTypeAnn: Option<Type> = {
@@ -109,19 +109,19 @@ Branch: Branch = {
 }
 
 TypeVar: TypeVar = {
-    r"[A-Z]\w*" => TypeVar::new(<>),
+    ID_UPPER => TypeVar::new(<>),
 }
 
 ExprVar: ExprVar = {
-    r"[a-z]\w*" => ExprVar::new(<>),
+    ID_LOWER => ExprVar::new(<>),
 }
 
 ExprCon: ExprCon = {
-    r"[A-Z]\w*" => ExprCon::new(<>),
+    ID_UPPER => ExprCon::new(<>),
 }
 
 Num: i64 = {
-    r"[0-9]+" =>? i64::from_str(<>)
+    NUMBER =>? i64::from_str(<>)
         .map_err(|_| ParseError::User {
             error: "number literal is too big"
         })
@@ -157,7 +157,7 @@ Box<T>: Box<T> = {
 
 List0<T, Sep>: Vec<T> = {
     => Vec::new(),
-    List1<T, Sep> => <>,
+    List1<T, Sep>,
 }
 
 List1<T, Sep>: Vec<T> = {
@@ -173,7 +173,7 @@ BinOp<X, Op, Y>: Expr = {
 }
 
 InParens<X>: X = {
-    "(" <X> ")" => <>,
+    "(" <X> ")",
 }
 
 match {
@@ -185,35 +185,11 @@ match {
     "match",
     "true",
     "false",
-    "(",
-    ")",
-    "{",
-    "}",
-    "[",
-    "]",
-    "<",
-    ">",
-    "->",
-    "=>",
-    ":",
-    ".",
-    ",",
-    ";",
-    "|",
-    "@",
-    "=",
-    "==",
-    "!=",
-    "<=",
-    ">=",
-    "+",
-    "-",
-    "*",
-    "/",
-    r"[A-Z]\w*",
-    r"[a-z]\w*",
-    r"[0-9]+",
+    r"[A-Z]\w*" => ID_UPPER,
+    r"[a-z]\w*" => ID_LOWER,
+    r"[0-9]+" => NUMBER,
     r"\s*" => { }, // The default whitespace skipping is disabled an `ignore pattern` is specified
     r"//[^\n\r]*[\n\r]*" => { }, // Skip `// comments`
     r"/\*([^\*]*\*+[^\*/])*([^\*]*\*+|[^\*])*\*/" => { },  // Skip `/* comments */`
+    _
 }

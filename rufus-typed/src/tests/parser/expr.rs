@@ -607,7 +607,7 @@ fn match1_expr_nocomma() {
 fn match1_block_comma() {
     insta::assert_display_snapshot!(parse_err("match x { A => { 1 }, }"), @r###"
     Unrecognized token `,` found at 20:21
-    Expected one of "}" or r#"[A-Z]\\w*"#
+    Expected one of "}" or ID_UPPER
     "###);
 }
 
