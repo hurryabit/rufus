@@ -1,18 +1,14 @@
 {
-	"name": "lsp-sample",
-	"description": "A language server example",
-	"author": "Microsoft Corporation",
-	"license": "MIT",
-	"version": "1.0.0",
+	"name": "rufus-vscode",
+	"description": "Rufus VSCode Extension",
+	"author": "Martin Huschenbett <martin.huschenbett@posteo.me>",
+	"license": "Apache-2.0",
+	"version": "0.1.0",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/hurryabit/rufus"
 	},
-	"publisher": "vscode-samples",
-	"categories": [],
-	"keywords": [
-		"multi-root ready"
-	],
+	"publisher": "hurryabit",
 	"engines": {
 		"vscode": "^1.43.0"
 	},
@@ -21,29 +17,6 @@
 	],
 	"main": "./out/extension",
 	"contributes": {
-		"configuration": {
-			"type": "object",
-			"title": "Example configuration",
-			"properties": {
-				"languageServerExample.maxNumberOfProblems": {
-					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
-				},
-				"languageServerExample.trace.server": {
-					"scope": "window",
-					"type": "string",
-					"enum": [
-						"off",
-						"messages",
-						"verbose"
-					],
-					"default": "off",
-					"description": "Traces the communication between VS Code and the language server."
-				}
-			}
-		},
 		"languages": [
 			{
 				"id": "rufus",
@@ -62,13 +35,10 @@
 		"vscode-languageclient": "^6.1.3"
 	},
 	"devDependencies": {
-		"@types/mocha": "^8.0.3",
-		"mocha": "^8.1.1",
 		"@types/node": "^12.12.0",
-		"eslint": "^6.4.0",
-		"@typescript-eslint/parser": "^2.3.0",
-		"typescript": "^4.0.2",
 		"@types/vscode": "1.43.0",
-		"vscode-test": "^1.3.0"
+		"@typescript-eslint/parser": "^2.3.0",
+		"eslint": "^6.4.0",
+		"typescript": "^4.0.2"
 	}
 }
