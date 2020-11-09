@@ -8,8 +8,9 @@ use lsp_types::{
     },
     request::GotoDefinition,
     Diagnostic, DiagnosticSeverity, GotoDefinitionResponse, InitializeParams, Position,
-    PublishDiagnosticsParams, Range, ServerCapabilities, TextDocumentItem,
-    TextDocumentSyncCapability, TextDocumentSyncKind, Url,
+    PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities, TextDocumentItem,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    TextDocumentSyncSaveOptions, Url,
 };
 
 use lsp_server::{Connection, Message, Request, RequestId, Response};
@@ -27,7 +28,17 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     let (connection, io_threads) = Connection::stdio();
 
     // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
-    let text_document_sync = Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::Full));
+    let text_document_sync = Some(TextDocumentSyncCapability::Options(
+        TextDocumentSyncOptions {
+            open_close: Some(true),
+            change: Some(TextDocumentSyncKind::Full),
+            save: Some(TextDocumentSyncSaveOptions::SaveOptions(SaveOptions {
+                include_text: Some(true),
+                ..SaveOptions::default()
+            })),
+            ..TextDocumentSyncOptions::default()
+        },
+    ));
     let server_capabilities = ServerCapabilities {
         text_document_sync,
         ..ServerCapabilities::default()
@@ -84,13 +95,19 @@ fn main_loop(
                         let TextDocumentItem { uri, text, .. } = params.text_document;
                         validate_document(connection, uri, text)?;
                     }
-                    DidChangeTextDocument::METHOD => {
-                        let params = cast_notification::<DidChangeTextDocument>(not);
+                    DidChangeTextDocument::METHOD => {}
+                    DidSaveTextDocument::METHOD => {
+                        let params = cast_notification::<DidSaveTextDocument>(not);
                         let uri = params.text_document.uri;
-                        let text = params.content_changes.into_iter().last().unwrap().text;
-                        validate_document(connection, uri, text)?;
+                        match params.text {
+                            Some(text) => {
+                                validate_document(connection, uri, text)?;
+                            }
+                            None => {
+                                info!("got save notification without text for {}", uri);
+                            }
+                        }
                     }
-                    DidSaveTextDocument::METHOD => (),
                     _ => {
                         info!("got unhandled notification: {:?}", not);
                     }
@@ -106,16 +123,13 @@ fn validate_document(
     uri: Url,
     input: String,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
-    info!("{} => {:?}", &uri, &input);
+    info!("Received text for {}", &uri);
     let parser = parser::ModuleParser::new();
     let diagnostics = match parser.parse(&input) {
         Ok(_ast) => vec![],
         Err(err) => {
             let diagnostic = Diagnostic {
-                range: Range::new(
-                    Position::new(0, 0),
-                    Position::new(0, 0),
-                ),
+                range: Range::new(Position::new(0, 0), Position::new(0, 0)),
                 severity: Some(DiagnosticSeverity::Error),
                 source: Some("rufus".to_string()),
                 message: format!("{}", err),
