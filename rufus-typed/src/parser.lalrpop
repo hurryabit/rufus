@@ -1,8 +1,8 @@
 use std::str::FromStr;
-use lalrpop_util::ParseError;
+use lalrpop_util::{lexer, ErrorRecovery, ParseError};
 use crate::syntax::*;
 
-grammar;
+grammar<'err>(errors: &'err mut Vec<ErrorRecovery<usize, lexer::Token<'input>, &'static str>>);
 
 pub Module: Module = {
     <decls: Decl*> => Module { decls },
@@ -34,6 +34,7 @@ pub Type: Type = {
     <TypeVar> "<" <List1<Type, ",">> ">" => Type::var_app(<>),
     "{" <List0<Param<TypeAnn>, ",">> "}" => Type::Record(<>),
     "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
+    ! => { errors.push(<>); Type::Error },
 }
 
 VariantCaseType: (ExprCon, Option<Type>) = {
@@ -84,6 +85,7 @@ AtomExpr: Expr = {
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
     <ExprCon> <Box<InParens<Expr>>?> => Expr::Variant(<>),
+    ! => { errors.push(<>); Expr::Error },
 }
 
 TypeAnn: Type = {

@@ -50,6 +50,7 @@ pub enum Type {
     Forall(Vec<TypeVar>, Box<Type>),
     Record(Vec<(ExprVar, Type)>),
     Variant(Vec<(ExprCon, Option<Type>)>),
+    Error,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -68,6 +69,7 @@ pub enum Expr {
     Proj(Box<Expr>, ExprVar),
     Variant(ExprCon, Option<Box<Expr>>),
     Match(Box<Expr>, Vec<Branch>),
+    Error,
 }
 
 #[derive(Clone, Debug, Serialize)]

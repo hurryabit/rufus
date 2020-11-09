@@ -1,6 +1,26 @@
 use crate::*;
 use syntax::*;
 
+use lalrpop_util::ParseError;
+
+fn parse_err(input: &'static str) -> (Option<Type>, Vec<ParseError<usize, parser::Token<'static>, &'static str>>) {
+    let parser = parser::TypeParser::new();
+    let mut errors = Vec::new();
+    let result = parser.parse(&mut errors, input);
+    assert!(!errors.is_empty() || result.is_err());
+    let mut errors = errors
+        .into_iter()
+        .map(|error_recovery| error_recovery.error)
+        .collect::<Vec<_>>();
+    match result {
+      Ok(expr) => (Some(expr), errors),
+      Err(error) => {
+        errors.push(error);
+        (None, errors)
+      }
+    }
+}
+
 fn int() -> Type {
     Type::Var(TypeVar::new("Int"))
 }
@@ -52,24 +72,138 @@ fn types_positive() {
     ];
 
     for (input, expected) in cases {
-        assert_eq!(parser.parse(input).as_ref(), Ok(expected))
+        let mut errors = Vec::new();
+        assert_eq!(parser.parse(&mut errors, input).as_ref(), Ok(expected));
+        assert_eq!(errors, vec![]);
     }
 }
 
 #[test]
-fn types_negative() {
-    let parser = parser::TypeParser::new();
+fn func_type_zero_params_one_comma() {
+    insta::assert_debug_snapshot!(parse_err("(,) -> Int"), @r###"
+    (
+        Some(
+            Fun(
+                [
+                    Error,
+                ],
+                Var(
+                    TypeVar(
+                        "Int",
+                    ),
+                ),
+            ),
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    1,
+                    Token(
+                        5,
+                        ",",
+                    ),
+                    2,
+                ),
+                expected: [
+                    "\"(\"",
+                    "\")\"",
+                    "\"[\"",
+                    "\"{\"",
+                    "ID_UPPER",
+                ],
+            },
+        ],
+    )
+    "###);
+}
 
-    let cases = &[
-        // These makes no sense.
-        "(,) -> Int",
-        "A<>",
-        "{,}",
-        // We don't support empty variants.
-        "[]",
-    ];
+#[test]
+fn type_app_zero_args() {
+    insta::assert_debug_snapshot!(parse_err("A<>"), @r###"
+    (
+        Some(
+            App(
+                Var(
+                    TypeVar(
+                        "A",
+                    ),
+                ),
+                [
+                    Error,
+                ],
+            ),
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    2,
+                    Token(
+                        17,
+                        ">",
+                    ),
+                    3,
+                ),
+                expected: [
+                    "\"(\"",
+                    "\"[\"",
+                    "\"{\"",
+                    "ID_UPPER",
+                ],
+            },
+        ],
+    )
+    "###);
+}
 
-    for input in cases {
-        assert!(parser.parse(input).is_err());
-    }
+#[test]
+fn record_zero_field_one_comma() {
+    insta::assert_debug_snapshot!(parse_err("{,}"), @r###"
+    (
+        Some(
+            Error,
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    1,
+                    Token(
+                        5,
+                        ",",
+                    ),
+                    2,
+                ),
+                expected: [
+                    "\"}\"",
+                    "ID_LOWER",
+                ],
+            },
+        ],
+    )
+    "###);
+}
+
+#[test]
+fn variant_zero_constructors() {
+    insta::assert_debug_snapshot!(parse_err("[]"), @r###"
+    (
+        Some(
+            Error,
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    1,
+                    Token(
+                        21,
+                        "]",
+                    ),
+                    2,
+                ),
+                expected: [
+                    "ID_UPPER",
+                ],
+            },
+        ],
+    )
+    "###);
 }

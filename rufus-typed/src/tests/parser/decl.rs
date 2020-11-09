@@ -3,7 +3,10 @@ use syntax::*;
 
 fn parse(input: &str) -> Decl {
     let parser = parser::DeclParser::new();
-    parser.parse(input).unwrap()
+    let mut errors = Vec::new();
+    let decl = parser.parse(&mut errors, input).unwrap();
+    assert_eq!(errors, vec![]);
+    decl
 }
 
 #[test]

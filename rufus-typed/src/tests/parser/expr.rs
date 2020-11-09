@@ -1,19 +1,40 @@
 use crate::*;
 use syntax::*;
 
+use lalrpop_util::ParseError;
+
 fn parse(input: &str) -> Expr {
     let parser = parser::ExprParser::new();
-    parser.parse(input).unwrap()
+    let mut errors = Vec::new();
+    let expr = parser.parse(&mut errors, input).unwrap();
+    assert_eq!(errors, vec![]);
+    expr
 }
 
 fn parse_block(input: &str) -> Expr {
     let parser = parser::BlockExprParser::new();
-    parser.parse(input).unwrap()
+    let mut errors = Vec::new();
+    let expr = parser.parse(&mut errors, input).unwrap();
+    assert_eq!(errors, vec![]);
+    expr
 }
 
-fn parse_err(input: &str) -> String {
+fn parse_err(input: &'static str) -> (Option<Expr>, Vec<ParseError<usize, parser::Token<'static>, &'static str>>) {
     let parser = parser::ExprParser::new();
-    parser.parse(input).unwrap_err().to_string()
+    let mut errors = Vec::new();
+    let result = parser.parse(&mut errors, input);
+    assert!(!errors.is_empty() || result.is_err());
+    let mut errors = errors
+        .into_iter()
+        .map(|error_recovery| error_recovery.error)
+        .collect::<Vec<_>>();
+    match result {
+      Ok(expr) => (Some(expr), errors),
+      Err(error) => {
+        errors.push(error);
+        (None, errors)
+      }
+    }
 }
 
 #[test]
@@ -102,9 +123,39 @@ fn app_ty() {
 
 #[test]
 fn app_ty_err() {
-    insta::assert_display_snapshot!(parse_err("f<A>(1)"), @r###"
-    Unrecognized token `>` found at 3:4
-    Expected one of ")", "+", ",", "-", ";", "{" or "}"
+    insta::assert_debug_snapshot!(parse_err("f<A>(1)"), @r###"
+    (
+        Some(
+            BinOp(
+                Error,
+                Greater,
+                Num(
+                    1,
+                ),
+            ),
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    3,
+                    Token(
+                        17,
+                        ">",
+                    ),
+                    4,
+                ),
+                expected: [
+                    "\")\"",
+                    "\"+\"",
+                    "\",\"",
+                    "\"-\"",
+                    "\";\"",
+                    "\"{\"",
+                    "\"}\"",
+                ],
+            },
+        ],
+    )
     "###);
 }
 
@@ -358,9 +409,41 @@ fn cmp_many() {
 
 #[test]
 fn cmp_many_err() {
-    insta::assert_display_snapshot!(parse_err("a == b == c"), @r###"
-    Unrecognized token `==` found at 7:9
-    Expected one of ")", "+", ",", "-", ";", "{" or "}"
+    insta::assert_debug_snapshot!(parse_err("a == b == c"), @r###"
+    (
+        Some(
+            BinOp(
+                Error,
+                Equals,
+                Var(
+                    ExprVar(
+                        "c",
+                    ),
+                ),
+            ),
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    7,
+                    Token(
+                        15,
+                        "==",
+                    ),
+                    9,
+                ),
+                expected: [
+                    "\")\"",
+                    "\"+\"",
+                    "\",\"",
+                    "\"-\"",
+                    "\";\"",
+                    "\"{\"",
+                    "\"}\"",
+                ],
+            },
+        ],
+    )
     "###);
 }
 
@@ -597,17 +680,69 @@ fn match1_block() {
 
 #[test]
 fn match1_expr_nocomma() {
-    insta::assert_display_snapshot!(parse_err("match x { A => 1 }"), @r###"
-    Unrecognized token `}` found at 17:18
-    Expected one of ","
+    insta::assert_debug_snapshot!(parse_err("match x { A => 1 }"), @r###"
+    (
+        Some(
+            Error,
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    17,
+                    Token(
+                        24,
+                        "}",
+                    ),
+                    18,
+                ),
+                expected: [
+                    "\",\"",
+                ],
+            },
+        ],
+    )
     "###);
 }
 
 #[test]
 fn match1_block_comma() {
-    insta::assert_display_snapshot!(parse_err("match x { A => { 1 }, }"), @r###"
-    Unrecognized token `,` found at 20:21
-    Expected one of "}" or ID_UPPER
+    insta::assert_debug_snapshot!(parse_err("match x { A => { 1 }, }"), @r###"
+    (
+        Some(
+            Match(
+                Var(
+                    ExprVar(
+                        "x",
+                    ),
+                ),
+                [
+                    Branch {
+                        con: ExprCon(
+                            "A",
+                        ),
+                        var: None,
+                        rhs: Error,
+                    },
+                ],
+            ),
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    20,
+                    Token(
+                        5,
+                        ",",
+                    ),
+                    21,
+                ),
+                expected: [
+                    "\"}\"",
+                    "ID_UPPER",
+                ],
+            },
+        ],
+    )
     "###);
 }
 

@@ -15,6 +15,8 @@ use lsp_types::{
 
 use lsp_server::{Connection, Message, Request, RequestId, Response};
 
+use lalrpop_util::ParseError;
+
 use rufus_typed::{parser, util};
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
@@ -118,6 +120,33 @@ fn main_loop(
     Ok(())
 }
 
+fn error_to_diagnostic(
+    trans: &util::PositionTranslator,
+    error: ParseError<usize, parser::Token<'_>, &'static str>,
+) -> Diagnostic {
+    use util::Position;
+    use ParseError::*;
+    let error = error.map_location(|index| trans.position(index));
+    let (start, end) = match error {
+        InvalidToken { location } | UnrecognizedEOF { location, .. } => (location, location),
+        UnrecognizedToken {
+            token: (start, _, end),
+            ..
+        }
+        | ExtraToken {
+            token: (start, _, end),
+        } => (start, end),
+        User { .. } => (Position::ORIGIN, Position::ORIGIN),
+    };
+    Diagnostic {
+        range: Range::new(start.to_lsp(), end.to_lsp()),
+        severity: Some(DiagnosticSeverity::Error),
+        source: Some("rufus".to_string()),
+        message: format!("{}", error),
+        ..Diagnostic::default()
+    }
+}
+
 fn validate_document(
     connection: &Connection,
     uri: Url,
@@ -125,38 +154,33 @@ fn validate_document(
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     info!("Received text for {}", &uri);
     let parser = parser::ModuleParser::new();
-    let diagnostics = match parser.parse(&input) {
-        Ok(_ast) => vec![],
-        Err(err) => {
-            use lalrpop_util::ParseError::*;
-            use util::Position;
-            let trans = util::PositionTranslator::new(&input);
-            let err = err.map_location(|index| trans.position(index));
-            let (start, end) = match err {
-                InvalidToken { location } | UnrecognizedEOF { location, .. } => {
-                    (location, location)
-                }
-                UnrecognizedToken {
-                    token: (start, _, end),
-                    ..
-                }
-                | ExtraToken {
-                    token: (start, _, end),
-                } => (start, end),
-                User { .. } => (Position::ORIGIN, Position::ORIGIN),
+    let mut errors = Vec::new();
+    let result = parser.parse(&mut errors, &input);
+    let trans = util::PositionTranslator::new(&input);
+    let (opt_ast, diagnostics) = match result {
+        Ok(ast) => {
+            let diagnostics = errors
+                .into_iter()
+                .map(|recovery_error| recovery_error.error)
+                .map(|error, | error_to_diagnostic(&trans, error))
+                .collect::<Vec<_>>();
+            (Some(ast), diagnostics)
+        }
+        Err(error) => {
+            let error = if errors.is_empty() {
+                error
+            } else {
+                errors.swap_remove(0).error
             };
-            let diagnostic = Diagnostic {
-                range: Range::new(start.to_lsp(), end.to_lsp()),
-                severity: Some(DiagnosticSeverity::Error),
-                source: Some("rufus".to_string()),
-                message: format!("{}", err),
-                ..Diagnostic::default()
-            };
-            vec![diagnostic]
+            let diagnostics = vec![error_to_diagnostic(&trans, error)];
+            (None, diagnostics)
         }
     };
 
     info!("Sending {} diagnostics", diagnostics.len());
+    if let Some(ast) = opt_ast {
+        info!("{}", serde_yaml::to_string(&ast)?);
+    }
     let params = PublishDiagnosticsParams {
         uri,
         diagnostics,
