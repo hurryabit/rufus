@@ -11,16 +11,16 @@
             "begin": "(<)(\\[)",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.brackets.angle.rust"
+                    "name": "punctuation.brackets.angle.rufus"
                 },
                 "2": {
-                    "name": "punctuation.brackets.square.rust"
+                    "name": "punctuation.brackets.square.rufus"
                 }
             },
             "end": ">",
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.brackets.angle.rust"
+                    "name": "punctuation.brackets.angle.rufus"
                 }
             },
             "patterns": [
@@ -49,23 +49,23 @@
         },
         {
             "comment": "macro type metavariables",
-            "name": "meta.macro.metavariable.type.rust",
+            "name": "meta.macro.metavariable.type.rufus",
             "match": "(\\$)((crate)|([A-Z][A-Za-z0-9_]*))((:)(block|expr|ident|item|lifetime|literal|meta|path?|stmt|tt|ty|vis))?",
             "captures": {
                 "1": {
-                    "name": "keyword.operator.macro.dollar.rust"
+                    "name": "keyword.operator.macro.dollar.rufus"
                 },
                 "3": {
-                    "name": "keyword.other.crate.rust"
+                    "name": "keyword.other.crate.rufus"
                 },
                 "4": {
-                    "name": "entity.name.type.metavariable.rust"
+                    "name": "entity.name.type.metavariable.rufus"
                 },
                 "6": {
-                    "name": "keyword.operator.key-value.rust"
+                    "name": "keyword.operator.key-value.rufus"
                 },
                 "7": {
-                    "name": "variable.other.metavariable.specifier.rust"
+                    "name": "variable.other.metavariable.specifier.rufus"
                 }
             },
             "patterns": [
@@ -76,20 +76,20 @@
         },
         {
             "comment": "macro metavariables",
-            "name": "meta.macro.metavariable.rust",
+            "name": "meta.macro.metavariable.rufus",
             "match": "(\\$)([a-z][A-Za-z0-9_]*)((:)(block|expr|ident|item|lifetime|literal|meta|path?|stmt|tt|ty|vis))?",
             "captures": {
                 "1": {
-                    "name": "keyword.operator.macro.dollar.rust"
+                    "name": "keyword.operator.macro.dollar.rufus"
                 },
                 "2": {
-                    "name": "variable.other.metavariable.name.rust"
+                    "name": "variable.other.metavariable.name.rufus"
                 },
                 "4": {
-                    "name": "keyword.operator.key-value.rust"
+                    "name": "keyword.operator.key-value.rufus"
                 },
                 "5": {
-                    "name": "variable.other.metavariable.specifier.rust"
+                    "name": "variable.other.metavariable.specifier.rufus"
                 }
             },
             "patterns": [
@@ -100,42 +100,42 @@
         },
         {
             "comment": "macro rules",
-            "name": "meta.macro.rules.rust",
+            "name": "meta.macro.rules.rufus",
             "match": "\\b(macro_rules!)\\s+(([a-z0-9_]+)|([A-Z][a-z0-9_]*))\\s+(\\{)",
             "captures": {
                 "1": {
-                    "name": "entity.name.function.macro.rules.rust"
+                    "name": "entity.name.function.macro.rules.rufus"
                 },
                 "3": {
-                    "name": "entity.name.function.macro.rust"
+                    "name": "entity.name.function.macro.rufus"
                 },
                 "4": {
-                    "name": "entity.name.type.macro.rust"
+                    "name": "entity.name.type.macro.rufus"
                 },
                 "5": {
-                    "name": "punctuation.brackets.curly.rust"
+                    "name": "punctuation.brackets.curly.rufus"
                 }
             }
         },
         {
             "comment": "attributes",
-            "name": "meta.attribute.rust",
+            "name": "meta.attribute.rufus",
             "begin": "(#)(\\!?)(\\[)",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.definition.attribute.rust"
+                    "name": "punctuation.definition.attribute.rufus"
                 },
                 "2": {
-                    "name": "keyword.operator.attribute.inner.rust"
+                    "name": "keyword.operator.attribute.inner.rufus"
                 },
                 "3": {
-                    "name": "punctuation.brackets.attribute.rust"
+                    "name": "punctuation.brackets.attribute.rufus"
                 }
             },
             "end": "\\]",
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.brackets.attribute.rust"
+                    "name": "punctuation.brackets.attribute.rufus"
                 }
             },
             "patterns": [
@@ -167,29 +167,29 @@
             "match": "(mod)\\s+((?:r#(?!crate|[Ss]elf|super))?[a-z][A-Za-z0-9_]*)",
             "captures": {
                 "1": {
-                    "name": "storage.type.rust"
+                    "name": "storage.type.rufus"
                 },
                 "2": {
-                    "name": "entity.name.module.rust"
+                    "name": "entity.name.module.rufus"
                 }
             }
         },
         {
             "comment": "external crate imports",
-            "name": "meta.import.rust",
+            "name": "meta.import.rufus",
             "begin": "\\b(extern)\\s+(crate)",
             "beginCaptures": {
                 "1": {
-                    "name": "storage.type.rust"
+                    "name": "storage.type.rufus"
                 },
                 "2": {
-                    "name": "keyword.other.crate.rust"
+                    "name": "keyword.other.crate.rufus"
                 }
             },
             "end": ";",
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.semi.rust"
+                    "name": "punctuation.semi.rufus"
                 }
             },
             "patterns": [
@@ -209,17 +209,17 @@
         },
         {
             "comment": "use statements",
-            "name": "meta.use.rust",
+            "name": "meta.use.rufus",
             "begin": "\\b(use)\\s",
             "beginCaptures": {
                 "1": {
-                    "name": "keyword.other.rust"
+                    "name": "keyword.other.rufus"
                 }
             },
             "end": ";",
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.semi.rust"
+                    "name": "punctuation.semi.rufus"
                 }
             },
             "patterns": [
@@ -294,12 +294,12 @@
             "patterns": [
                 {
                     "comment": "documentation comments",
-                    "name": "comment.line.documentation.rust",
+                    "name": "comment.line.documentation.rufus",
                     "match": "^\\s*///.*"
                 },
                 {
                     "comment": "line comments",
-                    "name": "comment.line.double-slash.rust",
+                    "name": "comment.line.double-slash.rufus",
                     "match": "\\s*//.*"
                 }
             ]
@@ -308,7 +308,7 @@
             "patterns": [
                 {
                     "comment": "block comments",
-                    "name": "comment.block.rust",
+                    "name": "comment.block.rufus",
                     "begin": "/\\*(?!\\*)",
                     "end": "\\*/",
                     "patterns": [
@@ -319,7 +319,7 @@
                 },
                 {
                     "comment": "block documentation comments",
-                    "name": "comment.block.documentation.rust",
+                    "name": "comment.block.documentation.rufus",
                     "begin": "/\\*\\*",
                     "end": "\\*/",
                     "patterns": [
@@ -334,7 +334,7 @@
             "patterns": [
                 {
                     "comment": "ALL CAPS constants",
-                    "name": "constant.other.caps.rust",
+                    "name": "constant.other.caps.rufus",
                     "match": "\\b[A-Z]{2}[A-Z0-9_]*\\b"
                 },
                 {
@@ -342,91 +342,91 @@
                     "match": "\\b(const)\\s+([A-Z][A-Za-z0-9_]*)\\b",
                     "captures": {
                         "1": {
-                            "name": "storage.type.rust"
+                            "name": "storage.type.rufus"
                         },
                         "2": {
-                            "name": "constant.other.caps.rust"
+                            "name": "constant.other.caps.rufus"
                         }
                     }
                 },
                 {
                     "comment": "decimal integers and floats",
-                    "name": "constant.numeric.decimal.rust",
+                    "name": "constant.numeric.decimal.rufus",
                     "match": "\\b\\d[\\d_]*(\\.?)[\\d_]*(?:(E)([+-])([\\d_]+))?(f32|f64|i128|i16|i32|i64|i8|isize|u128|u16|u32|u64|u8|usize)?\\b",
                     "captures": {
                         "1": {
-                            "name": "punctuation.separator.dot.decimal.rust"
+                            "name": "punctuation.separator.dot.decimal.rufus"
                         },
                         "2": {
-                            "name": "keyword.operator.exponent.rust"
+                            "name": "keyword.operator.exponent.rufus"
                         },
                         "3": {
-                            "name": "keyword.operator.exponent.sign.rust"
+                            "name": "keyword.operator.exponent.sign.rufus"
                         },
                         "4": {
-                            "name": "constant.numeric.decimal.exponent.mantissa.rust"
+                            "name": "constant.numeric.decimal.exponent.mantissa.rufus"
                         },
                         "5": {
-                            "name": "entity.name.type.numeric.rust"
+                            "name": "entity.name.type.numeric.rufus"
                         }
                     }
                 },
                 {
                     "comment": "hexadecimal integers",
-                    "name": "constant.numeric.hex.rust",
+                    "name": "constant.numeric.hex.rufus",
                     "match": "\\b0x[\\da-fA-F_]+(i128|i16|i32|i64|i8|isize|u128|u16|u32|u64|u8|usize)?\\b",
                     "captures": {
                         "1": {
-                            "name": "entity.name.type.numeric.rust"
+                            "name": "entity.name.type.numeric.rufus"
                         }
                     }
                 },
                 {
                     "comment": "octal integers",
-                    "name": "constant.numeric.oct.rust",
+                    "name": "constant.numeric.oct.rufus",
                     "match": "\\b0o[0-7_]+(i128|i16|i32|i64|i8|isize|u128|u16|u32|u64|u8|usize)?\\b",
                     "captures": {
                         "1": {
-                            "name": "entity.name.type.numeric.rust"
+                            "name": "entity.name.type.numeric.rufus"
                         }
                     }
                 },
                 {
                     "comment": "binary integers",
-                    "name": "constant.numeric.bin.rust",
+                    "name": "constant.numeric.bin.rufus",
                     "match": "\\b0b[01_]+(i128|i16|i32|i64|i8|isize|u128|u16|u32|u64|u8|usize)?\\b",
                     "captures": {
                         "1": {
-                            "name": "entity.name.type.numeric.rust"
+                            "name": "entity.name.type.numeric.rufus"
                         }
                     }
                 },
                 {
                     "comment": "booleans",
-                    "name": "constant.language.bool.rust",
+                    "name": "constant.language.bool.rufus",
                     "match": "\\btrue|false\\b"
                 }
             ]
         },
         "escapes": {
             "comment": "escapes: ASCII, byte, Unicode, quote, regex",
-            "name": "constant.character.escape.rust",
+            "name": "constant.character.escape.rufus",
             "match": "(\\\\)(?:(?:(x[0-7][0-7a-fA-F])|(u(\\{)[\\da-fA-F]{4,6}(\\}))|.))",
             "captures": {
                 "1": {
-                    "name": "constant.character.escape.backslash.rust"
+                    "name": "constant.character.escape.backslash.rufus"
                 },
                 "2": {
-                    "name": "constant.character.escape.bit.rust"
+                    "name": "constant.character.escape.bit.rufus"
                 },
                 "3": {
-                    "name": "constant.character.escape.unicode.rust"
+                    "name": "constant.character.escape.unicode.rufus"
                 },
                 "4": {
-                    "name": "constant.character.escape.unicode.punctuation.rust"
+                    "name": "constant.character.escape.unicode.punctuation.rufus"
                 },
                 "5": {
-                    "name": "constant.character.escape.unicode.punctuation.rust"
+                    "name": "constant.character.escape.unicode.punctuation.rufus"
                 }
             }
         },
@@ -437,35 +437,35 @@
                     "match": "\\b(pub)(\\()",
                     "captures": {
                         "1": {
-                            "name": "keyword.other.rust"
+                            "name": "keyword.other.rufus"
                         },
                         "2": {
-                            "name": "punctuation.brackets.round.rust"
+                            "name": "punctuation.brackets.round.rufus"
                         }
                     }
                 },
                 {
                     "comment": "function definition",
-                    "name": "meta.function.definition.rust",
+                    "name": "meta.function.definition.rufus",
                     "begin": "\\b(fn)\\s+((?:r#(?!crate|[Ss]elf|super))?[A-Za-z0-9_]+)((\\()|(<))",
                     "beginCaptures": {
                         "1": {
-                            "name": "keyword.other.fn.rust"
+                            "name": "keyword.other.fn.rufus"
                         },
                         "2": {
-                            "name": "entity.name.function.rust"
+                            "name": "entity.name.function.rufus"
                         },
                         "4": {
-                            "name": "punctuation.brackets.round.rust"
+                            "name": "punctuation.brackets.round.rufus"
                         },
                         "5": {
-                            "name": "punctuation.brackets.angle.rust"
+                            "name": "punctuation.brackets.angle.rufus"
                         }
                     },
                     "end": "\\{|;",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.brackets.curly.rust"
+                            "name": "punctuation.brackets.curly.rufus"
                         }
                     },
                     "patterns": [
@@ -515,20 +515,20 @@
                 },
                 {
                     "comment": "function/method calls, chaining",
-                    "name": "meta.function.call.rust",
+                    "name": "meta.function.call.rufus",
                     "begin": "((?:r#(?!crate|[Ss]elf|super))?[A-Za-z0-9_]+)(\\()",
                     "beginCaptures": {
                         "1": {
-                            "name": "entity.name.function.rust"
+                            "name": "entity.name.function.rufus"
                         },
                         "2": {
-                            "name": "punctuation.brackets.round.rust"
+                            "name": "punctuation.brackets.round.rufus"
                         }
                     },
                     "end": "\\)",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.brackets.round.rust"
+                            "name": "punctuation.brackets.round.rufus"
                         }
                     },
                     "patterns": [
@@ -578,17 +578,17 @@
                 },
                 {
                     "comment": "function/method calls with turbofish",
-                    "name": "meta.function.call.rust",
+                    "name": "meta.function.call.rufus",
                     "begin": "((?:r#(?!crate|[Ss]elf|super))?[A-Za-z0-9_]+)(?=::<.*>\\()",
                     "beginCaptures": {
                         "1": {
-                            "name": "entity.name.function.rust"
+                            "name": "entity.name.function.rufus"
                         }
                     },
                     "end": "\\)",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.brackets.round.rust"
+                            "name": "punctuation.brackets.round.rufus"
                         }
                     },
                     "patterns": [
@@ -642,67 +642,67 @@
             "patterns": [
                 {
                     "comment": "control flow keywords",
-                    "name": "keyword.control.rust",
+                    "name": "keyword.control.rufus",
                     "match": "\\b(await|break|continue|do|else|for|if|loop|match|return|try|while|yield)\\b"
                 },
                 {
                     "comment": "storage keywords",
-                    "name": "storage.type.rust",
+                    "name": "storage.type.rufus",
                     "match": "\\b(const|enum|extern|let|macro|mod|struct|trait|type)\\b"
                 },
                 {
                     "comment": "storage modifiers",
-                    "name": "storage.modifier.rust",
+                    "name": "storage.modifier.rufus",
                     "match": "\\b(abstract|static)\\b"
                 },
                 {
                     "comment": "other keywords",
-                    "name": "keyword.other.rust",
+                    "name": "keyword.other.rufus",
                     "match": "\\b(as|async|become|box|dyn|move|final|impl|in|override|priv|pub|ref|typeof|union|unsafe|unsized|use|virtual|where)\\b"
                 },
                 {
                     "comment": "fn",
-                    "name": "keyword.other.fn.rust",
+                    "name": "keyword.other.fn.rufus",
                     "match": "\\bfn\\b"
                 },
                 {
                     "comment": "crate",
-                    "name": "keyword.other.crate.rust",
+                    "name": "keyword.other.crate.rufus",
                     "match": "\\bcrate\\b"
                 },
                 {
                     "comment": "mut",
-                    "name": "storage.modifier.mut.rust",
+                    "name": "storage.modifier.mut.rufus",
                     "match": "\\bmut\\b"
                 },
                 {
                     "comment": "logical operators",
-                    "name": "keyword.operator.logical.rust",
+                    "name": "keyword.operator.logical.rufus",
                     "match": "(\\^|\\||\\|\\||&&|<<|>>|!)(?!=)"
                 },
                 {
                     "comment": "logical AND, borrow references",
-                    "name": "keyword.operator.borrow.and.rust",
+                    "name": "keyword.operator.borrow.and.rufus",
                     "match": "&(?![&=])"
                 },
                 {
                     "comment": "assignment operators",
-                    "name": "keyword.operator.assignment.rust",
+                    "name": "keyword.operator.assignment.rufus",
                     "match": "(\\+=|-=|\\*=|/=|%=|\\^=|&=|\\|=|<<=|>>=)"
                 },
                 {
                     "comment": "single equal",
-                    "name": "keyword.operator.assignment.equal.rust",
+                    "name": "keyword.operator.assignment.equal.rufus",
                     "match": "(?<![<>])=(?!=|>)"
                 },
                 {
                     "comment": "comparison operators",
-                    "name": "keyword.operator.comparison.rust",
+                    "name": "keyword.operator.comparison.rufus",
                     "match": "(=(=)?(?!>)|!=|<=|(?<!=)>=)"
                 },
                 {
                     "comment": "math operators",
-                    "name": "keyword.operator.math.rust",
+                    "name": "keyword.operator.math.rufus",
                     "match": "(([+%]|(\\*(?!\\w)))(?!=))|(-(?!>))|(/(?!/))"
                 },
                 {
@@ -710,31 +710,31 @@
                     "match": "(?:\\b|(?:(\\))|(\\])|(\\})))[ \\t]+([<>])[ \\t]+(?:\\b|(?:(\\()|(\\[)|(\\{)))",
                     "captures": {
                         "1": {
-                            "name": "punctuation.brackets.round.rust"
+                            "name": "punctuation.brackets.round.rufus"
                         },
                         "2": {
-                            "name": "punctuation.brackets.square.rust"
+                            "name": "punctuation.brackets.square.rufus"
                         },
                         "3": {
-                            "name": "punctuation.brackets.curly.rust"
+                            "name": "punctuation.brackets.curly.rufus"
                         },
                         "4": {
-                            "name": "keyword.operator.comparison.rust"
+                            "name": "keyword.operator.comparison.rufus"
                         },
                         "5": {
-                            "name": "punctuation.brackets.round.rust"
+                            "name": "punctuation.brackets.round.rufus"
                         },
                         "6": {
-                            "name": "punctuation.brackets.square.rust"
+                            "name": "punctuation.brackets.square.rufus"
                         },
                         "7": {
-                            "name": "punctuation.brackets.curly.rust"
+                            "name": "punctuation.brackets.curly.rufus"
                         }
                     }
                 },
                 {
                     "comment": "namespace operator",
-                    "name": "keyword.operator.namespace.rust",
+                    "name": "keyword.operator.namespace.rufus",
                     "match": "::"
                 },
                 {
@@ -742,62 +742,62 @@
                     "match": "(\\*)(?=\\w+)",
                     "captures": {
                         "1": {
-                            "name": "keyword.operator.dereference.rust"
+                            "name": "keyword.operator.dereference.rufus"
                         }
                     }
                 },
                 {
                     "comment": "subpattern binding",
-                    "name": "keyword.operator.subpattern.rust",
+                    "name": "keyword.operator.subpattern.rufus",
                     "match": "@"
                 },
                 {
                     "comment": "dot access",
-                    "name": "keyword.operator.access.dot.rust",
+                    "name": "keyword.operator.access.dot.rufus",
                     "match": "\\.(?!\\.)"
                 },
                 {
                     "comment": "ranges, range patterns",
-                    "name": "keyword.operator.range.rust",
+                    "name": "keyword.operator.range.rufus",
                     "match": "\\.{2}(=|\\.)?"
                 },
                 {
                     "comment": "colon",
-                    "name": "keyword.operator.key-value.rust",
+                    "name": "keyword.operator.key-value.rufus",
                     "match": ":(?!:)"
                 },
                 {
                     "comment": "dashrocket, skinny arrow",
-                    "name": "keyword.operator.arrow.skinny.rust",
+                    "name": "keyword.operator.arrow.skinny.rufus",
                     "match": "->"
                 },
                 {
                     "comment": "hashrocket, fat arrow",
-                    "name": "keyword.operator.arrow.fat.rust",
+                    "name": "keyword.operator.arrow.fat.rufus",
                     "match": "=>"
                 },
                 {
                     "comment": "dollar macros",
-                    "name": "keyword.operator.macro.dollar.rust",
+                    "name": "keyword.operator.macro.dollar.rufus",
                     "match": "\\$"
                 },
                 {
                     "comment": "question mark operator, questionably sized, macro kleene matcher",
-                    "name": "keyword.operator.question.rust",
+                    "name": "keyword.operator.question.rufus",
                     "match": "\\?"
                 }
             ]
         },
         "interpolations": {
             "comment": "curly brace interpolations",
-            "name": "meta.interpolation.rust",
+            "name": "meta.interpolation.rufus",
             "match": "({)[^\"{}]*(})",
             "captures": {
                 "1": {
-                    "name": "punctuation.definition.interpolation.rust"
+                    "name": "punctuation.definition.interpolation.rufus"
                 },
                 "2": {
-                    "name": "punctuation.definition.interpolation.rust"
+                    "name": "punctuation.definition.interpolation.rufus"
                 }
             }
         },
@@ -808,10 +808,10 @@
                     "match": "(['])([a-zA-Z_][0-9a-zA-Z_]*)(?!['])\\b",
                     "captures": {
                         "1": {
-                            "name": "punctuation.definition.lifetime.rust"
+                            "name": "punctuation.definition.lifetime.rufus"
                         },
                         "2": {
-                            "name": "entity.name.type.lifetime.rust"
+                            "name": "entity.name.type.lifetime.rufus"
                         }
                     }
                 },
@@ -820,13 +820,13 @@
                     "match": "(\\&)(['])([a-zA-Z_][0-9a-zA-Z_]*)(?!['])\\b",
                     "captures": {
                         "1": {
-                            "name": "keyword.operator.borrow.rust"
+                            "name": "keyword.operator.borrow.rufus"
                         },
                         "2": {
-                            "name": "punctuation.definition.lifetime.rust"
+                            "name": "punctuation.definition.lifetime.rufus"
                         },
                         "3": {
-                            "name": "entity.name.type.lifetime.rust"
+                            "name": "entity.name.type.lifetime.rufus"
                         }
                     }
                 }
@@ -836,14 +836,14 @@
             "patterns": [
                 {
                     "comment": "macros",
-                    "name": "meta.macro.rust",
+                    "name": "meta.macro.rufus",
                     "match": "(([a-z_][A-Za-z0-9_]*!)|([A-Z_][A-Za-z0-9_]*!))",
                     "captures": {
                         "2": {
-                            "name": "entity.name.function.macro.rust"
+                            "name": "entity.name.function.macro.rufus"
                         },
                         "3": {
-                            "name": "entity.name.type.macro.rust"
+                            "name": "entity.name.type.macro.rufus"
                         }
                     }
                 }
@@ -856,10 +856,10 @@
                     "match": "(?<![A-Za-z0-9_])([a-z0-9_]+)((?<!super|self)::)",
                     "captures": {
                         "1": {
-                            "name": "entity.name.namespace.rust"
+                            "name": "entity.name.namespace.rufus"
                         },
                         "2": {
-                            "name": "keyword.operator.namespace.rust"
+                            "name": "keyword.operator.namespace.rufus"
                         }
                     }
                 }
@@ -872,7 +872,7 @@
                     "match": "(?<![A-Za-z])(f32|f64|i128|i16|i32|i64|i8|isize|u128|u16|u32|u64|u8|usize)\\b",
                     "captures": {
                         "1": {
-                            "name": "entity.name.type.numeric.rust"
+                            "name": "entity.name.type.numeric.rufus"
                         }
                     }
                 },
@@ -881,16 +881,16 @@
                     "begin": "\\b([A-Z][A-Za-z0-9]*)(<)",
                     "beginCaptures": {
                         "1": {
-                            "name": "entity.name.type.rust"
+                            "name": "entity.name.type.rufus"
                         },
                         "2": {
-                            "name": "punctuation.brackets.angle.rust"
+                            "name": "punctuation.brackets.angle.rufus"
                         }
                     },
                     "end": ">",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.brackets.angle.rust"
+                            "name": "punctuation.brackets.angle.rufus"
                         }
                     },
                     "patterns": [
@@ -922,7 +922,7 @@
                 },
                 {
                     "comment": "primitive types",
-                    "name": "entity.name.type.primitive.rust",
+                    "name": "entity.name.type.primitive.rufus",
                     "match": "\\b(bool|char|str)\\b"
                 },
                 {
@@ -930,10 +930,10 @@
                     "match": "\\b(trait)\\s+([A-Z][A-Za-z0-9]*)\\b",
                     "captures": {
                         "1": {
-                            "name": "storage.type.rust"
+                            "name": "storage.type.rufus"
                         },
                         "2": {
-                            "name": "entity.name.type.trait.rust"
+                            "name": "entity.name.type.trait.rufus"
                         }
                     }
                 },
@@ -942,10 +942,10 @@
                     "match": "\\b(struct)\\s+([A-Z][A-Za-z0-9]*)\\b",
                     "captures": {
                         "1": {
-                            "name": "storage.type.rust"
+                            "name": "storage.type.rufus"
                         },
                         "2": {
-                            "name": "entity.name.type.struct.rust"
+                            "name": "entity.name.type.struct.rufus"
                         }
                     }
                 },
@@ -954,10 +954,10 @@
                     "match": "\\b(enum)\\s+([A-Z][A-Za-z0-9_]*)\\b",
                     "captures": {
                         "1": {
-                            "name": "storage.type.rust"
+                            "name": "storage.type.rufus"
                         },
                         "2": {
-                            "name": "entity.name.type.enum.rust"
+                            "name": "entity.name.type.enum.rufus"
                         }
                     }
                 },
@@ -966,16 +966,16 @@
                     "match": "\\b(type)\\s+([A-Z][A-Za-z0-9_]*)\\b",
                     "captures": {
                         "1": {
-                            "name": "storage.type.rust"
+                            "name": "storage.type.rufus"
                         },
                         "2": {
-                            "name": "entity.name.type.declaration.rust"
+                            "name": "entity.name.type.declaration.rufus"
                         }
                     }
                 },
                 {
                     "comment": "types",
-                    "name": "entity.name.type.rust",
+                    "name": "entity.name.type.rufus",
                     "match": "\\b[A-Z][A-Za-z0-9]*\\b(?!!)"
                 }
             ]
@@ -984,12 +984,12 @@
             "patterns": [
                 {
                     "comment": "option types",
-                    "name": "entity.name.type.option.rust",
+                    "name": "entity.name.type.option.rufus",
                     "match": "\\b(Some|None)\\b"
                 },
                 {
                     "comment": "result types",
-                    "name": "entity.name.type.result.rust",
+                    "name": "entity.name.type.result.rufus",
                     "match": "\\b(Ok|Err)\\b"
                 }
             ]
@@ -998,32 +998,32 @@
             "patterns": [
                 {
                     "comment": "comma",
-                    "name": "punctuation.comma.rust",
+                    "name": "punctuation.comma.rufus",
                     "match": ","
                 },
                 {
                     "comment": "curly braces",
-                    "name": "punctuation.brackets.curly.rust",
+                    "name": "punctuation.brackets.curly.rufus",
                     "match": "[{}]"
                 },
                 {
                     "comment": "parentheses, round brackets",
-                    "name": "punctuation.brackets.round.rust",
+                    "name": "punctuation.brackets.round.rufus",
                     "match": "[()]"
                 },
                 {
                     "comment": "semicolon",
-                    "name": "punctuation.semi.rust",
+                    "name": "punctuation.semi.rufus",
                     "match": ";"
                 },
                 {
                     "comment": "square brackets",
-                    "name": "punctuation.brackets.square.rust",
+                    "name": "punctuation.brackets.square.rufus",
                     "match": "[\\[\\]]"
                 },
                 {
                     "comment": "angle brackets",
-                    "name": "punctuation.brackets.angle.rust",
+                    "name": "punctuation.brackets.angle.rufus",
                     "match": "(?<!=)[<>]"
                 }
             ]
@@ -1032,20 +1032,20 @@
             "patterns": [
                 {
                     "comment": "double-quoted strings and byte strings",
-                    "name": "string.quoted.double.rust",
+                    "name": "string.quoted.double.rufus",
                     "begin": "(b?)(\")",
                     "beginCaptures": {
                         "1": {
-                            "name": "string.quoted.byte.raw.rust"
+                            "name": "string.quoted.byte.raw.rufus"
                         },
                         "2": {
-                            "name": "punctuation.definition.string.rust"
+                            "name": "punctuation.definition.string.rufus"
                         }
                     },
                     "end": "\"",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.definition.string.rust"
+                            "name": "punctuation.definition.string.rufus"
                         }
                     },
                     "patterns": [
@@ -1059,45 +1059,45 @@
                 },
                 {
                     "comment": "double-quoted raw strings and raw byte strings",
-                    "name": "string.quoted.double.rust",
+                    "name": "string.quoted.double.rufus",
                     "begin": "(b?r)(#*)(\")",
                     "beginCaptures": {
                         "1": {
-                            "name": "string.quoted.byte.raw.rust"
+                            "name": "string.quoted.byte.raw.rufus"
                         },
                         "2": {
-                            "name": "punctuation.definition.string.raw.rust"
+                            "name": "punctuation.definition.string.raw.rufus"
                         },
                         "3": {
-                            "name": "punctuation.definition.string.rust"
+                            "name": "punctuation.definition.string.rufus"
                         }
                     },
                     "end": "(\")(\\2)",
                     "endCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.rust"
+                            "name": "punctuation.definition.string.rufus"
                         },
                         "2": {
-                            "name": "punctuation.definition.string.raw.rust"
+                            "name": "punctuation.definition.string.raw.rufus"
                         }
                     }
                 },
                 {
                     "comment": "characters and bytes",
-                    "name": "string.quoted.single.char.rust",
+                    "name": "string.quoted.single.char.rufus",
                     "begin": "(b)?(')",
                     "beginCaptures": {
                         "1": {
-                            "name": "string.quoted.byte.raw.rust"
+                            "name": "string.quoted.byte.raw.rufus"
                         },
                         "2": {
-                            "name": "punctuation.definition.char.rust"
+                            "name": "punctuation.definition.char.rufus"
                         }
                     },
                     "end": "'",
                     "endCaptures": {
                         "0": {
-                            "name": "punctuation.definition.char.rust"
+                            "name": "punctuation.definition.char.rufus"
                         }
                     },
                     "patterns": [
@@ -1112,12 +1112,12 @@
             "patterns": [
                 {
                     "comment": "self",
-                    "name": "variable.language.self.rust",
+                    "name": "variable.language.self.rufus",
                     "match": "\\b[Ss]elf\\b"
                 },
                 {
                     "comment": "super",
-                    "name": "variable.language.super.rust",
+                    "name": "variable.language.super.rufus",
                     "match": "\\bsuper\\b"
                 }
             ]
@@ -1126,7 +1126,7 @@
             "patterns": [
                 {
                     "comment": "variables",
-                    "name": "variable.other.rust",
+                    "name": "variable.other.rufus",
                     "match": "\\b(?<!(?<!\\.)\\.)(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
                 }
             ]
