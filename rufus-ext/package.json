@@ -1,31 +1,38 @@
 {
-	"private": true,
-	"name": "rufus-vscode",
-	"description": "Rufus VSCode Extension",
-	"author": "Martin Huschenbett <martin.huschenbett@posteo.me>",
-	"publisher": "hurryabit",
-	"license": "Apache-2.0",
-	"version": "0.1.0",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/hurryabit/rufus"
-	},
-	"engines": {
-		"vscode": "^1.43.0"
-	},
-	"activationEvents": [
-		"onLanguage:rufus"
-	],
-	"main": "./out/extension",
-	"contributes": {
-		"languages": [
-			{
-				"id": "rufus",
-				"extensions": [
-					".rfs"
-				]
-			}
-		],
+    "private": true,
+    "name": "rufus-vscode",
+    "description": "Rufus VSCode Extension",
+    "author": "Martin Huschenbett <martin.huschenbett@posteo.me>",
+    "publisher": "hurryabit",
+    "license": "Apache-2.0",
+    "version": "0.1.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hurryabit/rufus"
+    },
+    "engines": {
+        "vscode": "^1.43.0"
+    },
+    "activationEvents": [
+        "onLanguage:rufus"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "languages": [
+            {
+                "id": "rufus",
+                "extensions": [
+                    ".rfs"
+                ]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "rufus",
+                "scopeName": "source.rufus",
+                "path": "./syntaxes/rufus.tmGrammar.json"
+            }
+        ],
         "configuration": {
             "type": "object",
             "title": "Rufus Configuration",
@@ -34,23 +41,23 @@
                     "type": "string",
                     "default": "rufus",
                     "description": "Path to the Rufus Language Server executable"
-				}
-			}
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -b",
-		"watch": "tsc -b -w"
-	},
-	"dependencies": {
-		"vscode-languageclient": "^6.1.3"
-	},
-	"devDependencies": {
-		"@types/node": "^12.12.0",
-		"@types/vscode": "1.43.0",
-		"@typescript-eslint/parser": "^2.3.0",
-		"eslint": "^6.4.0",
-		"typescript": "^4.0.2"
-	}
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^6.1.3"
+    },
+    "devDependencies": {
+        "@types/node": "^12.12.0",
+        "@types/vscode": "1.43.0",
+        "@typescript-eslint/parser": "^2.3.0",
+        "eslint": "^6.4.0",
+        "typescript": "^4.0.2"
+    }
 }
