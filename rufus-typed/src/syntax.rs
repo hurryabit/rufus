@@ -15,6 +15,7 @@ pub enum Decl {
 #[derive(Clone, Debug)]
 pub struct TypeDecl {
     pub name: TypeVar,
+    pub params: Vec<TypeVar>,
     pub body: Type,
 }
 
@@ -44,7 +45,7 @@ pub enum Type {
     Bool,
     Fun(Vec<Type>, Box<Type>),
     App(Box<Type>, Vec<Type>),
-    Abs(Vec<TypeVar>, Box<Type>),
+    Forall(Vec<TypeVar>, Box<Type>),
     Record(Vec<(ExprVar, Type)>),
     Variant(Vec<(ExprCon, Option<Type>)>),
 }

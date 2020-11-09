@@ -25,12 +25,10 @@ fn module() {
                     name: TypeVar(
                         "Mono",
                     ),
-                    body: Abs(
-                        [],
-                        Var(
-                            TypeVar(
-                                "Int",
-                            ),
+                    params: [],
+                    body: Var(
+                        TypeVar(
+                            "Int",
                         ),
                     ),
                 },
@@ -70,16 +68,14 @@ fn module() {
                     name: TypeVar(
                         "Poly",
                     ),
-                    body: Abs(
-                        [
-                            TypeVar(
-                                "A",
-                            ),
-                        ],
-                        Var(
-                            TypeVar(
-                                "A",
-                            ),
+                    params: [
+                        TypeVar(
+                            "A",
+                        ),
+                    ],
+                    body: Var(
+                        TypeVar(
+                            "A",
                         ),
                     ),
                 },

@@ -14,8 +14,8 @@ pub Decl: Decl = {
 }
 
 TypeDecl: TypeDecl = {
-    "type" <name: TypeVar> <params: TypeParams> "=" <rhs: Box<Type>> =>
-        TypeDecl { name, body: Type::Abs(params, rhs) },
+    "type" <name: TypeVar> <params: TypeParams> "=" <body: Type> =>
+        TypeDecl { name, params, body },
 }
 
 FuncDecl: FuncDecl = {

@@ -14,12 +14,10 @@ fn type_mono() {
             name: TypeVar(
                 "T",
             ),
-            body: Abs(
-                [],
-                Var(
-                    TypeVar(
-                        "Int",
-                    ),
+            params: [],
+            body: Var(
+                TypeVar(
+                    "Int",
                 ),
             ),
         },
@@ -35,16 +33,14 @@ fn type_poly() {
             name: TypeVar(
                 "T",
             ),
-            body: Abs(
-                [
-                    TypeVar(
-                        "A",
-                    ),
-                ],
-                Var(
-                    TypeVar(
-                        "A",
-                    ),
+            params: [
+                TypeVar(
+                    "A",
+                ),
+            ],
+            body: Var(
+                TypeVar(
+                    "A",
                 ),
             ),
         },
