@@ -34,7 +34,10 @@ impl PositionTranslator {
     }
 
     pub fn position(&self, index: usize) -> Position {
-        let line = self.line_starts.binary_search(&index).unwrap_or_else(|x| x - 1);
+        let line = self
+            .line_starts
+            .binary_search(&index)
+            .unwrap_or_else(|x| x - 1);
         Position::new(line, index - self.line_starts[line])
     }
 }

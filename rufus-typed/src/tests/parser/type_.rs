@@ -3,7 +3,12 @@ use syntax::*;
 
 use lalrpop_util::ParseError;
 
-fn parse_err(input: &'static str) -> (Option<Type>, Vec<ParseError<usize, parser::Token<'static>, &'static str>>) {
+fn parse_err(
+    input: &'static str,
+) -> (
+    Option<Type>,
+    Vec<ParseError<usize, parser::Token<'static>, &'static str>>,
+) {
     let parser = parser::TypeParser::new();
     let mut errors = Vec::new();
     let result = parser.parse(&mut errors, input);
@@ -13,11 +18,11 @@ fn parse_err(input: &'static str) -> (Option<Type>, Vec<ParseError<usize, parser
         .map(|error_recovery| error_recovery.error)
         .collect::<Vec<_>>();
     match result {
-      Ok(expr) => (Some(expr), errors),
-      Err(error) => {
-        errors.push(error);
-        (None, errors)
-      }
+        Ok(expr) => (Some(expr), errors),
+        Err(error) => {
+            errors.push(error);
+            (None, errors)
+        }
     }
 }
 
@@ -41,7 +46,10 @@ fn types_positive() {
         ("(Int,) -> Int", Fun(vec![int()], Box::new(int()))),
         ("A<Int>", Type::SynApp(TypeVar::new("A"), vec![int()])),
         ("A<Int,>", Type::SynApp(TypeVar::new("A"), vec![int()])),
-        ("A<Int,Bool>", Type::SynApp(TypeVar::new("A"), vec![int(), bool()])),
+        (
+            "A<Int,Bool>",
+            Type::SynApp(TypeVar::new("A"), vec![int(), bool()]),
+        ),
         ("{}", Record(vec![])),
         ("{a: Int}", Record(vec![(ExprVar::new("a"), int())])),
         ("{a: Int,}", Record(vec![(ExprVar::new("a"), int())])),

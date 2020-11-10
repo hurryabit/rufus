@@ -19,7 +19,12 @@ fn parse_block(input: &str) -> Expr {
     expr
 }
 
-fn parse_err(input: &'static str) -> (Option<Expr>, Vec<ParseError<usize, parser::Token<'static>, &'static str>>) {
+fn parse_err(
+    input: &'static str,
+) -> (
+    Option<Expr>,
+    Vec<ParseError<usize, parser::Token<'static>, &'static str>>,
+) {
     let parser = parser::ExprParser::new();
     let mut errors = Vec::new();
     let result = parser.parse(&mut errors, input);
@@ -29,11 +34,11 @@ fn parse_err(input: &'static str) -> (Option<Expr>, Vec<ParseError<usize, parser
         .map(|error_recovery| error_recovery.error)
         .collect::<Vec<_>>();
     match result {
-      Ok(expr) => (Some(expr), errors),
-      Err(error) => {
-        errors.push(error);
-        (None, errors)
-      }
+        Ok(expr) => (Some(expr), errors),
+        Err(error) => {
+            errors.push(error);
+            (None, errors)
+        }
     }
 }
 

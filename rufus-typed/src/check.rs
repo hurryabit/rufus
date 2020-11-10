@@ -63,7 +63,11 @@ impl Module {
 
 impl TypeDecl {
     pub fn check(&mut self, env: &KindEnv) -> Result<(), Error> {
-        let Self { name: _, params, body } = self;
+        let Self {
+            name: _,
+            params,
+            body,
+        } = self;
         TypeVar::check_unique(params.iter())?;
         let mut env = env.clone();
         env.type_vars.extend(params.iter().cloned());

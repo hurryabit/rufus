@@ -13,6 +13,6 @@ pub mod util;
 
 #[cfg(test)]
 mod tests {
-    mod parser;
     mod check;
+    mod parser;
 }
