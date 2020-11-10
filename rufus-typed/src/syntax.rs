@@ -30,10 +30,10 @@ pub struct FuncDecl {
     pub body: Expr,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct TypeVar(String);
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct ExprVar(String);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

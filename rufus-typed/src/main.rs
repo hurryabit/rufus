@@ -156,21 +156,22 @@ fn validate_document(
     connection: &Connection,
     uri: Url,
     input: String,
-    send_ast: bool,
+    full_validation: bool,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
+    use util::Position;
     info!("Received text for {}", &uri);
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();
     let result = parser.parse(&mut errors, &input);
     let trans = util::PositionTranslator::new(&input);
-    let (opt_ast, diagnostics) = match result {
-        Ok(ast) => {
+    let (opt_module, mut diagnostics) = match result {
+        Ok(module) => {
             let diagnostics = errors
                 .into_iter()
                 .map(|recovery_error| recovery_error.error)
                 .map(|error| error_to_diagnostic(&trans, error))
                 .collect::<Vec<_>>();
-            (Some(ast), diagnostics)
+            (Some(module), diagnostics)
         }
         Err(error) => {
             let error = if errors.is_empty() {
@@ -184,9 +185,19 @@ fn validate_document(
     };
 
     info!("Sending {} diagnostics", diagnostics.len());
-    if send_ast {
-        if let Some(ast) = opt_ast {
-            info!("{}", serde_yaml::to_string(&ast)?);
+    if full_validation {
+        if let Some(mut module) = opt_module {
+            if let Err(error) = module.check() {
+                let diagnostic = Diagnostic {
+                    range: Range::new(Position::ORIGIN.to_lsp(), Position::ORIGIN.to_lsp()),
+                    severity: Some(DiagnosticSeverity::Error),
+                    source: Some("rufus".to_string()),
+                    message: format!("{:?}", error),
+                    ..Diagnostic::default()
+                };
+                diagnostics.push(diagnostic);
+            }
+            info!("{}", serde_yaml::to_string(&module)?);
         }
     }
     let params = PublishDiagnosticsParams {
