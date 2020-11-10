@@ -13,7 +13,7 @@ lazy_static::lazy_static! {
 type Arity = usize;
 
 #[derive(Clone)]
-pub struct Env {
+pub struct KindEnv {
     type_syns: im::HashMap<TypeVar, Arity>,
     type_vars: im::HashSet<TypeVar>,
 }
@@ -41,12 +41,12 @@ impl Module {
             .map(|decl| (decl.name.clone(), decl.params.len()))
             .collect::<im::HashMap<_, _>>();
         let type_vars = im::HashSet::new();
-        let env = Env {
+        let kind_env = KindEnv {
             type_syns,
             type_vars,
         };
         for type_decl in self.type_decls_mut() {
-            type_decl.check(&env)?;
+            type_decl.check(&kind_env)?;
         }
         Ok(())
     }
@@ -62,7 +62,7 @@ impl Module {
 // }
 
 impl TypeDecl {
-    pub fn check(&mut self, env: &Env) -> Result<(), Error> {
+    pub fn check(&mut self, env: &KindEnv) -> Result<(), Error> {
         let Self { name: _, params, body } = self;
         TypeVar::check_unique(params.iter())?;
         let mut env = env.clone();
@@ -72,7 +72,7 @@ impl TypeDecl {
 }
 
 impl Type {
-    fn check(&mut self, env: &Env) -> Result<(), Error> {
+    fn check(&mut self, env: &KindEnv) -> Result<(), Error> {
         match self {
             Self::Error => Ok(()),
             Self::Int | Self::Bool => panic!("{:?} in Type.check", self),
