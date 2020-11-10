@@ -41,6 +41,7 @@ pub struct ExprCon(String);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub enum Type {
+    Error,
     Var(TypeVar),
     Syn(TypeVar),
     Int,
@@ -50,11 +51,11 @@ pub enum Type {
     Forall(Vec<TypeVar>, Box<Type>),
     Record(Vec<(ExprVar, Type)>),
     Variant(Vec<(ExprCon, Option<Type>)>),
-    Error,
 }
 
 #[derive(Clone, Debug, Serialize)]
 pub enum Expr {
+    Error,
     Var(ExprVar),
     Num(i64),
     Bool(bool),
@@ -69,7 +70,6 @@ pub enum Expr {
     Proj(Box<Expr>, ExprVar),
     Variant(ExprCon, Option<Box<Expr>>),
     Match(Box<Expr>, Vec<Branch>),
-    Error,
 }
 
 #[derive(Clone, Debug, Serialize)]
