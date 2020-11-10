@@ -116,13 +116,6 @@ impl Type {
                 }
                 Ok(0)
             }
-            Self::Forall(vars, body) => {
-                TypeVar::check_unique(vars.iter())?;
-                let mut env = env.clone();
-                env.type_vars.extend(vars.iter().cloned());
-                body.check(&env)?;
-                Ok(0)
-            }
             Self::Fun(_, _) | Self::Record(_) | Self::Variant(_) => {
                 for child in self.children_mut() {
                     child.check(env)?;

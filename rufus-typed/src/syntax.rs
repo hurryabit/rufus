@@ -48,7 +48,6 @@ pub enum Type {
     Bool,
     Fun(Vec<Type>, Box<Type>),
     App(Box<Type>, Vec<Type>),
-    Forall(Vec<TypeVar>, Box<Type>),
     Record(Vec<(ExprVar, Type)>),
     Variant(Vec<(ExprCon, Option<Type>)>),
 }

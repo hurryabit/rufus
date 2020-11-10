@@ -50,9 +50,6 @@ impl Type {
                         yield_!(arg);
                     }
                 }
-                Forall(_params, body) => {
-                    yield_!(body);
-                }
                 Record(fields) => {
                     for (_name, typ) in fields {
                         yield_!(typ);
