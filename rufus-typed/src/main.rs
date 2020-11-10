@@ -95,15 +95,20 @@ fn main_loop(
                     DidOpenTextDocument::METHOD => {
                         let params = cast_notification::<DidOpenTextDocument>(not);
                         let TextDocumentItem { uri, text, .. } = params.text_document;
-                        validate_document(connection, uri, text)?;
+                        validate_document(connection, uri, text, true)?;
                     }
-                    DidChangeTextDocument::METHOD => {}
+                    DidChangeTextDocument::METHOD => {
+                        let params = cast_notification::<DidChangeTextDocument>(not);
+                        let uri = params.text_document.uri;
+                        let text = params.content_changes.into_iter().last().unwrap().text;
+                        validate_document(connection, uri, text, false)?;
+                    }
                     DidSaveTextDocument::METHOD => {
                         let params = cast_notification::<DidSaveTextDocument>(not);
                         let uri = params.text_document.uri;
                         match params.text {
                             Some(text) => {
-                                validate_document(connection, uri, text)?;
+                                validate_document(connection, uri, text, true)?;
                             }
                             None => {
                                 info!("got save notification without text for {}", uri);
@@ -151,6 +156,7 @@ fn validate_document(
     connection: &Connection,
     uri: Url,
     input: String,
+    send_ast: bool,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     info!("Received text for {}", &uri);
     let parser = parser::ModuleParser::new();
@@ -162,7 +168,7 @@ fn validate_document(
             let diagnostics = errors
                 .into_iter()
                 .map(|recovery_error| recovery_error.error)
-                .map(|error, | error_to_diagnostic(&trans, error))
+                .map(|error| error_to_diagnostic(&trans, error))
                 .collect::<Vec<_>>();
             (Some(ast), diagnostics)
         }
@@ -178,8 +184,10 @@ fn validate_document(
     };
 
     info!("Sending {} diagnostics", diagnostics.len());
-    if let Some(ast) = opt_ast {
-        info!("{}", serde_yaml::to_string(&ast)?);
+    if send_ast {
+        if let Some(ast) = opt_ast {
+            info!("{}", serde_yaml::to_string(&ast)?);
+        }
     }
     let params = PublishDiagnosticsParams {
         uri,
