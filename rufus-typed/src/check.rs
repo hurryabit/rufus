@@ -21,9 +21,8 @@ pub struct Env {
 #[derive(Debug)]
 pub enum Error {
     UnknownTypeVar(TypeVar),
-    ExpectedTypeFoundTypeCon(Type),
-    WrongNumberOfTypeArgs {
-        typ: Type,
+    KindMismatch {
+        type_var: TypeVar,
         expected: Arity,
         found: Arity,
     },
@@ -73,54 +72,68 @@ impl TypeDecl {
 }
 
 impl Type {
-    pub fn check(&mut self, env: &Env) -> Result<(), Error> {
-        let arity = self.infer(env)?;
-        if arity == 0 {
-            Ok(())
-        } else {
-            Err(Error::ExpectedTypeFoundTypeCon(self.clone()))
-        }
-    }
-
-    fn infer(&mut self, env: &Env) -> Result<Arity, Error> {
+    fn check(&mut self, env: &Env) -> Result<(), Error> {
         match self {
-            Self::Error => Ok(0),
-            Self::Syn(_) | Self::Int | Self::Bool => panic!("{:?} in Type.check", self),
-            Self::Var(name) => {
-                if env.type_vars.contains(name) {
-                    Ok(0)
-                } else if let Some(arity) = env.type_syns.get(name) {
-                    let syn = Self::Syn(name.clone());
-                    *self = syn;
-                    Ok(*arity)
-                } else if let Some(builtin) = BUILTIN_TYPES.get(name) {
+            Self::Error => Ok(()),
+            Self::Int | Self::Bool => panic!("{:?} in Type.check", self),
+            Self::Var(var) => {
+                if env.type_vars.contains(var) {
+                    Ok(())
+                } else if let Some(arity) = env.type_syns.get(var) {
+                    if *arity == 0 {
+                        *self = Self::SynApp(var.clone(), vec![]);
+                        Ok(())
+                    } else {
+                        Err(Error::KindMismatch {
+                            type_var: var.clone(),
+                            expected: 0,
+                            found: *arity,
+                        })
+                    }
+                } else if let Some(builtin) = BUILTIN_TYPES.get(var) {
                     *self = builtin.clone();
-                    Ok(0)
+                    Ok(())
                 } else {
-                    Err(Error::UnknownTypeVar(name.clone()))
+                    Err(Error::UnknownTypeVar(var.clone()))
                 }
             }
-            Self::App(fun, args) => {
+            Self::SynApp(var, args) => {
                 let num_args = args.len();
                 assert!(num_args > 0);
-                let arity = fun.infer(&env)?;
-                if num_args != arity {
-                    return Err(Error::WrongNumberOfTypeArgs {
-                        typ: self.clone(),
-                        expected: arity,
-                        found: num_args,
-                    });
+                if env.type_vars.contains(var) {
+                    Err(Error::KindMismatch {
+                        type_var: var.clone(),
+                        expected: num_args,
+                        found: 0,
+                    })
+                } else if let Some(arity) = env.type_syns.get(var) {
+                    if *arity == num_args {
+                        for arg in args {
+                            arg.check(env)?;
+                        }
+                        Ok(())
+                    } else {
+                        Err(Error::KindMismatch {
+                            type_var: var.clone(),
+                            expected: num_args,
+                            found: *arity,
+                        })
+                    }
+                } else if BUILTIN_TYPES.contains_key(var) {
+                    Err(Error::KindMismatch {
+                        type_var: var.clone(),
+                        expected: num_args,
+                        found: 0,
+                    })
+                } else {
+                    Err(Error::UnknownTypeVar(var.clone()))
                 }
-                for arg in args {
-                    arg.check(env)?;
-                }
-                Ok(0)
             }
             Self::Fun(_, _) | Self::Record(_) | Self::Variant(_) => {
                 for child in self.children_mut() {
                     child.check(env)?;
                 }
-                Ok(0)
+                Ok(())
             }
         }
     }

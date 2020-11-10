@@ -44,11 +44,10 @@ pub struct ExprCon(String);
 pub enum Type {
     Error,
     Var(TypeVar),
-    Syn(TypeVar),
+    SynApp(TypeVar, Vec<Type>),
     Int,
     Bool,
     Fun(Vec<Type>, Box<Type>),
-    App(Box<Type>, Vec<Type>),
     Record(Vec<(ExprVar, Type)>),
     Variant(Vec<(ExprCon, Option<Type>)>),
 }
@@ -91,13 +90,6 @@ pub enum OpCode {
     LessEq,
     Greater,
     GreaterEq,
-}
-
-impl Type {
-    pub fn var_app(var: TypeVar, args: Vec<Self>) -> Self {
-        use Type::*;
-        App(Box::new(Var(var)), args)
-    }
 }
 
 impl TypeVar {

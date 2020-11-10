@@ -31,85 +31,76 @@ fn unknown_type_var() {
 #[test]
 fn unexpected_type_con_at_top() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = Id"), @r###"
-    ExpectedTypeFoundTypeCon(
-        Syn(
-            t#Id,
-        ),
-    )
+    KindMismatch {
+        type_var: t#Id,
+        expected: 0,
+        found: 1,
+    }
     "###);
 }
 
 #[test]
 fn unexpected_type_con_in_type_args() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype List<A> = A\ntype Bad = List<Id>"), @r###"
-    ExpectedTypeFoundTypeCon(
-        Syn(
-            t#Id,
-        ),
-    )
+    KindMismatch {
+        type_var: t#Id,
+        expected: 0,
+        found: 1,
+    }
     "###);
 }
 
 #[test]
 fn unexpected_type_con_in_func_args() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = (Id) -> Int"), @r###"
-    ExpectedTypeFoundTypeCon(
-        Syn(
-            t#Id,
-        ),
-    )
+    KindMismatch {
+        type_var: t#Id,
+        expected: 0,
+        found: 1,
+    }
     "###);
 }
 
 #[test]
 fn unexpected_type_con_in_func_result() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = () -> Id"), @r###"
-    ExpectedTypeFoundTypeCon(
-        Syn(
-            t#Id,
-        ),
-    )
+    KindMismatch {
+        type_var: t#Id,
+        expected: 0,
+        found: 1,
+    }
     "###);
 }
 
 #[test]
 fn unexpected_type_con_in_record() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = {field: Id}"), @r###"
-    ExpectedTypeFoundTypeCon(
-        Syn(
-            t#Id,
-        ),
-    )
+    KindMismatch {
+        type_var: t#Id,
+        expected: 0,
+        found: 1,
+    }
     "###);
 }
 
 #[test]
 fn unexpected_type_con_in_variant() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = [Constr(Id)]"), @r###"
-    ExpectedTypeFoundTypeCon(
-        Syn(
-            t#Id,
-        ),
-    )
+    KindMismatch {
+        type_var: t#Id,
+        expected: 0,
+        found: 1,
+    }
     "###);
 }
 
 #[test]
 fn wrong_arity_var() {
     insta::assert_debug_snapshot!(check_err("type Bad<F> = F<Int>"), @r###"
-    WrongNumberOfTypeArgs {
-        typ: App(
-            Var(
-                t#F,
-            ),
-            [
-                Var(
-                    t#Int,
-                ),
-            ],
-        ),
-        expected: 0,
-        found: 1,
+    KindMismatch {
+        type_var: t#F,
+        expected: 1,
+        found: 0,
     }
     "###);
 }
@@ -117,17 +108,10 @@ fn wrong_arity_var() {
 #[test]
 fn wrong_arity_builtin() {
     insta::assert_debug_snapshot!(check_err("type Bad<A> = Int<A>"), @r###"
-    WrongNumberOfTypeArgs {
-        typ: App(
-            Int,
-            [
-                Var(
-                    t#A,
-                ),
-            ],
-        ),
-        expected: 0,
-        found: 1,
+    KindMismatch {
+        type_var: t#Int,
+        expected: 1,
+        found: 0,
     }
     "###);
 }
@@ -135,19 +119,10 @@ fn wrong_arity_builtin() {
 #[test]
 fn wrong_arity_type_syn() {
     insta::assert_debug_snapshot!(check_err("type Syn = Int\ntype Bad = Syn<Int>"), @r###"
-    WrongNumberOfTypeArgs {
-        typ: App(
-            Syn(
-                t#Syn,
-            ),
-            [
-                Var(
-                    t#Int,
-                ),
-            ],
-        ),
-        expected: 0,
-        found: 1,
+    KindMismatch {
+        type_var: t#Syn,
+        expected: 1,
+        found: 0,
     }
     "###);
 }
@@ -155,22 +130,10 @@ fn wrong_arity_type_syn() {
 #[test]
 fn wrong_arity_type_con_syn() {
     insta::assert_debug_snapshot!(check_err("type Syn<A> = A\ntype Bad = Syn<Int, Int>"), @r###"
-    WrongNumberOfTypeArgs {
-        typ: App(
-            Syn(
-                t#Syn,
-            ),
-            [
-                Var(
-                    t#Int,
-                ),
-                Var(
-                    t#Int,
-                ),
-            ],
-        ),
-        expected: 1,
-        found: 2,
+    KindMismatch {
+        type_var: t#Syn,
+        expected: 2,
+        found: 1,
     }
     "###);
 }
@@ -212,7 +175,9 @@ fn syn_resolved() {
           name: Here
           params: []
           body:
-            Syn: Syn
+            SynApp:
+              - Syn
+              - []
     "###);
 }
 
@@ -257,7 +222,9 @@ fn type_syn_shadows_int() {
           name: Here
           params: []
           body:
-            Syn: Int
+            SynApp:
+              - Int
+              - []
     "###);
 }
 
@@ -276,8 +243,8 @@ fn type_con_syn_shadows_int() {
           name: Here
           params: []
           body:
-            App:
-              - Syn: Int
+            SynApp:
+              - Int
               - - Bool
     "###);
 }

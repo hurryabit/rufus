@@ -52,8 +52,8 @@ fn module() {
             - - x
               - Var: A
           return_type:
-            App:
-              - Var: Poly
+            SynApp:
+              - Poly
               - - Var: A
           body:
             Var: x

@@ -37,18 +37,18 @@ impl Type {
         gen!({
             match self {
                 Error => {}
-                Var(_) | Syn(_) | Int | Bool => {}
+                Var(_) | Int | Bool => {}
+                SynApp(syn, args) => {
+                    let _: &TypeVar = syn; // We want this to break if change the type of `syn`.
+                    for arg in args {
+                        yield_!(arg);
+                    }
+                }
                 Fun(params, result) => {
                     for param in params {
                         yield_!(param);
                     }
                     yield_!(result);
-                }
-                App(fun, args) => {
-                    yield_!(fun);
-                    for arg in args {
-                        yield_!(arg);
-                    }
                 }
                 Record(fields) => {
                     for (_name, typ) in fields {

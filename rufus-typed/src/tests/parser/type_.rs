@@ -39,9 +39,9 @@ fn types_positive() {
         ("() -> Int", Fun(vec![], Box::new(int()))),
         ("(Int) -> Int", Fun(vec![int()], Box::new(int()))),
         ("(Int,) -> Int", Fun(vec![int()], Box::new(int()))),
-        ("A<Int>", Type::var_app(TypeVar::new("A"), vec![int()])),
-        ("A<Int,>", Type::var_app(TypeVar::new("A"), vec![int()])),
-        ("A<Int,Bool>", Type::var_app(TypeVar::new("A"), vec![int(), bool()])),
+        ("A<Int>", Type::SynApp(TypeVar::new("A"), vec![int()])),
+        ("A<Int,>", Type::SynApp(TypeVar::new("A"), vec![int()])),
+        ("A<Int,Bool>", Type::SynApp(TypeVar::new("A"), vec![int(), bool()])),
         ("{}", Record(vec![])),
         ("{a: Int}", Record(vec![(ExprVar::new("a"), int())])),
         ("{a: Int,}", Record(vec![(ExprVar::new("a"), int())])),
@@ -120,10 +120,8 @@ fn type_app_zero_args() {
     insta::assert_debug_snapshot!(parse_err("A<>"), @r###"
     (
         Some(
-            App(
-                Var(
-                    t#A,
-                ),
+            SynApp(
+                t#A,
                 [
                     Error,
                 ],
