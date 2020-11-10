@@ -61,7 +61,6 @@ pub enum Expr {
     Lam(Vec<(ExprVar, Option<Type>)>, Box<Expr>),
     App(Box<Expr>, Vec<Expr>),
     BinOp(Box<Expr>, OpCode, Box<Expr>),
-    TypeAbs(Vec<TypeVar>, Box<Expr>),
     TypeApp(Box<Expr>, Vec<Type>),
     Let(ExprVar, Option<Type>, Box<Expr>, Box<Expr>),
     If(Box<Expr>, Box<Expr>, Box<Expr>),

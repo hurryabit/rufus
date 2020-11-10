@@ -89,9 +89,6 @@ impl Expr {
                     yield_!(lhs);
                     yield_!(rhs);
                 }
-                TypeAbs(params, body) => {
-                    yield_!(body);
-                }
                 TypeApp(fun, _args) => {
                     yield_!(fun);
                 }

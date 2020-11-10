@@ -516,14 +516,87 @@ fn lam1_typed() {
 
 #[test]
 fn lam1_poly() {
-    insta::assert_yaml_snapshot!(parse("fn<A>(x: A) { x }"), @r###"
-    ---
-    TypeAbs:
-      - - A
-      - Lam:
-          - - - x
-              - Var: A
-          - Var: x
+    insta::assert_debug_snapshot!(parse_err("fn<A>(x: A) { x }"), @r###"
+    (
+        Some(
+            Error,
+        ),
+        [
+            UnrecognizedToken {
+                token: (
+                    2,
+                    Token(
+                        12,
+                        "<",
+                    ),
+                    3,
+                ),
+                expected: [
+                    "\"(\"",
+                ],
+            },
+            UnrecognizedToken {
+                token: (
+                    4,
+                    Token(
+                        17,
+                        ">",
+                    ),
+                    5,
+                ),
+                expected: [
+                    "\")\"",
+                    "\"+\"",
+                    "\",\"",
+                    "\"-\"",
+                    "\";\"",
+                    "\"{\"",
+                    "\"}\"",
+                ],
+            },
+            UnrecognizedToken {
+                token: (
+                    7,
+                    Token(
+                        10,
+                        ":",
+                    ),
+                    8,
+                ),
+                expected: [
+                    "\"!=\"",
+                    "\"(\"",
+                    "\")\"",
+                    "\"*\"",
+                    "\"+\"",
+                    "\",\"",
+                    "\"-\"",
+                    "\".\"",
+                    "\"/\"",
+                    "\";\"",
+                    "\"<\"",
+                    "\"<=\"",
+                    "\"==\"",
+                    "\">\"",
+                    "\">=\"",
+                    "\"@\"",
+                    "\"{\"",
+                    "\"}\"",
+                ],
+            },
+            UnrecognizedToken {
+                token: (
+                    12,
+                    Token(
+                        22,
+                        "{",
+                    ),
+                    13,
+                ),
+                expected: [],
+            },
+        ],
+    )
     "###);
 }
 
