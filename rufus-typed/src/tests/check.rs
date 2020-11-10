@@ -23,9 +23,7 @@ fn check_err(input: &str) -> Error {
 fn unknown_type_var() {
     insta::assert_debug_snapshot!(check_err("type Bad = Unknown"), @r###"
     UnknownTypeVar(
-        TypeVar(
-            "Unknown",
-        ),
+        t#Unknown,
     )
     "###);
 }
@@ -35,9 +33,7 @@ fn unexpected_type_con_at_top() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = Id"), @r###"
     ExpectedTypeFoundTypeCon(
         Syn(
-            TypeVar(
-                "Id",
-            ),
+            t#Id,
         ),
     )
     "###);
@@ -48,9 +44,7 @@ fn unexpected_type_con_in_type_args() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype List<A> = A\ntype Bad = List<Id>"), @r###"
     ExpectedTypeFoundTypeCon(
         Syn(
-            TypeVar(
-                "Id",
-            ),
+            t#Id,
         ),
     )
     "###);
@@ -61,9 +55,7 @@ fn unexpected_type_con_in_func_args() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = (Id) -> Int"), @r###"
     ExpectedTypeFoundTypeCon(
         Syn(
-            TypeVar(
-                "Id",
-            ),
+            t#Id,
         ),
     )
     "###);
@@ -74,9 +66,7 @@ fn unexpected_type_con_in_func_result() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = () -> Id"), @r###"
     ExpectedTypeFoundTypeCon(
         Syn(
-            TypeVar(
-                "Id",
-            ),
+            t#Id,
         ),
     )
     "###);
@@ -87,9 +77,7 @@ fn unexpected_type_con_in_record() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = {field: Id}"), @r###"
     ExpectedTypeFoundTypeCon(
         Syn(
-            TypeVar(
-                "Id",
-            ),
+            t#Id,
         ),
     )
     "###);
@@ -100,9 +88,7 @@ fn unexpected_type_con_in_variant() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = [Constr(Id)]"), @r###"
     ExpectedTypeFoundTypeCon(
         Syn(
-            TypeVar(
-                "Id",
-            ),
+            t#Id,
         ),
     )
     "###);
@@ -114,15 +100,11 @@ fn wrong_arity_var() {
     WrongNumberOfTypeArgs {
         typ: App(
             Var(
-                TypeVar(
-                    "F",
-                ),
+                t#F,
             ),
             [
                 Var(
-                    TypeVar(
-                        "Int",
-                    ),
+                    t#Int,
                 ),
             ],
         ),
@@ -140,9 +122,7 @@ fn wrong_arity_builtin() {
             Int,
             [
                 Var(
-                    TypeVar(
-                        "A",
-                    ),
+                    t#A,
                 ),
             ],
         ),
@@ -158,15 +138,11 @@ fn wrong_arity_type_syn() {
     WrongNumberOfTypeArgs {
         typ: App(
             Syn(
-                TypeVar(
-                    "Syn",
-                ),
+                t#Syn,
             ),
             [
                 Var(
-                    TypeVar(
-                        "Int",
-                    ),
+                    t#Int,
                 ),
             ],
         ),
@@ -182,20 +158,14 @@ fn wrong_arity_type_con_syn() {
     WrongNumberOfTypeArgs {
         typ: App(
             Syn(
-                TypeVar(
-                    "Syn",
-                ),
+                t#Syn,
             ),
             [
                 Var(
-                    TypeVar(
-                        "Int",
-                    ),
+                    t#Int,
                 ),
                 Var(
-                    TypeVar(
-                        "Int",
-                    ),
+                    t#Int,
                 ),
             ],
         ),

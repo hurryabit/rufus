@@ -88,9 +88,7 @@ fn func_type_zero_params_one_comma() {
                     Error,
                 ],
                 Var(
-                    TypeVar(
-                        "Int",
-                    ),
+                    t#Int,
                 ),
             ),
         ),
@@ -124,9 +122,7 @@ fn type_app_zero_args() {
         Some(
             App(
                 Var(
-                    TypeVar(
-                        "A",
-                    ),
+                    t#A,
                 ),
                 [
                     Error,

@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::fmt;
 
 mod debruijn;
 mod iter;
@@ -30,13 +31,13 @@ pub struct FuncDecl {
     pub body: Expr,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Eq, Hash, PartialEq, Serialize)]
 pub struct TypeVar(String);
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Eq, Hash, PartialEq, Serialize)]
 pub struct ExprVar(String);
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Eq, PartialEq, Serialize)]
 pub struct ExprCon(String);
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -105,14 +106,32 @@ impl TypeVar {
     }
 }
 
+impl fmt::Debug for TypeVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("t#{}", self.0))
+    }
+}
+
 impl ExprVar {
     pub fn new(x: &str) -> Self {
         Self(x.to_owned())
     }
 }
 
+impl fmt::Debug for ExprVar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("e#{}", self.0))
+    }
+}
+
 impl ExprCon {
     pub fn new(x: &str) -> Self {
         Self(x.to_owned())
+    }
+}
+
+impl fmt::Debug for ExprCon {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("c#{}", self.0))
     }
 }

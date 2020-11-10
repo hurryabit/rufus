@@ -416,9 +416,7 @@ fn cmp_many_err() {
                 Error,
                 Equals,
                 Var(
-                    ExprVar(
-                        "c",
-                    ),
+                    e#c,
                 ),
             ),
         ),
@@ -711,15 +709,11 @@ fn match1_block_comma() {
         Some(
             Match(
                 Var(
-                    ExprVar(
-                        "x",
-                    ),
+                    e#x,
                 ),
                 [
                     Branch {
-                        con: ExprCon(
-                            "A",
-                        ),
+                        con: c#A,
                         var: None,
                         rhs: Error,
                     },
