@@ -89,8 +89,8 @@ impl Expr {
                     yield_!(lhs);
                     yield_!(rhs);
                 }
-                TypeApp(fun, _args) => {
-                    yield_!(fun);
+                FunInst(fun, _types) => {
+                    let _: &ExprVar = fun; // We want this to fail if we change the type of `fun`.
                 }
                 Let(_binder, _type, bindee, body) => {
                     yield_!(bindee);

@@ -114,8 +114,8 @@ fn app_ty() {
     insta::assert_yaml_snapshot!(parse("f@<Int>(1)"), @r###"
     ---
     App:
-      - TypeApp:
-          - Var: f
+      - FunInst:
+          - f
           - - Var: Int
       - - Num: 1
     "###);

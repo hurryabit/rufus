@@ -79,7 +79,7 @@ AtomExpr: Expr = {
     // NOTE(MH): Ideally, we would not have the "@" symbol before the angle
     // brackets, but that would make the expression `f(g<a, b>(c))` ambiguous
     // to parse. With `f(g@<a, b>(c))` there's no ambiguity.
-    <fun: ExprVar> "@" "<" <tyargs: List1<Type, ",">> ">" "(" <exargs: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::TypeApp(Box::new(Expr::Var(fun)), tyargs)), exargs),
+    <fun: ExprVar> "@" "<" <types: List1<Type, ",">> ">" "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::FunInst(fun, types)), args),
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
     <ExprCon> <Box<InParens<Expr>>?> => Expr::Variant(<>),
