@@ -154,7 +154,7 @@ impl FuncDecl {
         let env = &mut env.clone();
         env.kind_env.type_vars = type_params.iter().cloned().collect();
         env.expr_vars = expr_params.iter().cloned().collect();
-        body.check(env, return_type)?;
+        body.check(env, return_type.clone())?;
         Ok(())
     }
 }
@@ -264,22 +264,22 @@ impl TypeScheme {
 }
 
 impl Expr {
-    pub fn check(&mut self, env: &TypeEnv, expected: &Type) -> Result<(), Error> {
+    pub fn check(&mut self, env: &TypeEnv, expected: Type) -> Result<(), Error> {
         self.infer(env, Some(expected))?;
         Ok(())
     }
 
-    fn infer(&mut self, env: &TypeEnv, opt_expected: Option<&Type>) -> Result<Type, Error> {
+    fn infer(&mut self, env: &TypeEnv, opt_expected: Option<Type>) -> Result<Type, Error> {
         match self {
             Self::Error => Ok(Type::Error),
             Self::Var(var) => {
                 if let Some(typ) = env.expr_vars.get(var) {
-                    self.found_vs_opt_expected(env, typ.clone(), opt_expected.cloned())
+                    self.found_vs_opt_expected(env, typ.clone(), opt_expected)
                 } else if let Some(TypeScheme { params, body }) = env.funcs.get(var) {
                     let arity = params.len();
                     if arity == 0 {
                         *self = Self::FunInst(var.clone(), vec![]);
-                        self.found_vs_opt_expected(env, body.clone(), opt_expected.cloned())
+                        self.found_vs_opt_expected(env, body.clone(), opt_expected)
                     } else {
                         Err(Error::SchemeMismatch {
                             expr_var: var.clone(),
@@ -291,8 +291,8 @@ impl Expr {
                     Err(Error::UnknownExprVar(var.clone()))
                 }
             }
-            Self::Num(_) => self.found_vs_opt_expected(env, Type::Int, opt_expected.cloned()),
-            Self::Bool(_) => self.found_vs_opt_expected(env, Type::Bool, opt_expected.cloned()),
+            Self::Num(_) => self.found_vs_opt_expected(env, Type::Int, opt_expected),
+            Self::Bool(_) => self.found_vs_opt_expected(env, Type::Bool, opt_expected),
             Self::Lam(params, body) => {
                 for (_, opt_typ) in params.iter_mut() {
                     if let Some(typ) = opt_typ {
@@ -300,7 +300,7 @@ impl Expr {
                     }
                 }
                 ExprVar::check_unique(params.iter().map(|(name, _)| name))?;
-                match opt_expected.cloned() {
+                match opt_expected {
                     None => {
                         if params
                             .iter()
@@ -323,6 +323,7 @@ impl Expr {
                     Some(expected) => match expected.weak_normalize(env) {
                         Type::Fun(param_types, result) if params.len() == param_types.len() => {
                             let env = &mut env.clone();
+                            // TODO(MH): Remove some cloning.
                             for ((var, opt_type_ann), expected) in
                                 params.iter_mut().zip(param_types.iter())
                             {
@@ -336,10 +337,10 @@ impl Expr {
                                 }
                                 env.expr_vars.insert(var.clone(), typ);
                             }
-                            let result = body.infer(env, Some(&result))?;
+                            let result = body.infer(env, Some(*result))?;
                             Ok(Type::Fun(param_types.clone(), Box::new(result)))
                         }
-                        expected => Err(Error::BadLam(expected.clone(), params.len())),
+                        expected => Err(Error::BadLam(expected, params.len())),
                     },
                 }
             }
@@ -347,19 +348,19 @@ impl Expr {
                 let fun_type = fun.infer(env, None)?;
                 match fun_type.weak_normalize(env) {
                     Type::Fun(params, result) if params.len() == args.len() => {
-                        for (arg, typ) in args.iter_mut().zip(params.iter()) {
+                        for (arg, typ) in args.iter_mut().zip(params.into_iter()) {
                             arg.infer(env, Some(typ))?;
                         }
-                        self.found_vs_opt_expected(env, *result, opt_expected.cloned())
+                        self.found_vs_opt_expected(env, *result, opt_expected)
                     }
                     fun_type => Err(Error::BadApp(fun_type, args.len())),
                 }
             }
             Self::BinOp(lhs, op, rhs) => match op {
                 OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div => {
-                    lhs.infer(env, Some(&Type::Int))?;
-                    rhs.infer(env, Some(&Type::Int))?;
-                    self.found_vs_opt_expected(env, Type::Int, opt_expected.cloned())
+                    lhs.infer(env, Some(Type::Int))?;
+                    rhs.infer(env, Some(Type::Int))?;
+                    self.found_vs_opt_expected(env, Type::Int, opt_expected)
                 }
                 OpCode::Equals
                 | OpCode::NotEq
@@ -368,8 +369,8 @@ impl Expr {
                 | OpCode::Greater
                 | OpCode::GreaterEq => {
                     let typ = lhs.infer(env, None)?;
-                    rhs.infer(env, Some(&typ))?;
-                    self.found_vs_opt_expected(env, Type::Bool, opt_expected.cloned())
+                    rhs.infer(env, Some(typ))?;
+                    self.found_vs_opt_expected(env, Type::Bool, opt_expected)
                 }
             },
             Self::FunInst(var, types) => {
@@ -388,7 +389,7 @@ impl Expr {
                     let arity = scheme.params.len();
                     if arity == num_types {
                         let found = scheme.instantiate(types);
-                        self.found_vs_opt_expected(env, found, opt_expected.cloned())
+                        self.found_vs_opt_expected(env, found, opt_expected)
                     } else {
                         Err(Error::SchemeMismatch {
                             expr_var: var.clone(),
@@ -404,37 +405,30 @@ impl Expr {
                 if let Some(typ) = opt_typ {
                     typ.check(&env.kind_env)?;
                 }
-                let typ = bindee.infer(env, opt_typ.as_ref())?;
-                if opt_typ.is_none() {
-                    *opt_typ = Some(typ.clone());
-                }
+                let typ = bindee.infer(env, std::mem::take(opt_typ))?;
+                *opt_typ = Some(typ.clone());
                 let env = &mut env.clone();
                 env.expr_vars.insert(binder.clone(), typ);
                 body.infer(env, opt_expected)
             }
             Self::If(cond, then, elze) => {
-                cond.infer(env, Some(&Type::Bool))?;
+                cond.infer(env, Some(Type::Bool))?;
                 let typ = then.infer(env, opt_expected)?;
-                elze.infer(env, Some(&typ))?;
-                Ok(typ)
+                elze.infer(env, Some(typ))
             }
             Self::Record(fields) => {
                 let fields = fields
                     .iter_mut()
                     .map(|(name, expr)| Ok((name.clone(), expr.infer(env, None)?)))
                     .collect::<Result<_, _>>()?;
-                self.found_vs_opt_expected(env, Type::Record(fields), opt_expected.cloned())
+                self.found_vs_opt_expected(env, Type::Record(fields), opt_expected)
             }
             Self::Proj(record, field) => {
                 let record_typ = record.infer(env, None)?;
                 match record_typ.weak_normalize(env) {
                     Type::Record(fields) => {
                         if let Some(field_typ) = find_by_key(&fields, field) {
-                            self.found_vs_opt_expected(
-                                env,
-                                field_typ.clone(),
-                                opt_expected.cloned(),
-                            )
+                            self.found_vs_opt_expected(env, field_typ.clone(), opt_expected)
                         } else {
                             Err(Error::BadRecordProj(Type::Record(fields), field.clone()))
                         }
@@ -442,18 +436,18 @@ impl Expr {
                     record_typ => Err(Error::BadRecordProj(record_typ, field.clone())),
                 }
             }
-            Self::Variant(con, arg) => match opt_expected.cloned() {
+            Self::Variant(con, arg) => match opt_expected {
                 None => Err(Error::TypeAnnsNeeded(self.clone())),
                 Some(expected) => match expected.weak_normalize(env) {
                     Type::Variant(cons) => {
                         if let Some(arg_typ) = find_by_key(&cons, con) {
-                            arg.infer(env, Some(arg_typ))?;
-                            Ok(Type::Variant(cons.clone()))
+                            arg.infer(env, Some(arg_typ.clone()))?;
+                            Ok(Type::Variant(cons))
                         } else {
-                            Err(Error::BadVariant(Type::Variant(cons.clone()), con.clone()))
+                            Err(Error::BadVariant(Type::Variant(cons), con.clone()))
                         }
                     }
-                    expected => Err(Error::BadVariant(expected.clone(), con.clone())),
+                    expected => Err(Error::BadVariant(expected, con.clone())),
                 },
             },
             Self::Match(scrut, branches) => {
@@ -461,9 +455,9 @@ impl Expr {
                 match scrut_typ.weak_normalize(env) {
                     Type::Variant(cons) => {
                         if let Some((first, rest)) = branches.split_first_mut() {
-                            let rhs_typ = first.infer(env, &cons, opt_expected)?;
+                            let mut rhs_typ = first.infer(env, &cons, opt_expected)?;
                             for other in rest {
-                                other.infer(env, &cons, Some(&rhs_typ))?;
+                                rhs_typ = other.infer(env, &cons, Some(rhs_typ))?;
                             }
                             Ok(rhs_typ)
                         } else {
@@ -499,10 +493,7 @@ impl Expr {
                     .collect::<Result<_, _>>()?;
                 Ok(Type::SynApp(var1, args))
             }
-            (found, expected) => match (
-                found.weak_normalize(env),
-                expected.clone().weak_normalize(env),
-            ) {
+            (found, expected) => match (found.weak_normalize(env), expected.weak_normalize(env)) {
                 (Type::SynApp(_, _), _) | (_, Type::SynApp(_, _)) => {
                     panic!("IMPOSSIBLE: Type::SynApp after Type::weak_normalize")
                 }
@@ -566,7 +557,7 @@ impl Branch {
         &mut self,
         env: &TypeEnv,
         cons: &Vec<(ExprCon, Type)>,
-        opt_expected: Option<&Type>,
+        opt_expected: Option<Type>,
     ) -> Result<Type, Error> {
         let Branch {
             con,
