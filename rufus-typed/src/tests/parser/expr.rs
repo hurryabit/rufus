@@ -231,7 +231,7 @@ fn variant0() {
     ---
     Variant:
       - A
-      - ~
+      - Record: []
     "###);
 }
 
@@ -251,7 +251,7 @@ fn variant_int() {
     ---
     Variant:
       - Int
-      - ~
+      - Record: []
     "###);
 }
 
@@ -261,7 +261,7 @@ fn variant_bool() {
     ---
     Variant:
       - Bool
-      - ~
+      - Record: []
     "###);
 }
 

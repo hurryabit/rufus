@@ -56,10 +56,8 @@ impl Type {
                     }
                 }
                 Variant(constrs) => {
-                    for (_name, opt_typ) in constrs {
-                        if let Some(typ) = opt_typ {
-                            yield_!(typ);
-                        }
+                    for (_name, typ) in constrs {
+                        yield_!(typ);
                     }
                 }
             }
@@ -109,10 +107,8 @@ impl Expr {
                 Proj(record, _field) => {
                     yield_!(record);
                 }
-                Variant(_const, opt_payload) => {
-                    if let Some(payload) = opt_payload {
-                        yield_!(payload);
-                    }
+                Variant(_constr, payload) => {
+                    yield_!(payload);
                 }
                 Match(scrut, branches) => {
                     yield_!(scrut);

@@ -37,8 +37,9 @@ pub Type: Type = {
     ! => { errors.push(<>); Type::Error },
 }
 
-VariantCaseType: (ExprCon, Option<Type>) = {
-    ExprCon InParens<Type>? => (<>),
+VariantCaseType: (ExprCon, Type) = {
+    ExprCon InParens<Type> => (<>),
+    <con: ExprCon> => (con, Type::Record(vec![])),
 }
 
 pub Expr: Expr = {
@@ -82,7 +83,8 @@ AtomExpr: Expr = {
     <fun: ExprVar> "@" "<" <types: List1<Type, ",">> ">" "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::FunInst(fun, types)), args),
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
-    <ExprCon> <Box<InParens<Expr>>?> => Expr::Variant(<>),
+    <ExprCon> <Box<InParens<Expr>>> => Expr::Variant(<>),
+    <con: ExprCon> => Expr::Variant(con, Box::new(Expr::Record(vec![]))),
     ! => { errors.push(<>); Expr::Error },
 }
 

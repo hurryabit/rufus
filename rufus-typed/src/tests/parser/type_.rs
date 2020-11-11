@@ -34,6 +34,10 @@ fn bool() -> Type {
     Type::Var(TypeVar::new("Bool"))
 }
 
+fn unit() -> Type {
+    Type::Record(vec![])
+}
+
 #[test]
 fn types_positive() {
     use syntax::Type::*;
@@ -56,25 +60,25 @@ fn types_positive() {
         (
             "[A | B(Int)]",
             Variant(vec![
-                (ExprCon::new("A"), None),
-                (ExprCon::new("B"), Some(int())),
+                (ExprCon::new("A"), unit()),
+                (ExprCon::new("B"), int()),
             ]),
         ),
         (
             "[Int(Int)]",
-            Variant(vec![(ExprCon::new("Int"), Some(int()))]),
+            Variant(vec![(ExprCon::new("Int"), int())]),
         ),
         (
             "[Bool(Bool)]",
-            Variant(vec![(ExprCon::new("Bool"), Some(bool()))]),
+            Variant(vec![(ExprCon::new("Bool"), bool())]),
         ),
         // TODO(MH): We want to allow an optional leading "|" rather
         // than a trailing one.
         (
             "[A | B(Int) |]",
             Variant(vec![
-                (ExprCon::new("A"), None),
-                (ExprCon::new("B"), Some(int())),
+                (ExprCon::new("A"), unit()),
+                (ExprCon::new("B"), int()),
             ]),
         ),
     ];

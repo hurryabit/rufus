@@ -49,7 +49,13 @@ pub enum Type {
     Bool,
     Fun(Vec<Type>, Box<Type>),
     Record(Vec<(ExprVar, Type)>),
-    Variant(Vec<(ExprCon, Option<Type>)>),
+    Variant(Vec<(ExprCon, Type)>),
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TypeScheme {
+    pub params: Vec<TypeVar>,
+    pub body: Type,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -66,7 +72,7 @@ pub enum Expr {
     If(Box<Expr>, Box<Expr>, Box<Expr>),
     Record(Vec<(ExprVar, Expr)>),
     Proj(Box<Expr>, ExprVar),
-    Variant(ExprCon, Option<Box<Expr>>),
+    Variant(ExprCon, Box<Expr>),
     Match(Box<Expr>, Vec<Branch>),
 }
 
@@ -89,6 +95,18 @@ pub enum OpCode {
     LessEq,
     Greater,
     GreaterEq,
+}
+
+impl Default for Type {
+    fn default() -> Self {
+        Self::Error
+    }
+}
+
+impl Default for Expr {
+    fn default() -> Self {
+        Self::Error
+    }
 }
 
 impl TypeVar {
