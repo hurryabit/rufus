@@ -1,19 +1,11 @@
 use crate::syntax::*;
 use std::hash::Hash;
 
-lazy_static::lazy_static! {
-    static ref BUILTIN_TYPES: im::HashMap<TypeVar, Type> = {
-        let mut res = im::HashMap::new();
-        res.insert(TypeVar::new("Int"), Type::Int);
-        res.insert(TypeVar::new("Bool"), Type::Bool);
-        res
-    };
-}
-
 type Arity = usize;
 
 #[derive(Clone)]
 pub struct KindEnv {
+    builtin_types: im::HashMap<TypeVar, Type>,
     types: im::HashMap<TypeVar, TypeScheme>,
     type_vars: im::HashSet<TypeVar>,
 }
@@ -61,20 +53,28 @@ pub enum Error {
 
 impl Module {
     pub fn check(&mut self) -> Result<(), Error> {
+        let mut builtin_types = im::HashMap::new();
+        builtin_types.insert(TypeVar::new("Int"), Type::Int);
+        builtin_types.insert(TypeVar::new("Bool"), Type::Bool);
+
         if let Some(name) = find_duplicate(self.type_decls().map(|decl| &decl.name)) {
-            return Err(Error::DuplicateTypeDecl(name.clone()));
+            return Err(Error::DuplicateTypeDecl(*name));
         }
 
         let types = self.types();
         let type_vars = im::HashSet::new();
-        let mut kind_env = KindEnv { types, type_vars };
+        let mut kind_env = KindEnv {
+            builtin_types,
+            types,
+            type_vars,
+        };
         for type_decl in self.type_decls_mut() {
             type_decl.check(&kind_env)?;
         }
         kind_env.types = self.types();
         let funcs = self
             .func_decls_mut()
-            .map(|decl| Ok((decl.name.clone(), decl.check_signature(&kind_env)?)))
+            .map(|decl| Ok((decl.name, decl.check_signature(&kind_env)?)))
             .collect::<Result<_, _>>()?;
         let expr_vars = im::HashMap::new();
         let type_env = TypeEnv {
@@ -92,7 +92,7 @@ impl Module {
         self.type_decls()
             .map(|TypeDecl { name, params, body }| {
                 (
-                    name.clone(),
+                    *name,
                     TypeScheme {
                         params: params.clone(),
                         body: body.clone(),
@@ -170,20 +170,20 @@ impl Type {
                 } else if let Some(scheme) = env.types.get(var) {
                     let arity = scheme.params.len();
                     if arity == 0 {
-                        *self = Self::SynApp(var.clone(), vec![]);
+                        *self = Self::SynApp(*var, vec![]);
                         Ok(())
                     } else {
                         Err(Error::KindMismatch {
-                            type_var: var.clone(),
+                            type_var: *var,
                             expected: 0,
                             found: arity,
                         })
                     }
-                } else if let Some(builtin) = BUILTIN_TYPES.get(var) {
+                } else if let Some(builtin) = env.builtin_types.get(var) {
                     *self = builtin.clone();
                     Ok(())
                 } else {
-                    Err(Error::UnknownTypeVar(var.clone()))
+                    Err(Error::UnknownTypeVar(*var))
                 }
             }
             Self::SynApp(var, args) => {
@@ -191,7 +191,7 @@ impl Type {
                 assert!(num_args > 0);
                 if env.type_vars.contains(var) {
                     Err(Error::KindMismatch {
-                        type_var: var.clone(),
+                        type_var: *var,
                         expected: num_args,
                         found: 0,
                     })
@@ -204,19 +204,19 @@ impl Type {
                         Ok(())
                     } else {
                         Err(Error::KindMismatch {
-                            type_var: var.clone(),
+                            type_var: *var,
                             expected: num_args,
                             found: arity,
                         })
                     }
-                } else if BUILTIN_TYPES.contains_key(var) {
+                } else if env.builtin_types.contains_key(var) {
                     Err(Error::KindMismatch {
-                        type_var: var.clone(),
+                        type_var: *var,
                         expected: num_args,
                         found: 0,
                     })
                 } else {
-                    Err(Error::UnknownTypeVar(var.clone()))
+                    Err(Error::UnknownTypeVar(*var))
                 }
             }
             Self::Fun(_, _) | Self::Record(_) | Self::Variant(_) => {
@@ -278,17 +278,17 @@ impl Expr {
                 } else if let Some(TypeScheme { params, body }) = env.funcs.get(var) {
                     let arity = params.len();
                     if arity == 0 {
-                        *self = Self::FunInst(var.clone(), vec![]);
+                        *self = Self::FunInst(*var, vec![]);
                         self.found_vs_opt_expected(env, body.clone(), opt_expected)
                     } else {
                         Err(Error::SchemeMismatch {
-                            expr_var: var.clone(),
+                            expr_var: *var,
                             expected: 0,
                             found: arity,
                         })
                     }
                 } else {
-                    Err(Error::UnknownExprVar(var.clone()))
+                    Err(Error::UnknownExprVar(*var))
                 }
             }
             Self::Num(_) => self.found_vs_opt_expected(env, Type::Int, opt_expected),
@@ -311,7 +311,7 @@ impl Expr {
                             for (var, opt_type_ann) in params {
                                 // TODO(MH): Use `collect::<Option<_>>`.
                                 let type_ann = opt_type_ann.as_ref().unwrap();
-                                env.expr_vars.insert(var.clone(), type_ann.clone());
+                                env.expr_vars.insert(*var, type_ann.clone());
                                 param_types.push(type_ann.clone());
                             }
                             let result = body.infer(env, None)?;
@@ -327,7 +327,7 @@ impl Expr {
                             for ((var, opt_type_ann), expected) in
                                 params.iter_mut().zip(param_types.iter())
                             {
-                                let typ = Expr::Var(var.clone()).found_vs_opt_expected(
+                                let typ = Expr::Var(*var).found_vs_opt_expected(
                                     env,
                                     expected.clone(),
                                     opt_type_ann.clone(),
@@ -335,7 +335,7 @@ impl Expr {
                                 if opt_type_ann.is_none() {
                                     *opt_type_ann = Some(typ.clone());
                                 }
-                                env.expr_vars.insert(var.clone(), typ);
+                                env.expr_vars.insert(*var, typ);
                             }
                             let result = body.infer(env, Some(*result))?;
                             Ok(Type::Fun(param_types.clone(), Box::new(result)))
@@ -381,7 +381,7 @@ impl Expr {
                 }
                 if env.expr_vars.contains_key(var) {
                     Err(Error::SchemeMismatch {
-                        expr_var: var.clone(),
+                        expr_var: *var,
                         expected: num_types,
                         found: 0,
                     })
@@ -392,13 +392,13 @@ impl Expr {
                         self.found_vs_opt_expected(env, found, opt_expected)
                     } else {
                         Err(Error::SchemeMismatch {
-                            expr_var: var.clone(),
+                            expr_var: *var,
                             expected: num_types,
                             found: arity,
                         })
                     }
                 } else {
-                    Err(Error::UnknownExprVar(var.clone()))
+                    Err(Error::UnknownExprVar(*var))
                 }
             }
             Self::Let(binder, opt_typ, bindee, body) => {
@@ -419,7 +419,7 @@ impl Expr {
             Self::Record(fields) => {
                 let fields = fields
                     .iter_mut()
-                    .map(|(name, expr)| Ok((name.clone(), expr.infer(env, None)?)))
+                    .map(|(name, expr)| Ok((*name, expr.infer(env, None)?)))
                     .collect::<Result<_, _>>()?;
                 self.found_vs_opt_expected(env, Type::Record(fields), opt_expected)
             }
@@ -430,10 +430,10 @@ impl Expr {
                         if let Some(field_typ) = find_by_key(&fields, field) {
                             self.found_vs_opt_expected(env, field_typ.clone(), opt_expected)
                         } else {
-                            Err(Error::BadRecordProj(Type::Record(fields), field.clone()))
+                            Err(Error::BadRecordProj(Type::Record(fields), *field))
                         }
                     }
-                    record_typ => Err(Error::BadRecordProj(record_typ, field.clone())),
+                    record_typ => Err(Error::BadRecordProj(record_typ, *field)),
                 }
             }
             Self::Variant(con, arg) => match opt_expected {
@@ -444,10 +444,10 @@ impl Expr {
                             arg.infer(env, Some(arg_typ.clone()))?;
                             Ok(Type::Variant(cons))
                         } else {
-                            Err(Error::BadVariant(Type::Variant(cons), con.clone()))
+                            Err(Error::BadVariant(Type::Variant(cons), *con))
                         }
                     }
-                    expected => Err(Error::BadVariant(expected, con.clone())),
+                    expected => Err(Error::BadVariant(expected, *con)),
                 },
             },
             Self::Match(scrut, branches) => {
@@ -567,13 +567,13 @@ impl Branch {
         if let Some(arg_type) = find_by_key(cons, con) {
             if let Some(var) = opt_var {
                 let env = &mut env.clone();
-                env.expr_vars.insert(var.clone(), arg_type.clone());
+                env.expr_vars.insert(*var, arg_type.clone());
                 rhs.infer(env, opt_expected)
             } else {
                 rhs.infer(env, opt_expected)
             }
         } else {
-            Err(Error::BadBranch(Type::Variant(cons.clone()), con.clone()))
+            Err(Error::BadBranch(Type::Variant(cons.clone()), *con))
         }
     }
 }
@@ -581,7 +581,7 @@ impl Branch {
 impl TypeVar {
     fn check_unique<'a, I: Iterator<Item = &'a TypeVar>>(iter: I) -> Result<(), Error> {
         if let Some(dup) = find_duplicate(iter) {
-            Err(Error::DuplicateTypeVar(dup.clone()))
+            Err(Error::DuplicateTypeVar(*dup))
         } else {
             Ok(())
         }
@@ -591,7 +591,7 @@ impl TypeVar {
 impl ExprVar {
     fn check_unique<'a, I: Iterator<Item = &'a ExprVar>>(iter: I) -> Result<(), Error> {
         if let Some(dup) = find_duplicate(iter) {
-            Err(Error::DuplicateExprVar(dup.clone()))
+            Err(Error::DuplicateExprVar(*dup))
         } else {
             Ok(())
         }

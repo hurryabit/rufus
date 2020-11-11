@@ -1,4 +1,5 @@
-use serde::Serialize;
+use lalrpop_intern::InternedString;
+use serde::{Serialize, Serializer};
 use std::fmt;
 
 mod debruijn;
@@ -30,15 +31,6 @@ pub struct FuncDecl {
     pub return_type: Type,
     pub body: Expr,
 }
-
-#[derive(Clone, Eq, Hash, PartialEq, Serialize)]
-pub struct TypeVar(String);
-
-#[derive(Clone, Eq, Hash, PartialEq, Serialize)]
-pub struct ExprVar(String);
-
-#[derive(Clone, Eq, PartialEq, Serialize)]
-pub struct ExprCon(String);
 
 #[derive(Clone, Debug, Serialize)]
 pub enum Type {
@@ -97,6 +89,15 @@ pub enum OpCode {
     GreaterEq,
 }
 
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub struct TypeVar(InternedString);
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub struct ExprVar(InternedString);
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub struct ExprCon(InternedString);
+
 impl Default for Type {
     fn default() -> Self {
         Self::Error
@@ -111,7 +112,7 @@ impl Default for Expr {
 
 impl TypeVar {
     pub fn new(x: &str) -> Self {
-        Self(x.to_owned())
+        Self(lalrpop_intern::intern(x))
     }
 }
 
@@ -121,9 +122,18 @@ impl fmt::Debug for TypeVar {
     }
 }
 
+impl Serialize for TypeVar {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        lalrpop_intern::read(|interner| interner.data(self.0).serialize(serializer))
+    }
+}
+
 impl ExprVar {
     pub fn new(x: &str) -> Self {
-        Self(x.to_owned())
+        Self(lalrpop_intern::intern(x))
     }
 }
 
@@ -133,14 +143,32 @@ impl fmt::Debug for ExprVar {
     }
 }
 
+impl Serialize for ExprVar {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        lalrpop_intern::read(|interner| interner.data(self.0).serialize(serializer))
+    }
+}
+
 impl ExprCon {
     pub fn new(x: &str) -> Self {
-        Self(x.to_owned())
+        Self(lalrpop_intern::intern(x))
     }
 }
 
 impl fmt::Debug for ExprCon {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!("c#{}", self.0))
+    }
+}
+
+impl Serialize for ExprCon {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        lalrpop_intern::read(|interner| interner.data(self.0).serialize(serializer))
     }
 }
