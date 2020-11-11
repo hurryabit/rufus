@@ -152,7 +152,7 @@ impl FuncDecl {
         } = self;
         ExprVar::check_unique(expr_params.iter().map(|(var, _)| var))?;
         let env = &mut env.clone();
-        env.kind_env.type_vars = type_params.iter().cloned().collect();
+        env.kind_env.type_vars = type_params.iter().copied().collect();
         env.expr_vars = expr_params.iter().cloned().collect();
         body.check(env, return_type.clone())?;
         Ok(())
@@ -307,15 +307,16 @@ impl Expr {
                             .all(|(_, opt_type_ann)| opt_type_ann.is_some())
                         {
                             let env = &mut env.clone();
-                            let mut param_types = Vec::new();
-                            for (var, opt_type_ann) in params {
-                                // TODO(MH): Use `collect::<Option<_>>`.
-                                let type_ann = opt_type_ann.as_ref().unwrap();
-                                env.expr_vars.insert(*var, type_ann.clone());
-                                param_types.push(type_ann.clone());
-                            }
+                            let param_types = params
+                                .iter()
+                                .map(|(var, opt_type_ann)| {
+                                    let type_ann = opt_type_ann.as_ref().unwrap();
+                                    env.expr_vars.insert(*var, type_ann.clone());
+                                    type_ann.clone()
+                                })
+                                .collect();
                             let result = body.infer(env, None)?;
-                            Ok(Type::Fun(param_types.clone(), Box::new(result)))
+                            Ok(Type::Fun(param_types, Box::new(result)))
                         } else {
                             Err(Error::TypeAnnsNeeded(self.clone()))
                         }
@@ -324,21 +325,29 @@ impl Expr {
                         Type::Fun(param_types, result) if params.len() == param_types.len() => {
                             let env = &mut env.clone();
                             // TODO(MH): Remove some cloning.
-                            for ((var, opt_type_ann), expected) in
-                                params.iter_mut().zip(param_types.iter())
-                            {
-                                let typ = Expr::Var(*var).found_vs_opt_expected(
-                                    env,
-                                    expected.clone(),
-                                    opt_type_ann.clone(),
-                                )?;
-                                if opt_type_ann.is_none() {
-                                    *opt_type_ann = Some(typ.clone());
-                                }
-                                env.expr_vars.insert(*var, typ);
-                            }
+                            let param_types = params
+                                .iter_mut()
+                                .zip(param_types.into_iter())
+                                .map(|x| {
+                                    // TODO(MH): Replace `x` with a pattern once
+                                    // https://github.com/rust-lang/rust/issues/68354
+                                    // has been stabilized.
+                                    let (var, opt_type_ann) = x.0;
+                                    let expected = x.1;
+                                    let typ = Expr::Var(*var).found_vs_opt_expected(
+                                        env,
+                                        expected,
+                                        opt_type_ann.clone(),
+                                    )?;
+                                    if opt_type_ann.is_none() {
+                                        *opt_type_ann = Some(typ.clone());
+                                    }
+                                    env.expr_vars.insert(*var, typ.clone());
+                                    Ok(typ)
+                                })
+                                .collect::<Result<_, _>>()?;
                             let result = body.infer(env, Some(*result))?;
-                            Ok(Type::Fun(param_types.clone(), Box::new(result)))
+                            Ok(Type::Fun(param_types, Box::new(result)))
                         }
                         expected => Err(Error::BadLam(expected, params.len())),
                     },
@@ -405,8 +414,10 @@ impl Expr {
                 if let Some(typ) = opt_typ {
                     typ.check(&env.kind_env)?;
                 }
-                let typ = bindee.infer(env, std::mem::take(opt_typ))?;
-                *opt_typ = Some(typ.clone());
+                let typ = bindee.infer(env, opt_typ.clone())?;
+                if opt_typ.is_none() {
+                    *opt_typ = Some(typ.clone());
+                }
                 let env = &mut env.clone();
                 env.expr_vars.insert(binder.clone(), typ);
                 body.infer(env, opt_expected)
