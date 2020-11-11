@@ -40,7 +40,7 @@ pub struct ExprVar(String);
 #[derive(Clone, Eq, PartialEq, Serialize)]
 pub struct ExprCon(String);
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub enum Type {
     Error,
     Var(TypeVar),
