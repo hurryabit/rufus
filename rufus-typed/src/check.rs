@@ -1,28 +1,26 @@
-use crate::syntax::*;
+use crate::syntax;
 use std::collections;
 use std::hash::Hash;
 use std::rc::Rc;
+use syntax::{Branch, Expr, ExprCon, ExprVar, FuncDecl, Module, OpCode, TypeDecl, TypeVar};
+use types::*;
 
 pub mod types;
 
 type Arity = usize;
 
-type URcType = types::RcType;
-type UType = types::Type;
-type UTypeScheme = types::TypeScheme;
-
 #[derive(Clone)]
 pub struct KindEnv {
-    builtin_types: Rc<collections::HashMap<TypeVar, Type>>,
-    types: Rc<collections::HashMap<TypeVar, UTypeScheme>>,
+    builtin_types: Rc<collections::HashMap<TypeVar, syntax::Type>>,
+    types: Rc<collections::HashMap<TypeVar, TypeScheme>>,
     type_vars: im::HashSet<TypeVar>,
 }
 
 #[derive(Clone)]
 pub struct TypeEnv {
     kind_env: KindEnv,
-    funcs: Rc<collections::HashMap<ExprVar, UTypeScheme>>,
-    expr_vars: im::HashMap<ExprVar, URcType>,
+    funcs: Rc<collections::HashMap<ExprVar, TypeScheme>>,
+    expr_vars: im::HashMap<ExprVar, RcType>,
 }
 
 #[derive(Debug)]
@@ -42,18 +40,18 @@ pub enum Error {
     },
     TypeMismatch {
         expr: Expr,
-        expected: URcType,
-        found: URcType,
+        expected: RcType,
+        found: RcType,
     },
     DuplicateTypeVar(TypeVar),
     DuplicateTypeDecl(TypeVar),
     DuplicateExprVar(ExprVar),
-    BadRecordProj(URcType, ExprVar),
-    BadApp(URcType, Arity),
-    BadLam(URcType, Arity),
-    BadVariant(URcType, ExprCon),
-    BadMatch(URcType),
-    BadBranch(URcType, ExprCon),
+    BadRecordProj(RcType, ExprVar),
+    BadApp(RcType, Arity),
+    BadLam(RcType, Arity),
+    BadVariant(RcType, ExprCon),
+    BadMatch(RcType),
+    BadBranch(RcType, ExprCon),
     EmptyMatch,
     TypeAnnsNeeded(Expr),
     NotImplemented(&'static str),
@@ -62,8 +60,8 @@ pub enum Error {
 impl Module {
     pub fn check(&mut self) -> Result<(), Error> {
         let mut builtin_types = collections::HashMap::new();
-        builtin_types.insert(TypeVar::new("Int"), Type::Int);
-        builtin_types.insert(TypeVar::new("Bool"), Type::Bool);
+        builtin_types.insert(TypeVar::new("Int"), syntax::Type::Int);
+        builtin_types.insert(TypeVar::new("Bool"), syntax::Type::Bool);
 
         if let Some(name) = find_duplicate(self.type_decls().map(|decl| &decl.name)) {
             return Err(Error::DuplicateTypeDecl(*name));
@@ -96,14 +94,14 @@ impl Module {
         Ok(())
     }
 
-    fn types(&self) -> collections::HashMap<TypeVar, UTypeScheme> {
+    fn types(&self) -> collections::HashMap<TypeVar, TypeScheme> {
         self.type_decls()
             .map(|TypeDecl { name, params, body }| {
                 (
                     *name,
-                    UTypeScheme {
+                    TypeScheme {
                         params: params.clone(),
-                        body: URcType::from_syntax(body),
+                        body: RcType::from_syntax(body),
                     },
                 )
             })
@@ -126,7 +124,7 @@ impl TypeDecl {
 }
 
 impl FuncDecl {
-    pub fn check_signature(&mut self, env: &KindEnv) -> Result<UTypeScheme, Error> {
+    pub fn check_signature(&mut self, env: &KindEnv) -> Result<TypeScheme, Error> {
         let Self {
             name: _,
             type_params,
@@ -141,14 +139,14 @@ impl FuncDecl {
             typ.check(env)?;
         }
         return_type.check(env)?;
-        Ok(UTypeScheme {
+        Ok(TypeScheme {
             params: type_params.clone(),
-            body: URcType::new(UType::Fun(
+            body: RcType::new(Type::Fun(
                 expr_params
                     .iter()
-                    .map(|(_, typ)| URcType::from_syntax(typ))
+                    .map(|(_, typ)| RcType::from_syntax(typ))
                     .collect(),
-                URcType::from_syntax(return_type),
+                RcType::from_syntax(return_type),
             )),
         })
     }
@@ -166,14 +164,14 @@ impl FuncDecl {
         env.kind_env.type_vars = type_params.iter().copied().collect();
         env.expr_vars = expr_params
             .iter()
-            .map(|(var, typ)| (*var, URcType::from_syntax(typ)))
+            .map(|(var, typ)| (*var, RcType::from_syntax(typ)))
             .collect();
-        body.check(env, &URcType::from_syntax(return_type))?;
+        body.check(env, &RcType::from_syntax(return_type))?;
         Ok(())
     }
 }
 
-impl Type {
+impl syntax::Type {
     fn check(&mut self, env: &KindEnv) -> Result<(), Error> {
         match self {
             Self::Error => Ok(()),
@@ -243,19 +241,19 @@ impl Type {
     }
 }
 
-impl URcType {
+impl RcType {
     pub fn weak_normalize_env(&self, env: &TypeEnv) -> Self {
         self.weak_normalize(&env.kind_env.types)
     }
 }
 
 impl Expr {
-    pub fn check(&mut self, env: &TypeEnv, expected: &URcType) -> Result<(), Error> {
+    pub fn check(&mut self, env: &TypeEnv, expected: &RcType) -> Result<(), Error> {
         match self {
             Self::Lam(params, body) if params.iter().any(|(_, opt_typ)| opt_typ.is_none()) => {
                 check_lam_params(params, env)?;
                 match &*expected.weak_normalize_env(env) {
-                    UType::Fun(param_types, result) if params.len() == param_types.len() => {
+                    Type::Fun(param_types, result) if params.len() == param_types.len() => {
                         let env = &mut env.clone();
                         // TODO(MH): Replace `x` with a pattern once
                         // https://github.com/rust-lang/rust/issues/68354
@@ -264,7 +262,7 @@ impl Expr {
                             let (var, opt_type_ann) = &mut x.0;
                             let expected = x.1;
                             if let Some(type_ann) = opt_type_ann {
-                                let found = URcType::from_syntax(type_ann);
+                                let found = RcType::from_syntax(type_ann);
                                 if !found.equiv(expected, &env.kind_env.types) {
                                     return Err(Error::TypeMismatch {
                                         expr: Expr::Var(*var),
@@ -288,13 +286,13 @@ impl Expr {
                 body.check(&env.intro_expr_var(binder, binder_typ), expected)
             }
             Self::If(cond, then, elze) => {
-                cond.check(env, &URcType::new(UType::Bool))?;
+                cond.check(env, &RcType::new(Type::Bool))?;
                 then.check(env, &expected)?;
                 elze.check(env, &expected)?;
                 Ok(())
             }
             Self::Variant(con, arg) => match &*expected.weak_normalize_env(env) {
-                UType::Variant(cons) => {
+                Type::Variant(cons) => {
                     if let Some(arg_typ) = find_by_key(&cons, con) {
                         arg.check(env, arg_typ)
                     } else {
@@ -306,7 +304,7 @@ impl Expr {
             Self::Match(scrut, branches) => {
                 let scrut_typ = scrut.infer(env)?;
                 match &*scrut_typ.weak_normalize_env(env) {
-                    UType::Variant(cons) => {
+                    Type::Variant(cons) => {
                         if !branches.is_empty() {
                             for branch in branches {
                                 branch.check(env, &scrut_typ, cons, expected)?;
@@ -343,13 +341,13 @@ impl Expr {
         }
     }
 
-    fn infer(&mut self, env: &TypeEnv) -> Result<URcType, Error> {
+    fn infer(&mut self, env: &TypeEnv) -> Result<RcType, Error> {
         match self {
-            Self::Error => Ok(URcType::new(UType::Error)),
+            Self::Error => Ok(RcType::new(Type::Error)),
             Self::Var(var) => {
                 if let Some(found) = env.expr_vars.get(var) {
                     Ok(found.clone())
-                } else if let Some(UTypeScheme { params, body }) = env.funcs.get(var) {
+                } else if let Some(TypeScheme { params, body }) = env.funcs.get(var) {
                     let arity = params.len();
                     if arity == 0 {
                         *self = Self::FunInst(*var, vec![]);
@@ -365,26 +363,26 @@ impl Expr {
                     Err(Error::UnknownExprVar(*var))
                 }
             }
-            Self::Num(_) => Ok(URcType::new(UType::Int)),
-            Self::Bool(_) => Ok(URcType::new(UType::Bool)),
+            Self::Num(_) => Ok(RcType::new(Type::Int)),
+            Self::Bool(_) => Ok(RcType::new(Type::Bool)),
             Self::Lam(params, body) if params.iter().all(|(_, opt_typ)| opt_typ.is_some()) => {
                 check_lam_params(params, env)?;
                 let env = &mut env.clone();
                 let param_types = params
                     .iter()
                     .map(|(var, opt_type_ann)| {
-                        let typ = URcType::from_syntax(opt_type_ann.as_ref().unwrap());
+                        let typ = RcType::from_syntax(opt_type_ann.as_ref().unwrap());
                         env.expr_vars.insert(*var, typ.clone());
                         typ
                     })
                     .collect();
                 let result = body.infer(env)?;
-                Ok(URcType::new(UType::Fun(param_types, result)))
+                Ok(RcType::new(Type::Fun(param_types, result)))
             }
             Self::App(fun, args) => {
                 let fun_type = fun.infer(env)?;
                 match &*fun_type.weak_normalize_env(env) {
-                    UType::Fun(params, result) if params.len() == args.len() => {
+                    Type::Fun(params, result) if params.len() == args.len() => {
                         for (arg, typ) in args.iter_mut().zip(params.iter()) {
                             arg.check(env, typ)?;
                         }
@@ -395,7 +393,7 @@ impl Expr {
             }
             Self::BinOp(lhs, op, rhs) => match op {
                 OpCode::Add | OpCode::Sub | OpCode::Mul | OpCode::Div => {
-                    let int = URcType::new(UType::Int);
+                    let int = RcType::new(Type::Int);
                     lhs.check(env, &int)?;
                     rhs.check(env, &int)?;
                     Ok(int)
@@ -408,7 +406,7 @@ impl Expr {
                 | OpCode::GreaterEq => {
                     let typ = lhs.infer(env)?;
                     rhs.check(env, &typ)?;
-                    Ok(URcType::new(UType::Bool))
+                    Ok(RcType::new(Type::Bool))
                 }
             },
             Self::FunInst(var, types) => {
@@ -426,7 +424,7 @@ impl Expr {
                 } else if let Some(scheme) = env.funcs.get(var) {
                     let arity = scheme.params.len();
                     if arity == num_types {
-                        let types = types.iter().map(URcType::from_syntax).collect();
+                        let types = types.iter().map(RcType::from_syntax).collect();
                         Ok(scheme.instantiate(&types))
                     } else {
                         Err(Error::SchemeMismatch {
@@ -444,7 +442,7 @@ impl Expr {
                 body.infer(&env.intro_expr_var(binder, binder_typ))
             }
             Self::If(cond, then, elze) => {
-                cond.check(env, &URcType::new(UType::Bool))?;
+                cond.check(env, &RcType::new(Type::Bool))?;
                 let typ = then.infer(env)?;
                 elze.check(env, &typ)?;
                 Ok(typ)
@@ -454,12 +452,12 @@ impl Expr {
                     .iter_mut()
                     .map(|(name, expr)| Ok((*name, expr.infer(env)?)))
                     .collect::<Result<_, _>>()?;
-                Ok(URcType::new(UType::Record(fields)))
+                Ok(RcType::new(Type::Record(fields)))
             }
             Self::Proj(record, field) => {
                 let record_typ = record.infer(env)?;
                 match &*record_typ.weak_normalize_env(env) {
-                    UType::Record(fields) => {
+                    Type::Record(fields) => {
                         if let Some(field_typ) = find_by_key(&fields, field) {
                             Ok(field_typ.clone())
                         } else {
@@ -472,7 +470,7 @@ impl Expr {
             Self::Match(scrut, branches) => {
                 let scrut_typ = scrut.infer(env)?;
                 match &*scrut_typ.weak_normalize_env(env) {
-                    UType::Variant(cons) => {
+                    Type::Variant(cons) => {
                         if let Some((first, rest)) = branches.split_first_mut() {
                             let rhs_typ = first.infer(env, &scrut_typ, cons)?;
                             for branch in rest {
@@ -495,9 +493,9 @@ impl Branch {
     fn infer(
         &mut self,
         env: &TypeEnv,
-        scrut_type: &URcType,
-        cons: &Vec<(ExprCon, URcType)>,
-    ) -> Result<URcType, Error> {
+        scrut_type: &RcType,
+        cons: &Vec<(ExprCon, RcType)>,
+    ) -> Result<RcType, Error> {
         if let Some(arg_type) = find_by_key(cons, &self.con) {
             if let Some(var) = &self.var {
                 self.rhs.infer(&env.intro_expr_var(var, arg_type.clone()))
@@ -512,9 +510,9 @@ impl Branch {
     fn check(
         &mut self,
         env: &TypeEnv,
-        scrut_type: &URcType,
-        cons: &Vec<(ExprCon, URcType)>,
-        expected: &URcType,
+        scrut_type: &RcType,
+        cons: &Vec<(ExprCon, RcType)>,
+        expected: &RcType,
     ) -> Result<(), Error> {
         if let Some(arg_type) = find_by_key(cons, &self.con) {
             if let Some(var) = &self.var {
@@ -530,7 +528,7 @@ impl Branch {
 }
 
 impl TypeEnv {
-    fn intro_expr_var(&self, var: &ExprVar, typ: URcType) -> Self {
+    fn intro_expr_var(&self, var: &ExprVar, typ: RcType) -> Self {
         let mut env = self.clone();
         env.expr_vars.insert(*var, typ);
         env
@@ -557,7 +555,10 @@ impl ExprVar {
     }
 }
 
-fn check_lam_params(params: &mut Vec<(ExprVar, Option<Type>)>, env: &TypeEnv) -> Result<(), Error> {
+fn check_lam_params(
+    params: &mut Vec<(ExprVar, Option<syntax::Type>)>,
+    env: &TypeEnv,
+) -> Result<(), Error> {
     for (_, opt_typ) in params.iter_mut() {
         if let Some(typ) = opt_typ {
             typ.check(&env.kind_env)?;
@@ -568,11 +569,11 @@ fn check_lam_params(params: &mut Vec<(ExprVar, Option<Type>)>, env: &TypeEnv) ->
 
 fn check_let_bindee(
     env: &TypeEnv,
-    opt_type_ann: &mut Option<Type>,
+    opt_type_ann: &mut Option<syntax::Type>,
     bindee: &mut Expr,
-) -> Result<URcType, Error> {
+) -> Result<RcType, Error> {
     if let Some(type_ann) = opt_type_ann {
-        let typ = URcType::from_syntax(type_ann);
+        let typ = RcType::from_syntax(type_ann);
         bindee.check(env, &typ)?;
         Ok(typ)
     } else {
