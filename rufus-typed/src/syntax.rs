@@ -45,12 +45,6 @@ pub enum Type {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct TypeScheme {
-    pub params: Vec<TypeVar>,
-    pub body: Type,
-}
-
-#[derive(Clone, Debug, Serialize)]
 pub enum Expr {
     Error,
     Var(ExprVar),
