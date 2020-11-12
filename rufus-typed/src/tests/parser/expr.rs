@@ -46,7 +46,11 @@ fn parse_err(
 fn var() {
     insta::assert_yaml_snapshot!(parse("x"), @r###"
     ---
-    Var: x
+    Var:
+      locatee: x
+      span:
+        start: 0
+        end: 1
     "###);
 }
 
@@ -79,7 +83,15 @@ fn app0() {
     insta::assert_yaml_snapshot!(parse("f()"), @r###"
     ---
     App:
-      - Var: f
+      - locatee:
+          Var:
+            locatee: f
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - []
     "###);
 }
@@ -89,8 +101,20 @@ fn app1() {
     insta::assert_yaml_snapshot!(parse("f(1)"), @r###"
     ---
     App:
-      - Var: f
-      - - Num: 1
+      - locatee:
+          Var:
+            locatee: f
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
+      - - locatee:
+            Num: 1
+          span:
+            start: 2
+            end: 3
     "###);
 }
 
@@ -99,8 +123,20 @@ fn app1_trailing() {
     insta::assert_yaml_snapshot!(parse("f(1,)"), @r###"
     ---
     App:
-      - Var: f
-      - - Num: 1
+      - locatee:
+          Var:
+            locatee: f
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
+      - - locatee:
+            Num: 1
+          span:
+            start: 2
+            end: 3
     "###);
 }
 
@@ -109,9 +145,25 @@ fn app2() {
     insta::assert_yaml_snapshot!(parse("f(1, 2)"), @r###"
     ---
     App:
-      - Var: f
-      - - Num: 1
-        - Num: 2
+      - locatee:
+          Var:
+            locatee: f
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
+      - - locatee:
+            Num: 1
+          span:
+            start: 2
+            end: 3
+        - locatee:
+            Num: 2
+          span:
+            start: 5
+            end: 6
     "###);
 }
 #[test]
@@ -119,10 +171,29 @@ fn app_ty() {
     insta::assert_yaml_snapshot!(parse("f@<Int>(1)"), @r###"
     ---
     App:
-      - FunInst:
-          - f
-          - - Var: Int
-      - - Num: 1
+      - locatee:
+          FunInst:
+            - locatee: f
+              span:
+                start: 0
+                end: 1
+            - - locatee:
+                  Var:
+                    locatee: Int
+                    span:
+                      start: 3
+                      end: 6
+                span:
+                  start: 3
+                  end: 6
+        span:
+          start: 0
+          end: 7
+      - - locatee:
+            Num: 1
+          span:
+            start: 8
+            end: 9
     "###);
 }
 
@@ -132,11 +203,23 @@ fn app_ty_err() {
     (
         Some(
             BinOp(
-                Error,
+                Located {
+                    locatee: Error,
+                    span: Span {
+                        start: 0,
+                        end: 3,
+                    },
+                },
                 Greater,
-                Num(
-                    1,
-                ),
+                Located {
+                    locatee: Num(
+                        1,
+                    ),
+                    span: Span {
+                        start: 4,
+                        end: 7,
+                    },
+                },
             ),
         ),
         [
@@ -176,8 +259,15 @@ fn record1() {
     insta::assert_yaml_snapshot!(parse("{x = 1}"), @r###"
     ---
     Record:
-      - - x
-        - Num: 1
+      - - locatee: x
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Num: 1
+          span:
+            start: 5
+            end: 6
     "###);
 }
 
@@ -186,8 +276,15 @@ fn record1_trailing() {
     insta::assert_yaml_snapshot!(parse("{x = 1,}"), @r###"
     ---
     Record:
-      - - x
-        - Num: 1
+      - - locatee: x
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Num: 1
+          span:
+            start: 5
+            end: 6
     "###);
 }
 
@@ -196,10 +293,24 @@ fn record2() {
     insta::assert_yaml_snapshot!(parse("{x = 1, y = 2}"), @r###"
     ---
     Record:
-      - - x
-        - Num: 1
-      - - y
-        - Num: 2
+      - - locatee: x
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Num: 1
+          span:
+            start: 5
+            end: 6
+      - - locatee: y
+          span:
+            start: 8
+            end: 9
+        - locatee:
+            Num: 2
+          span:
+            start: 12
+            end: 13
     "###);
 }
 
@@ -208,8 +319,19 @@ fn proj1() {
     insta::assert_yaml_snapshot!(parse("r.x"), @r###"
     ---
     Proj:
-      - Var: r
-      - x
+      - locatee:
+          Var:
+            locatee: r
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
+      - locatee: x
+        span:
+          start: 2
+          end: 3
     "###);
 }
 
@@ -218,10 +340,28 @@ fn proj2() {
     insta::assert_yaml_snapshot!(parse("r.x.y"), @r###"
     ---
     Proj:
-      - Proj:
-          - Var: r
-          - x
-      - y
+      - locatee:
+          Proj:
+            - locatee:
+                Var:
+                  locatee: r
+                  span:
+                    start: 0
+                    end: 1
+              span:
+                start: 0
+                end: 1
+            - locatee: x
+              span:
+                start: 2
+                end: 3
+        span:
+          start: 0
+          end: 3
+      - locatee: y
+        span:
+          start: 4
+          end: 5
     "###);
 }
 
@@ -230,8 +370,15 @@ fn variant0() {
     insta::assert_yaml_snapshot!(parse("A"), @r###"
     ---
     Variant:
-      - A
-      - Record: []
+      - locatee: A
+        span:
+          start: 0
+          end: 1
+      - locatee:
+          Record: []
+        span:
+          start: 0
+          end: 1
     "###);
 }
 
@@ -240,8 +387,15 @@ fn variant1() {
     insta::assert_yaml_snapshot!(parse("A(0)"), @r###"
     ---
     Variant:
-      - A
-      - Num: 0
+      - locatee: A
+        span:
+          start: 0
+          end: 1
+      - locatee:
+          Num: 0
+        span:
+          start: 2
+          end: 3
     "###);
 }
 
@@ -250,8 +404,15 @@ fn variant_int() {
     insta::assert_yaml_snapshot!(parse("Int"), @r###"
     ---
     Variant:
-      - Int
-      - Record: []
+      - locatee: Int
+        span:
+          start: 0
+          end: 3
+      - locatee:
+          Record: []
+        span:
+          start: 0
+          end: 3
     "###);
 }
 
@@ -260,8 +421,15 @@ fn variant_bool() {
     insta::assert_yaml_snapshot!(parse("Bool"), @r###"
     ---
     Variant:
-      - Bool
-      - Record: []
+      - locatee: Bool
+        span:
+          start: 0
+          end: 4
+      - locatee:
+          Record: []
+        span:
+          start: 0
+          end: 4
     "###);
 }
 
@@ -270,9 +438,25 @@ fn prod2() {
     insta::assert_yaml_snapshot!(parse("a*b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - Mul
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 2
+              end: 3
+        span:
+          start: 2
+          end: 3
     "###);
 }
 
@@ -281,12 +465,40 @@ fn prod3() {
     insta::assert_yaml_snapshot!(parse("a/b*c"), @r###"
     ---
     BinOp:
-      - BinOp:
-          - Var: a
-          - Div
-          - Var: b
+      - locatee:
+          BinOp:
+            - locatee:
+                Var:
+                  locatee: a
+                  span:
+                    start: 0
+                    end: 1
+              span:
+                start: 0
+                end: 1
+            - Div
+            - locatee:
+                Var:
+                  locatee: b
+                  span:
+                    start: 2
+                    end: 3
+              span:
+                start: 2
+                end: 3
+        span:
+          start: 0
+          end: 3
       - Mul
-      - Var: c
+      - locatee:
+          Var:
+            locatee: c
+            span:
+              start: 4
+              end: 5
+        span:
+          start: 4
+          end: 5
     "###);
 }
 
@@ -295,9 +507,25 @@ fn sum2() {
     insta::assert_yaml_snapshot!(parse("a+b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - Add
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 2
+              end: 3
+        span:
+          start: 2
+          end: 3
     "###);
 }
 
@@ -306,12 +534,40 @@ fn sum3() {
     insta::assert_yaml_snapshot!(parse("a-b+c"), @r###"
     ---
     BinOp:
-      - BinOp:
-          - Var: a
-          - Sub
-          - Var: b
+      - locatee:
+          BinOp:
+            - locatee:
+                Var:
+                  locatee: a
+                  span:
+                    start: 0
+                    end: 1
+              span:
+                start: 0
+                end: 1
+            - Sub
+            - locatee:
+                Var:
+                  locatee: b
+                  span:
+                    start: 2
+                    end: 3
+              span:
+                start: 2
+                end: 3
+        span:
+          start: 0
+          end: 3
       - Add
-      - Var: c
+      - locatee:
+          Var:
+            locatee: c
+            span:
+              start: 4
+              end: 5
+        span:
+          start: 4
+          end: 5
     "###);
 }
 
@@ -320,9 +576,25 @@ fn cmp_eq() {
     insta::assert_yaml_snapshot!(parse("a == b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - Equals
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 5
+              end: 6
+        span:
+          start: 5
+          end: 6
     "###);
 }
 
@@ -331,9 +603,25 @@ fn cmp_neq() {
     insta::assert_yaml_snapshot!(parse("a != b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - NotEq
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 5
+              end: 6
+        span:
+          start: 5
+          end: 6
     "###);
 }
 
@@ -342,9 +630,25 @@ fn cmp_lt() {
     insta::assert_yaml_snapshot!(parse("a < b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - Less
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 4
+              end: 5
+        span:
+          start: 4
+          end: 5
     "###);
 }
 
@@ -353,9 +657,25 @@ fn cmp_leq() {
     insta::assert_yaml_snapshot!(parse("a <= b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - LessEq
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 5
+              end: 6
+        span:
+          start: 5
+          end: 6
     "###);
 }
 
@@ -364,9 +684,25 @@ fn cmp_gt() {
     insta::assert_yaml_snapshot!(parse("a > b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - Greater
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 4
+              end: 5
+        span:
+          start: 4
+          end: 5
     "###);
 }
 
@@ -375,9 +711,25 @@ fn cmp_geq() {
     insta::assert_yaml_snapshot!(parse("a >= b"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - GreaterEq
-      - Var: b
+      - locatee:
+          Var:
+            locatee: b
+            span:
+              start: 5
+              end: 6
+        span:
+          start: 5
+          end: 6
     "###);
 }
 
@@ -386,15 +738,55 @@ fn cmp_mixed() {
     insta::assert_yaml_snapshot!(parse("a + b == c * d"), @r###"
     ---
     BinOp:
-      - BinOp:
-          - Var: a
-          - Add
-          - Var: b
+      - locatee:
+          BinOp:
+            - locatee:
+                Var:
+                  locatee: a
+                  span:
+                    start: 0
+                    end: 1
+              span:
+                start: 0
+                end: 1
+            - Add
+            - locatee:
+                Var:
+                  locatee: b
+                  span:
+                    start: 4
+                    end: 5
+              span:
+                start: 4
+                end: 5
+        span:
+          start: 0
+          end: 5
       - Equals
-      - BinOp:
-          - Var: c
-          - Mul
-          - Var: d
+      - locatee:
+          BinOp:
+            - locatee:
+                Var:
+                  locatee: c
+                  span:
+                    start: 9
+                    end: 10
+              span:
+                start: 9
+                end: 10
+            - Mul
+            - locatee:
+                Var:
+                  locatee: d
+                  span:
+                    start: 13
+                    end: 14
+              span:
+                start: 13
+                end: 14
+        span:
+          start: 9
+          end: 14
     "###);
 }
 
@@ -403,12 +795,40 @@ fn cmp_many() {
     insta::assert_yaml_snapshot!(parse("a == (b == c)"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - Equals
-      - BinOp:
-          - Var: b
-          - Equals
-          - Var: c
+      - locatee:
+          BinOp:
+            - locatee:
+                Var:
+                  locatee: b
+                  span:
+                    start: 6
+                    end: 7
+              span:
+                start: 6
+                end: 7
+            - Equals
+            - locatee:
+                Var:
+                  locatee: c
+                  span:
+                    start: 11
+                    end: 12
+              span:
+                start: 11
+                end: 12
+        span:
+          start: 5
+          end: 13
     "###);
 }
 
@@ -418,11 +838,29 @@ fn cmp_many_err() {
     (
         Some(
             BinOp(
-                Error,
+                Located {
+                    locatee: Error,
+                    span: Span {
+                        start: 0,
+                        end: 6,
+                    },
+                },
                 Equals,
-                Var(
-                    e#c,
-                ),
+                Located {
+                    locatee: Var(
+                        Located {
+                            locatee: e#c,
+                            span: Span {
+                                start: 10,
+                                end: 11,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 10,
+                        end: 11,
+                    },
+                },
             ),
         ),
         [
@@ -455,12 +893,40 @@ fn sum_prod() {
     insta::assert_yaml_snapshot!(parse("a+b*c"), @r###"
     ---
     BinOp:
-      - Var: a
+      - locatee:
+          Var:
+            locatee: a
+            span:
+              start: 0
+              end: 1
+        span:
+          start: 0
+          end: 1
       - Add
-      - BinOp:
-          - Var: b
-          - Mul
-          - Var: c
+      - locatee:
+          BinOp:
+            - locatee:
+                Var:
+                  locatee: b
+                  span:
+                    start: 2
+                    end: 3
+              span:
+                start: 2
+                end: 3
+            - Mul
+            - locatee:
+                Var:
+                  locatee: c
+                  span:
+                    start: 4
+                    end: 5
+              span:
+                start: 4
+                end: 5
+        span:
+          start: 2
+          end: 5
     "###);
 }
 
@@ -470,7 +936,11 @@ fn lam0() {
     ---
     Lam:
       - []
-      - Num: 0
+      - locatee:
+          Num: 0
+        span:
+          start: 5
+          end: 10
     "###);
 }
 
@@ -479,9 +949,20 @@ fn lam1() {
     insta::assert_yaml_snapshot!(parse("fn(x) { x }"), @r###"
     ---
     Lam:
-      - - - x
+      - - - locatee: x
+            span:
+              start: 3
+              end: 4
           - ~
-      - Var: x
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 8
+              end: 9
+        span:
+          start: 6
+          end: 11
     "###);
 }
 
@@ -490,9 +971,20 @@ fn lam1_trailing() {
     insta::assert_yaml_snapshot!(parse("fn(x,) { x }"), @r###"
     ---
     Lam:
-      - - - x
+      - - - locatee: x
+            span:
+              start: 3
+              end: 4
           - ~
-      - Var: x
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 9
+              end: 10
+        span:
+          start: 7
+          end: 12
     "###);
 }
 
@@ -501,11 +993,25 @@ fn lam2() {
     insta::assert_yaml_snapshot!(parse("fn(x, y) { x }"), @r###"
     ---
     Lam:
-      - - - x
+      - - - locatee: x
+            span:
+              start: 3
+              end: 4
           - ~
-        - - y
+        - - locatee: y
+            span:
+              start: 6
+              end: 7
           - ~
-      - Var: x
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 11
+              end: 12
+        span:
+          start: 9
+          end: 14
     "###);
 }
 #[test]
@@ -513,9 +1019,28 @@ fn lam1_typed() {
     insta::assert_yaml_snapshot!(parse("fn(x: Int) { x }"), @r###"
     ---
     Lam:
-      - - - x
-          - Var: Int
-      - Var: x
+      - - - locatee: x
+            span:
+              start: 3
+              end: 4
+          - locatee:
+              Var:
+                locatee: Int
+                span:
+                  start: 6
+                  end: 9
+            span:
+              start: 6
+              end: 9
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 13
+              end: 14
+        span:
+          start: 11
+          end: 16
     "###);
 }
 
@@ -610,9 +1135,21 @@ fn if_atom() {
     insta::assert_yaml_snapshot!(parse("if true { 0 } else { 1 }"), @r###"
     ---
     If:
-      - Bool: true
-      - Num: 0
-      - Num: 1
+      - locatee:
+          Bool: true
+        span:
+          start: 3
+          end: 7
+      - locatee:
+          Num: 0
+        span:
+          start: 8
+          end: 13
+      - locatee:
+          Num: 1
+        span:
+          start: 19
+          end: 24
     "###);
 }
 
@@ -621,12 +1158,40 @@ fn if_cmp() {
     insta::assert_yaml_snapshot!(parse("if a == b { 0 } else { 1 }"), @r###"
     ---
     If:
-      - BinOp:
-          - Var: a
-          - Equals
-          - Var: b
-      - Num: 0
-      - Num: 1
+      - locatee:
+          BinOp:
+            - locatee:
+                Var:
+                  locatee: a
+                  span:
+                    start: 3
+                    end: 4
+              span:
+                start: 3
+                end: 4
+            - Equals
+            - locatee:
+                Var:
+                  locatee: b
+                  span:
+                    start: 8
+                    end: 9
+              span:
+                start: 8
+                end: 9
+        span:
+          start: 3
+          end: 9
+      - locatee:
+          Num: 0
+        span:
+          start: 10
+          end: 15
+      - locatee:
+          Num: 1
+        span:
+          start: 21
+          end: 26
     "###);
 }
 
@@ -634,7 +1199,11 @@ fn if_cmp() {
 fn block_atom() {
     insta::assert_yaml_snapshot!(parse_block("{ a }"), @r###"
     ---
-    Var: a
+    Var:
+      locatee: a
+      span:
+        start: 2
+        end: 3
     "###);
 }
 
@@ -643,8 +1212,15 @@ fn block_record() {
     insta::assert_yaml_snapshot!(parse_block("{ {f = 1} }"), @r###"
     ---
     Record:
-      - - f
-        - Num: 1
+      - - locatee: f
+          span:
+            start: 3
+            end: 4
+        - locatee:
+            Num: 1
+          span:
+            start: 7
+            end: 8
     "###);
 }
 
@@ -653,10 +1229,25 @@ fn let1_atom() {
     insta::assert_yaml_snapshot!(parse_block("{ let x = 1; x }"), @r###"
     ---
     Let:
-      - x
+      - locatee: x
+        span:
+          start: 6
+          end: 7
       - ~
-      - Num: 1
-      - Var: x
+      - locatee:
+          Num: 1
+        span:
+          start: 10
+          end: 11
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 13
+              end: 14
+        span:
+          start: 13
+          end: 14
     "###);
 }
 
@@ -665,13 +1256,36 @@ fn let1_complex() {
     insta::assert_yaml_snapshot!(parse_block("{ let x = 1 + 1; x }"), @r###"
     ---
     Let:
-      - x
+      - locatee: x
+        span:
+          start: 6
+          end: 7
       - ~
-      - BinOp:
-          - Num: 1
-          - Add
-          - Num: 1
-      - Var: x
+      - locatee:
+          BinOp:
+            - locatee:
+                Num: 1
+              span:
+                start: 10
+                end: 11
+            - Add
+            - locatee:
+                Num: 1
+              span:
+                start: 14
+                end: 15
+        span:
+          start: 10
+          end: 15
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 17
+              end: 18
+        span:
+          start: 17
+          end: 18
     "###);
 }
 
@@ -680,10 +1294,33 @@ fn let1_typed() {
     insta::assert_yaml_snapshot!(parse_block("{ let x: Int = 1; x }"), @r###"
     ---
     Let:
-      - x
-      - Var: Int
-      - Num: 1
-      - Var: x
+      - locatee: x
+        span:
+          start: 6
+          end: 7
+      - locatee:
+          Var:
+            locatee: Int
+            span:
+              start: 9
+              end: 12
+        span:
+          start: 9
+          end: 12
+      - locatee:
+          Num: 1
+        span:
+          start: 15
+          end: 16
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 18
+              end: 19
+        span:
+          start: 18
+          end: 19
     "###);
 }
 
@@ -692,10 +1329,25 @@ fn let1_block() {
     insta::assert_yaml_snapshot!(parse_block("{ let x = { 1 }; x }"), @r###"
     ---
     Let:
-      - x
+      - locatee: x
+        span:
+          start: 6
+          end: 7
       - ~
-      - Num: 1
-      - Var: x
+      - locatee:
+          Num: 1
+        span:
+          start: 10
+          end: 15
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 17
+              end: 18
+        span:
+          start: 17
+          end: 18
     "###);
 }
 
@@ -704,14 +1356,44 @@ fn let2() {
     insta::assert_yaml_snapshot!(parse_block("{ let x = 1; let y = x; y }"), @r###"
     ---
     Let:
-      - x
+      - locatee: x
+        span:
+          start: 6
+          end: 7
       - ~
-      - Num: 1
-      - Let:
-          - y
-          - ~
-          - Var: x
-          - Var: y
+      - locatee:
+          Num: 1
+        span:
+          start: 10
+          end: 11
+      - locatee:
+          Let:
+            - locatee: y
+              span:
+                start: 17
+                end: 18
+            - ~
+            - locatee:
+                Var:
+                  locatee: x
+                  span:
+                    start: 21
+                    end: 22
+              span:
+                start: 21
+                end: 22
+            - locatee:
+                Var:
+                  locatee: y
+                  span:
+                    start: 24
+                    end: 25
+              span:
+                start: 24
+                end: 25
+        span:
+          start: 13
+          end: 25
     "###);
 }
 
@@ -720,11 +1402,31 @@ fn match1_novar() {
     insta::assert_yaml_snapshot!(parse("match x { A => 1, }"), @r###"
     ---
     Match:
-      - Var: x
-      - - con: A
-          var: ~
-          rhs:
-            Num: 1
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 6
+              end: 7
+        span:
+          start: 6
+          end: 7
+      - - locatee:
+            con:
+              locatee: A
+              span:
+                start: 10
+                end: 11
+            var: ~
+            rhs:
+              locatee:
+                Num: 1
+              span:
+                start: 15
+                end: 16
+          span:
+            start: 10
+            end: 17
     "###);
 }
 
@@ -733,11 +1435,35 @@ fn match1_var() {
     insta::assert_yaml_snapshot!(parse("match x { A(y) => 1, }"), @r###"
     ---
     Match:
-      - Var: x
-      - - con: A
-          var: y
-          rhs:
-            Num: 1
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 6
+              end: 7
+        span:
+          start: 6
+          end: 7
+      - - locatee:
+            con:
+              locatee: A
+              span:
+                start: 10
+                end: 11
+            var:
+              locatee: y
+              span:
+                start: 12
+                end: 13
+            rhs:
+              locatee:
+                Num: 1
+              span:
+                start: 18
+                end: 19
+          span:
+            start: 10
+            end: 20
     "###);
 }
 
@@ -746,11 +1472,31 @@ fn match1_block() {
     insta::assert_yaml_snapshot!(parse("match x { A => { 1 } }"), @r###"
     ---
     Match:
-      - Var: x
-      - - con: A
-          var: ~
-          rhs:
-            Num: 1
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 6
+              end: 7
+        span:
+          start: 6
+          end: 7
+      - - locatee:
+            con:
+              locatee: A
+              span:
+                start: 10
+                end: 11
+            var: ~
+            rhs:
+              locatee:
+                Num: 1
+              span:
+                start: 15
+                end: 20
+          span:
+            start: 10
+            end: 20
     "###);
 }
 
@@ -786,14 +1532,44 @@ fn match1_block_comma() {
     (
         Some(
             Match(
-                Var(
-                    e#x,
-                ),
+                Located {
+                    locatee: Var(
+                        Located {
+                            locatee: e#x,
+                            span: Span {
+                                start: 6,
+                                end: 7,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 6,
+                        end: 7,
+                    },
+                },
                 [
-                    Branch {
-                        con: c#A,
-                        var: None,
-                        rhs: Error,
+                    Located {
+                        locatee: Branch {
+                            con: Located {
+                                locatee: c#A,
+                                span: Span {
+                                    start: 10,
+                                    end: 11,
+                                },
+                            },
+                            var: None,
+                            rhs: Located {
+                                locatee: Error,
+                                span: Span {
+                                    start: 15,
+                                    end: 20,
+                                },
+                            },
+                        },
+                        span: Span {
+                            start: 10,
+                            end: 21,
+                        },
                     },
                 ],
             ),
@@ -823,15 +1599,47 @@ fn match2_exprs() {
     insta::assert_yaml_snapshot!(parse("match x { A => 1, B => 2, }"), @r###"
     ---
     Match:
-      - Var: x
-      - - con: A
-          var: ~
-          rhs:
-            Num: 1
-        - con: B
-          var: ~
-          rhs:
-            Num: 2
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 6
+              end: 7
+        span:
+          start: 6
+          end: 7
+      - - locatee:
+            con:
+              locatee: A
+              span:
+                start: 10
+                end: 11
+            var: ~
+            rhs:
+              locatee:
+                Num: 1
+              span:
+                start: 15
+                end: 16
+          span:
+            start: 10
+            end: 17
+        - locatee:
+            con:
+              locatee: B
+              span:
+                start: 18
+                end: 19
+            var: ~
+            rhs:
+              locatee:
+                Num: 2
+              span:
+                start: 23
+                end: 24
+          span:
+            start: 18
+            end: 25
     "###);
 }
 
@@ -840,15 +1648,47 @@ fn match2_expr_block() {
     insta::assert_yaml_snapshot!(parse("match x { A => 1, B => { 2 } }"), @r###"
     ---
     Match:
-      - Var: x
-      - - con: A
-          var: ~
-          rhs:
-            Num: 1
-        - con: B
-          var: ~
-          rhs:
-            Num: 2
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 6
+              end: 7
+        span:
+          start: 6
+          end: 7
+      - - locatee:
+            con:
+              locatee: A
+              span:
+                start: 10
+                end: 11
+            var: ~
+            rhs:
+              locatee:
+                Num: 1
+              span:
+                start: 15
+                end: 16
+          span:
+            start: 10
+            end: 17
+        - locatee:
+            con:
+              locatee: B
+              span:
+                start: 18
+                end: 19
+            var: ~
+            rhs:
+              locatee:
+                Num: 2
+              span:
+                start: 23
+                end: 28
+          span:
+            start: 18
+            end: 28
     "###);
 }
 
@@ -857,15 +1697,47 @@ fn match2_block_expr() {
     insta::assert_yaml_snapshot!(parse("match x { A => { 1 } B => 2, }"), @r###"
     ---
     Match:
-      - Var: x
-      - - con: A
-          var: ~
-          rhs:
-            Num: 1
-        - con: B
-          var: ~
-          rhs:
-            Num: 2
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 6
+              end: 7
+        span:
+          start: 6
+          end: 7
+      - - locatee:
+            con:
+              locatee: A
+              span:
+                start: 10
+                end: 11
+            var: ~
+            rhs:
+              locatee:
+                Num: 1
+              span:
+                start: 15
+                end: 20
+          span:
+            start: 10
+            end: 20
+        - locatee:
+            con:
+              locatee: B
+              span:
+                start: 21
+                end: 22
+            var: ~
+            rhs:
+              locatee:
+                Num: 2
+              span:
+                start: 26
+                end: 27
+          span:
+            start: 21
+            end: 28
     "###);
 }
 
@@ -874,14 +1746,46 @@ fn match2_blocks() {
     insta::assert_yaml_snapshot!(parse("match x { A => { 1 } B => { 2 } }"), @r###"
     ---
     Match:
-      - Var: x
-      - - con: A
-          var: ~
-          rhs:
-            Num: 1
-        - con: B
-          var: ~
-          rhs:
-            Num: 2
+      - locatee:
+          Var:
+            locatee: x
+            span:
+              start: 6
+              end: 7
+        span:
+          start: 6
+          end: 7
+      - - locatee:
+            con:
+              locatee: A
+              span:
+                start: 10
+                end: 11
+            var: ~
+            rhs:
+              locatee:
+                Num: 1
+              span:
+                start: 15
+                end: 20
+          span:
+            start: 10
+            end: 20
+        - locatee:
+            con:
+              locatee: B
+              span:
+                start: 21
+                end: 22
+            var: ~
+            rhs:
+              locatee:
+                Num: 2
+              span:
+                start: 26
+                end: 31
+          span:
+            start: 21
+            end: 31
     "###);
 }

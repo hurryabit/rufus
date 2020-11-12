@@ -1,5 +1,5 @@
 use crate::*;
-use check::Error;
+use check::LError;
 use syntax::Module;
 
 fn check(input: &str) -> Module {
@@ -11,7 +11,7 @@ fn check(input: &str) -> Module {
     module
 }
 
-fn check_err(input: &str) -> Error {
+fn check_err(input: &str) -> LError {
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
@@ -22,19 +22,31 @@ fn check_err(input: &str) -> Error {
 #[test]
 fn unknown_type_var() {
     insta::assert_debug_snapshot!(check_err("type Bad = Unknown"), @r###"
-    UnknownTypeVar(
-        t#Unknown,
-    )
+    Located {
+        locatee: UnknownTypeVar(
+            t#Unknown,
+        ),
+        span: Span {
+            start: 11,
+            end: 18,
+        },
+    }
     "###);
 }
 
 #[test]
 fn unexpected_type_con_at_top() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = Id"), @r###"
-    KindMismatch {
-        type_var: t#Id,
-        expected: 0,
-        found: 1,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Id,
+            expected: 0,
+            found: 1,
+        },
+        span: Span {
+            start: 26,
+            end: 28,
+        },
     }
     "###);
 }
@@ -42,10 +54,16 @@ fn unexpected_type_con_at_top() {
 #[test]
 fn unexpected_type_con_in_type_args() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype List<A> = A\ntype Bad = List<Id>"), @r###"
-    KindMismatch {
-        type_var: t#Id,
-        expected: 0,
-        found: 1,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Id,
+            expected: 0,
+            found: 1,
+        },
+        span: Span {
+            start: 48,
+            end: 50,
+        },
     }
     "###);
 }
@@ -53,10 +71,16 @@ fn unexpected_type_con_in_type_args() {
 #[test]
 fn unexpected_type_con_in_func_args() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = (Id) -> Int"), @r###"
-    KindMismatch {
-        type_var: t#Id,
-        expected: 0,
-        found: 1,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Id,
+            expected: 0,
+            found: 1,
+        },
+        span: Span {
+            start: 27,
+            end: 29,
+        },
     }
     "###);
 }
@@ -64,10 +88,16 @@ fn unexpected_type_con_in_func_args() {
 #[test]
 fn unexpected_type_con_in_func_result() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = () -> Id"), @r###"
-    KindMismatch {
-        type_var: t#Id,
-        expected: 0,
-        found: 1,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Id,
+            expected: 0,
+            found: 1,
+        },
+        span: Span {
+            start: 32,
+            end: 34,
+        },
     }
     "###);
 }
@@ -75,10 +105,16 @@ fn unexpected_type_con_in_func_result() {
 #[test]
 fn unexpected_type_con_in_record() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = {field: Id}"), @r###"
-    KindMismatch {
-        type_var: t#Id,
-        expected: 0,
-        found: 1,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Id,
+            expected: 0,
+            found: 1,
+        },
+        span: Span {
+            start: 34,
+            end: 36,
+        },
     }
     "###);
 }
@@ -86,10 +122,16 @@ fn unexpected_type_con_in_record() {
 #[test]
 fn unexpected_type_con_in_variant() {
     insta::assert_debug_snapshot!(check_err("type Id<A> = A\ntype Bad = [Constr(Id)]"), @r###"
-    KindMismatch {
-        type_var: t#Id,
-        expected: 0,
-        found: 1,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Id,
+            expected: 0,
+            found: 1,
+        },
+        span: Span {
+            start: 34,
+            end: 36,
+        },
     }
     "###);
 }
@@ -97,10 +139,16 @@ fn unexpected_type_con_in_variant() {
 #[test]
 fn wrong_arity_var() {
     insta::assert_debug_snapshot!(check_err("type Bad<F> = F<Int>"), @r###"
-    KindMismatch {
-        type_var: t#F,
-        expected: 1,
-        found: 0,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#F,
+            expected: 1,
+            found: 0,
+        },
+        span: Span {
+            start: 14,
+            end: 20,
+        },
     }
     "###);
 }
@@ -108,10 +156,16 @@ fn wrong_arity_var() {
 #[test]
 fn wrong_arity_builtin() {
     insta::assert_debug_snapshot!(check_err("type Bad<A> = Int<A>"), @r###"
-    KindMismatch {
-        type_var: t#Int,
-        expected: 1,
-        found: 0,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Int,
+            expected: 1,
+            found: 0,
+        },
+        span: Span {
+            start: 14,
+            end: 20,
+        },
     }
     "###);
 }
@@ -119,10 +173,16 @@ fn wrong_arity_builtin() {
 #[test]
 fn wrong_arity_type_syn() {
     insta::assert_debug_snapshot!(check_err("type Syn = Int\ntype Bad = Syn<Int>"), @r###"
-    KindMismatch {
-        type_var: t#Syn,
-        expected: 1,
-        found: 0,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Syn,
+            expected: 1,
+            found: 0,
+        },
+        span: Span {
+            start: 26,
+            end: 34,
+        },
     }
     "###);
 }
@@ -130,10 +190,16 @@ fn wrong_arity_type_syn() {
 #[test]
 fn wrong_arity_type_con_syn() {
     insta::assert_debug_snapshot!(check_err("type Syn<A> = A\ntype Bad = Syn<Int, Int>"), @r###"
-    KindMismatch {
-        type_var: t#Syn,
-        expected: 2,
-        found: 1,
+    Located {
+        locatee: KindMismatch {
+            type_var: t#Syn,
+            expected: 2,
+            found: 1,
+        },
+        span: Span {
+            start: 27,
+            end: 40,
+        },
     }
     "###);
 }
@@ -144,9 +210,17 @@ fn int_resolved() {
     ---
     decls:
       - Type:
-          name: Here
+          name:
+            locatee: Here
+            span:
+              start: 5
+              end: 9
           params: []
-          body: Int
+          body:
+            locatee: Int
+            span:
+              start: 12
+              end: 15
     "###);
 }
 
@@ -156,9 +230,17 @@ fn bool_resolved() {
     ---
     decls:
       - Type:
-          name: Here
+          name:
+            locatee: Here
+            span:
+              start: 5
+              end: 9
           params: []
-          body: Bool
+          body:
+            locatee: Bool
+            span:
+              start: 12
+              end: 16
     "###);
 }
 
@@ -168,16 +250,35 @@ fn syn_resolved() {
     ---
     decls:
       - Type:
-          name: Syn
-          params: []
-          body: Int
-      - Type:
-          name: Here
+          name:
+            locatee: Syn
+            span:
+              start: 5
+              end: 8
           params: []
           body:
-            SynApp:
-              - Syn
-              - []
+            locatee: Int
+            span:
+              start: 11
+              end: 14
+      - Type:
+          name:
+            locatee: Here
+            span:
+              start: 20
+              end: 24
+          params: []
+          body:
+            locatee:
+              SynApp:
+                - locatee: Syn
+                  span:
+                    start: 27
+                    end: 30
+                - []
+            span:
+              start: 27
+              end: 30
     "###);
 }
 
@@ -187,11 +288,26 @@ fn var_resolved() {
     ---
     decls:
       - Type:
-          name: Here
+          name:
+            locatee: Here
+            span:
+              start: 5
+              end: 9
           params:
-            - A
+            - locatee: A
+              span:
+                start: 10
+                end: 11
           body:
-            Var: A
+            locatee:
+              Var:
+                locatee: A
+                span:
+                  start: 15
+                  end: 16
+            span:
+              start: 15
+              end: 16
     "###);
 }
 
@@ -201,11 +317,26 @@ fn var_shadows_int() {
     ---
     decls:
       - Type:
-          name: Here
+          name:
+            locatee: Here
+            span:
+              start: 5
+              end: 9
           params:
-            - Int
+            - locatee: Int
+              span:
+                start: 10
+                end: 13
           body:
-            Var: Int
+            locatee:
+              Var:
+                locatee: Int
+                span:
+                  start: 17
+                  end: 20
+            span:
+              start: 17
+              end: 20
     "###);
 }
 
@@ -215,16 +346,35 @@ fn type_syn_shadows_int() {
     ---
     decls:
       - Type:
-          name: Int
-          params: []
-          body: Bool
-      - Type:
-          name: Here
+          name:
+            locatee: Int
+            span:
+              start: 5
+              end: 8
           params: []
           body:
-            SynApp:
-              - Int
-              - []
+            locatee: Bool
+            span:
+              start: 11
+              end: 15
+      - Type:
+          name:
+            locatee: Here
+            span:
+              start: 21
+              end: 25
+          params: []
+          body:
+            locatee:
+              SynApp:
+                - locatee: Int
+                  span:
+                    start: 28
+                    end: 31
+                - []
+            span:
+              start: 28
+              end: 31
     "###);
 }
 
@@ -234,17 +384,46 @@ fn type_con_syn_shadows_int() {
     ---
     decls:
       - Type:
-          name: Int
+          name:
+            locatee: Int
+            span:
+              start: 5
+              end: 8
           params:
-            - A
+            - locatee: A
+              span:
+                start: 9
+                end: 10
           body:
-            Var: A
+            locatee:
+              Var:
+                locatee: A
+                span:
+                  start: 14
+                  end: 15
+            span:
+              start: 14
+              end: 15
       - Type:
-          name: Here
+          name:
+            locatee: Here
+            span:
+              start: 21
+              end: 25
           params: []
           body:
-            SynApp:
-              - Int
-              - - Bool
+            locatee:
+              SynApp:
+                - locatee: Int
+                  span:
+                    start: 28
+                    end: 31
+                - - locatee: Bool
+                    span:
+                      start: 32
+                      end: 36
+            span:
+              start: 28
+              end: 37
     "###);
 }

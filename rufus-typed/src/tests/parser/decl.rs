@@ -14,10 +14,22 @@ fn type_mono() {
     insta::assert_yaml_snapshot!(parse("type T = Int"), @r###"
     ---
     Type:
-      name: T
+      name:
+        locatee: T
+        span:
+          start: 5
+          end: 6
       params: []
       body:
-        Var: Int
+        locatee:
+          Var:
+            locatee: Int
+            span:
+              start: 9
+              end: 12
+        span:
+          start: 9
+          end: 12
     "###);
 }
 
@@ -26,11 +38,26 @@ fn type_poly() {
     insta::assert_yaml_snapshot!(parse("type T<A> = A"), @r###"
     ---
     Type:
-      name: T
+      name:
+        locatee: T
+        span:
+          start: 5
+          end: 6
       params:
-        - A
+        - locatee: A
+          span:
+            start: 7
+            end: 8
       body:
-        Var: A
+        locatee:
+          Var:
+            locatee: A
+            span:
+              start: 12
+              end: 13
+        span:
+          start: 12
+          end: 13
     "###);
 }
 
@@ -39,15 +66,46 @@ fn func_mono() {
     insta::assert_yaml_snapshot!(parse("fn id(x: Int) -> Int { x }"), @r###"
     ---
     Func:
-      name: id
+      name:
+        locatee: id
+        span:
+          start: 3
+          end: 5
       type_params: []
       expr_params:
-        - - x
-          - Var: Int
+        - - locatee: x
+            span:
+              start: 6
+              end: 7
+          - locatee:
+              Var:
+                locatee: Int
+                span:
+                  start: 9
+                  end: 12
+            span:
+              start: 9
+              end: 12
       return_type:
-        Var: Int
+        locatee:
+          Var:
+            locatee: Int
+            span:
+              start: 17
+              end: 20
+        span:
+          start: 17
+          end: 20
       body:
-        Var: x
+        locatee:
+          Var:
+            locatee: x
+            span:
+              start: 23
+              end: 24
+        span:
+          start: 21
+          end: 26
     "###);
 }
 
@@ -56,15 +114,49 @@ fn func_poly() {
     insta::assert_yaml_snapshot!(parse("fn id<A>(x: A) -> A { x }"), @r###"
     ---
     Func:
-      name: id
+      name:
+        locatee: id
+        span:
+          start: 3
+          end: 5
       type_params:
-        - A
+        - locatee: A
+          span:
+            start: 6
+            end: 7
       expr_params:
-        - - x
-          - Var: A
+        - - locatee: x
+            span:
+              start: 9
+              end: 10
+          - locatee:
+              Var:
+                locatee: A
+                span:
+                  start: 12
+                  end: 13
+            span:
+              start: 12
+              end: 13
       return_type:
-        Var: A
+        locatee:
+          Var:
+            locatee: A
+            span:
+              start: 18
+              end: 19
+        span:
+          start: 18
+          end: 19
       body:
-        Var: x
+        locatee:
+          Var:
+            locatee: x
+            span:
+              start: 22
+              end: 23
+        span:
+          start: 20
+          end: 25
     "###);
 }

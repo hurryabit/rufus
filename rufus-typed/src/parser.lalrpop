@@ -14,112 +14,170 @@ pub Decl: Decl = {
 }
 
 TypeDecl: TypeDecl = {
-    "type" <name: TypeVar> <params: TypeParams> "=" <body: Type> =>
+    "type" <name: LTypeVar> <params: TypeParams> "=" <body: LType> =>
         TypeDecl { name, params, body },
 }
 
 FuncDecl: FuncDecl = {
-    "fn" <name: ExprVar> <type_params: TypeParams> "(" <expr_params: List0<Param<TypeAnn>, ",">> ")" "->" <return_type: Type> <body: BlockExpr> =>
+    "fn" <name: LExprVar> <type_params: TypeParams> "(" <expr_params: List0<Param<TypeAnn>, ",">> ")" "->" <return_type: LType> <body: LBlockExpr> =>
         FuncDecl { name, type_params, expr_params, return_type, body },
 }
 
-TypeParams: Vec<TypeVar> = {
+TypeParams: Vec<LTypeVar> = {
     => vec![],
-    "<" <List1<TypeVar, ",">> ">",
+    "<" <List1<LTypeVar, ",">> ">",
 }
 
 pub Type: Type = {
-    TypeVar => Type::Var(<>),
-    "(" <List0<Type, ",">> ")" "->" <Box<Type>> => Type::Fun(<>),
-    <TypeVar> "<" <List1<Type, ",">> ">" => Type::SynApp(<>),
+    LTypeVar => Type::Var(<>),
+    "(" <List0<LType, ",">> ")" "->" <Box<LType>> => Type::Fun(<>),
+    <LTypeVar> "<" <List1<LType, ",">> ">" => Type::SynApp(<>),
     "{" <List0<Param<TypeAnn>, ",">> "}" => Type::Record(<>),
     "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
     ! => { errors.push(<>); Type::Error },
 }
 
-VariantCaseType: (ExprCon, Type) = {
-    ExprCon InParens<Type> => (<>),
-    <con: ExprCon> => (con, Type::Record(vec![])),
+LType: LType = {
+    Located<Type>
+}
+
+VariantCaseType: (LExprCon, LType) = {
+    LExprCon InParens<LType> => (<>),
+    <con: LExprCon> => {
+        let span = con.span;
+        (con, Located::new(Type::Record(vec![]), span))
+    },
 }
 
 pub Expr: Expr = {
     SumExpr,
-    BinOp<SumExpr, CompOp, SumExpr>,
-    "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<BlockExpr>> => Expr::Lam(<>),
-    "if" <Box<Expr>> <Box<BlockExpr>> "else" <Box<BlockExpr>> => Expr::If(<>),
-    "match" <Box<Expr>> "{" <Branch+> "}" => Expr::Match(<>),
+    BinOp<LSumExpr, CompOp, LSumExpr>,
+    "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<LBlockExpr>> => Expr::Lam(<>),
+    "if" <Box<LExpr>> <Box<LBlockExpr>> "else" <Box<LBlockExpr>> => Expr::If(<>),
+    "match" <Box<LExpr>> "{" <LBranch+> "}" => Expr::Match(<>),
+}
+
+LExpr: LExpr = {
+    Located<Expr>,
 }
 
 pub BlockExpr: Expr = {
     "{" <Statements> "}",
 }
 
+LBlockExpr: LExpr = {
+    Located<BlockExpr>,
+}
+
 Statements: Expr = {
     Expr,
-    "let" <ExprVar> <OptTypeAnn> "=" <Box<Expr>> ";" <Box<Statements>> => Expr::Let(<>),
-    "let" <ExprVar> <OptTypeAnn> "=" <Box<BlockExpr>> ";" <Box<Statements>> => Expr::Let(<>),
+    "let" <LExprVar> <OptTypeAnn> "=" <Box<LExpr>> ";" <Box<LStatements>> => Expr::Let(<>),
+    "let" <LExprVar> <OptTypeAnn> "=" <Box<LBlockExpr>> ";" <Box<LStatements>> => Expr::Let(<>),
+}
+
+LStatements: LExpr = {
+    Located<Statements>,
 }
 
 SumExpr: Expr = {
-    BinOp<SumExpr, SumOp, ProductExpr>,
+    BinOp<LSumExpr, SumOp, LProductExpr>,
     ProductExpr,
 }
 
+LSumExpr: LExpr = {
+    Located<SumExpr>,
+}
+
 ProductExpr: Expr = {
-    BinOp<ProductExpr, ProductOp, AtomExpr>,
+    BinOp<LProductExpr, ProductOp, LAtomExpr>,
     AtomExpr,
+}
+
+LProductExpr: LExpr = {
+    Located<ProductExpr>,
 }
 
 AtomExpr: Expr = {
     InParens<Expr>,
-    ExprVar => Expr::Var(<>),
+    LExprVar => Expr::Var(<>),
     Num => Expr::Num(<>),
     Bool => Expr::Bool(<>),
     // TODO(MH): Merge the two rules below.
-    <fun: ExprVar> "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::Var(fun)), args),
-    // NOTE(MH): Ideally, we would not have the "@" symbol before the angle
-    // brackets, but that would make the expression `f(g<a, b>(c))` ambiguous
-    // to parse. With `f(g@<a, b>(c))` there's no ambiguity.
-    <fun: ExprVar> "@" "<" <types: List1<Type, ",">> ">" "(" <args: List0<Expr, ",">> ")" => Expr::App(Box::new(Expr::FunInst(fun, types)), args),
+    <fun: LExprVar> "(" <args: List0<LExpr, ",">> ")" => {
+        let span = fun.span;
+        Expr::App(Box::new(Located::new(Expr::Var(fun), span)), args)
+    },
+    <Box<Located<FunInst>>> "(" <List0<LExpr, ",">> ")" => Expr::App(<>),
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
-    <Box<AtomExpr>> "." <ExprVar> => Expr::Proj(<>),
-    <ExprCon> <Box<InParens<Expr>>> => Expr::Variant(<>),
-    <con: ExprCon> => Expr::Variant(con, Box::new(Expr::Record(vec![]))),
+    <Box<LAtomExpr>> "." <LExprVar> => Expr::Proj(<>),
+    <LExprCon> <Box<InParens<LExpr>>> => Expr::Variant(<>),
+    // TODO(MH): Is this a sensible span?
+    <con: LExprCon> => {
+        let span = con.span;
+        Expr::Variant(con, Box::new(Located::new(Expr::Record(vec![]), span)))
+    },
     ! => { errors.push(<>); Expr::Error },
 }
 
-TypeAnn: Type = {
-    ":" <Type>,
+LAtomExpr: LExpr = {
+    Located<AtomExpr>,
 }
 
-OptTypeAnn: Option<Type> = {
+// NOTE(MH): Ideally, we would not have the "@" symbol before the angle
+// brackets, but that would make the expression `f(g<a, b>(c))` ambiguous
+// to parse. With `f(g@<a, b>(c))` there's no ambiguity.
+FunInst: Expr = {
+    <LExprVar> "@" "<" <List1<LType, ",">> ">" => Expr::FunInst(<>),
+}
+
+TypeAnn: LType = {
+    ":" <LType>,
+}
+
+OptTypeAnn: Option<LType> = {
     => None,
-    ":" <Type> => Some(<>),
+    ":" <LType> => Some(<>),
 }
 
-Param<T>: (ExprVar, T) = {
-    ExprVar T => (<>),
+Param<T>: (LExprVar, T) = {
+    LExprVar T => (<>),
 }
 
-RecordAssign: (ExprVar, Expr) = {
-    <ExprVar> "=" <Expr> => (<>),
+RecordAssign: (LExprVar, LExpr) = {
+    <LExprVar> "=" <LExpr> => (<>),
 }
 
 Branch: Branch = {
-    <con: ExprCon> <var: InParens<ExprVar>?> "=>" <rhs: BlockExpr> => Branch { con, var, rhs },
-    <con: ExprCon> <var: InParens<ExprVar>?> "=>" <rhs: Expr> "," => Branch { con, var, rhs },
+    <con: LExprCon> <var: InParens<LExprVar>?> "=>" <rhs: LBlockExpr> => Branch { con, var, rhs },
+    <con: LExprCon> <var: InParens<LExprVar>?> "=>" <rhs: LExpr> "," => Branch { con, var, rhs },
+}
+
+LBranch: LBranch = {
+    Located<Branch>,
 }
 
 TypeVar: TypeVar = {
     ID_UPPER => TypeVar::new(<>),
 }
 
+LTypeVar: LTypeVar = {
+    Located<TypeVar>,
+}
+
 ExprVar: ExprVar = {
     ID_LOWER => ExprVar::new(<>),
 }
 
+LExprVar: LExprVar = {
+    Located<ExprVar>,
+}
+
 ExprCon: ExprCon = {
     ID_UPPER => ExprCon::new(<>),
+}
+
+LExprCon: LExprCon = {
+    Located<ExprCon>,
 }
 
 Num: i64 = {
@@ -176,6 +234,10 @@ BinOp<X, Op, Y>: Expr = {
 
 InParens<X>: X = {
     "(" <X> ")",
+}
+
+Located<X>: Located<X> = {
+    <start: @L> <locatee: X> <end: @R> => Located::new(locatee, Span { start, end }),
 }
 
 match {

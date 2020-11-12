@@ -158,7 +158,6 @@ fn validate_document(
     input: String,
     full_validation: bool,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
-    use util::Position;
     info!("Received text for {}", &uri);
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();
@@ -188,11 +187,13 @@ fn validate_document(
     if full_validation {
         if let Some(mut module) = opt_module {
             if let Err(error) = module.check() {
+                let span = error.span;
+                let range = Range::new(trans.position(span.start).to_lsp(), trans.position(span.end).to_lsp());
                 let diagnostic = Diagnostic {
-                    range: Range::new(Position::ORIGIN.to_lsp(), Position::ORIGIN.to_lsp()),
+                    range,
                     severity: Some(DiagnosticSeverity::Error),
                     source: Some("rufus".to_string()),
-                    message: format!("{:?}", error),
+                    message: format!("{:?}", error.locatee),
                     ..Diagnostic::default()
                 };
                 diagnostics.push(diagnostic);

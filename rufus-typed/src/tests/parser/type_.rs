@@ -38,7 +38,11 @@ fn parse_err(
 fn type_var() {
     insta::assert_yaml_snapshot!(parse("A"), @r###"
     ---
-    Var: A
+    Var:
+      locatee: A
+      span:
+        start: 0
+        end: 1
     "###);
 }
 
@@ -48,7 +52,15 @@ fn func0() {
     ---
     Fun:
       - []
-      - Var: Int
+      - locatee:
+          Var:
+            locatee: Int
+            span:
+              start: 6
+              end: 9
+        span:
+          start: 6
+          end: 9
     "###);
 }
 
@@ -57,8 +69,24 @@ fn func1() {
     insta::assert_yaml_snapshot!(parse("(Int) -> Int"), @r###"
     ---
     Fun:
-      - - Var: Int
-      - Var: Int
+      - - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 1
+                end: 4
+          span:
+            start: 1
+            end: 4
+      - locatee:
+          Var:
+            locatee: Int
+            span:
+              start: 9
+              end: 12
+        span:
+          start: 9
+          end: 12
     "###);
 }
 
@@ -67,8 +95,24 @@ fn func1_extra_comma() {
     insta::assert_yaml_snapshot!(parse("(Int,) -> Int"), @r###"
     ---
     Fun:
-      - - Var: Int
-      - Var: Int
+      - - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 1
+                end: 4
+          span:
+            start: 1
+            end: 4
+      - locatee:
+          Var:
+            locatee: Int
+            span:
+              start: 10
+              end: 13
+        span:
+          start: 10
+          end: 13
     "###);
 }
 
@@ -77,8 +121,19 @@ fn syn_app1() {
     insta::assert_yaml_snapshot!(parse("A<Int>"), @r###"
     ---
     SynApp:
-      - A
-      - - Var: Int
+      - locatee: A
+        span:
+          start: 0
+          end: 1
+      - - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 2
+                end: 5
+          span:
+            start: 2
+            end: 5
     "###);
 }
 
@@ -87,8 +142,19 @@ fn syn_app1_extra_comma() {
     insta::assert_yaml_snapshot!(parse("A<Int,>"), @r###"
     ---
     SynApp:
-      - A
-      - - Var: Int
+      - locatee: A
+        span:
+          start: 0
+          end: 1
+      - - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 2
+                end: 5
+          span:
+            start: 2
+            end: 5
     "###);
 }
 
@@ -97,9 +163,28 @@ fn syn_app2() {
     insta::assert_yaml_snapshot!(parse("A<Int, Bool>"), @r###"
     ---
     SynApp:
-      - A
-      - - Var: Int
-        - Var: Bool
+      - locatee: A
+        span:
+          start: 0
+          end: 1
+      - - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 2
+                end: 5
+          span:
+            start: 2
+            end: 5
+        - locatee:
+            Var:
+              locatee: Bool
+              span:
+                start: 7
+                end: 11
+          span:
+            start: 7
+            end: 11
     "###);
 }
 
@@ -116,8 +201,19 @@ fn record1() {
     insta::assert_yaml_snapshot!(parse("{x: Int}"), @r###"
     ---
     Record:
-      - - x
-        - Var: Int
+      - - locatee: x
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 4
+                end: 7
+          span:
+            start: 4
+            end: 7
     "###);
 }
 
@@ -126,8 +222,19 @@ fn record1_extra_comma() {
     insta::assert_yaml_snapshot!(parse("{x: Int,}"), @r###"
     ---
     Record:
-      - - x
-        - Var: Int
+      - - locatee: x
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 4
+                end: 7
+          span:
+            start: 4
+            end: 7
     "###);
 }
 
@@ -136,8 +243,15 @@ fn variant1_unit() {
     insta::assert_yaml_snapshot!(parse("[A]"), @r###"
     ---
     Variant:
-      - - A
-        - Record: []
+      - - locatee: A
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Record: []
+          span:
+            start: 1
+            end: 2
     "###);
 }
 
@@ -146,8 +260,19 @@ fn variant1_payload() {
     insta::assert_yaml_snapshot!(parse("[A(Int)]"), @r###"
     ---
     Variant:
-      - - A
-        - Var: Int
+      - - locatee: A
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 3
+                end: 6
+          span:
+            start: 3
+            end: 6
     "###);
 }
 
@@ -156,10 +281,24 @@ fn variant2_units() {
     insta::assert_yaml_snapshot!(parse("[A | B]"), @r###"
     ---
     Variant:
-      - - A
-        - Record: []
-      - - B
-        - Record: []
+      - - locatee: A
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Record: []
+          span:
+            start: 1
+            end: 2
+      - - locatee: B
+          span:
+            start: 5
+            end: 6
+        - locatee:
+            Record: []
+          span:
+            start: 5
+            end: 6
     "###);
 }
 
@@ -168,10 +307,28 @@ fn variant2_unit_payload() {
     insta::assert_yaml_snapshot!(parse("[A | B(Int)]"), @r###"
     ---
     Variant:
-      - - A
-        - Record: []
-      - - B
-        - Var: Int
+      - - locatee: A
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Record: []
+          span:
+            start: 1
+            end: 2
+      - - locatee: B
+          span:
+            start: 5
+            end: 6
+        - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 7
+                end: 10
+          span:
+            start: 7
+            end: 10
     "###);
 }
 
@@ -180,10 +337,28 @@ fn variant2_payload_unit() {
     insta::assert_yaml_snapshot!(parse("[A(Bool) | B]"), @r###"
     ---
     Variant:
-      - - A
-        - Var: Bool
-      - - B
-        - Record: []
+      - - locatee: A
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Var:
+              locatee: Bool
+              span:
+                start: 3
+                end: 7
+          span:
+            start: 3
+            end: 7
+      - - locatee: B
+          span:
+            start: 11
+            end: 12
+        - locatee:
+            Record: []
+          span:
+            start: 11
+            end: 12
     "###);
 }
 
@@ -192,10 +367,32 @@ fn variant2_payloads() {
     insta::assert_yaml_snapshot!(parse("[A(Bool) | B(Int)]"), @r###"
     ---
     Variant:
-      - - A
-        - Var: Bool
-      - - B
-        - Var: Int
+      - - locatee: A
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Var:
+              locatee: Bool
+              span:
+                start: 3
+                end: 7
+          span:
+            start: 3
+            end: 7
+      - - locatee: B
+          span:
+            start: 11
+            end: 12
+        - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 13
+                end: 16
+          span:
+            start: 13
+            end: 16
     "###);
 }
 
@@ -206,10 +403,28 @@ fn variant2_extra_bar() {
     insta::assert_yaml_snapshot!(parse("[A | B(Int) |]"), @r###"
     ---
     Variant:
-      - - A
-        - Record: []
-      - - B
-        - Var: Int
+      - - locatee: A
+          span:
+            start: 1
+            end: 2
+        - locatee:
+            Record: []
+          span:
+            start: 1
+            end: 2
+      - - locatee: B
+          span:
+            start: 5
+            end: 6
+        - locatee:
+            Var:
+              locatee: Int
+              span:
+                start: 7
+                end: 10
+          span:
+            start: 7
+            end: 10
     "###);
 }
 
@@ -220,11 +435,29 @@ fn func_type_zero_params_one_comma() {
         Some(
             Fun(
                 [
-                    Error,
+                    Located {
+                        locatee: Error,
+                        span: Span {
+                            start: 1,
+                            end: 1,
+                        },
+                    },
                 ],
-                Var(
-                    t#Int,
-                ),
+                Located {
+                    locatee: Var(
+                        Located {
+                            locatee: t#Int,
+                            span: Span {
+                                start: 7,
+                                end: 10,
+                            },
+                        },
+                    ),
+                    span: Span {
+                        start: 7,
+                        end: 10,
+                    },
+                },
             ),
         ),
         [
@@ -256,9 +489,21 @@ fn type_app_zero_args() {
     (
         Some(
             SynApp(
-                t#A,
+                Located {
+                    locatee: t#A,
+                    span: Span {
+                        start: 0,
+                        end: 1,
+                    },
+                },
                 [
-                    Error,
+                    Located {
+                        locatee: Error,
+                        span: Span {
+                            start: 2,
+                            end: 2,
+                        },
+                    },
                 ],
             ),
         ),

@@ -2,7 +2,7 @@ use serde::{Serialize, Serializer};
 use std::rc::Rc;
 
 use crate::syntax;
-use syntax::{ExprCon, ExprVar, TypeVar};
+use syntax::{ExprCon, ExprVar, Located, TypeVar};
 
 type SynType = syntax::Type;
 
@@ -34,8 +34,16 @@ impl RcType {
         Self(Rc::new(typ))
     }
 
+    pub fn from_lsyntax(lsyntax: &Located<SynType>) -> Self {
+        Self::new(Type::from_syntax(&lsyntax.locatee))
+    }
+
     pub fn from_syntax(syntax: &SynType) -> Self {
         Self::new(Type::from_syntax(syntax))
+    }
+
+    pub fn to_lsyntax(&self) -> Located<SynType> {
+        Located::gen(self.to_syntax())
     }
 
     pub fn to_syntax(&self) -> SynType {
@@ -132,61 +140,65 @@ impl Type {
     pub fn from_syntax(syntax: &SynType) -> Self {
         match syntax {
             SynType::Error => Type::Error,
-            SynType::Var(var) => Type::Var(*var),
+            SynType::Var(var) => Type::Var(var.locatee),
             SynType::SynApp(var, args) => {
-                let args = args.iter().map(RcType::from_syntax).collect();
-                Type::SynApp(*var, args)
+                let args = args.iter().map(RcType::from_lsyntax).collect();
+                Type::SynApp(var.locatee, args)
             }
             SynType::Int => Type::Int,
             SynType::Bool => Type::Bool,
             SynType::Fun(params, result) => {
-                let params = params.iter().map(RcType::from_syntax).collect();
-                let result = RcType::from_syntax(result);
+                let params = params.iter().map(RcType::from_lsyntax).collect();
+                let result = RcType::from_lsyntax(result);
                 Type::Fun(params, result)
             }
             SynType::Record(fields) => {
                 let fields = fields
                     .iter()
-                    .map(|(name, typ)| (*name, RcType::from_syntax(typ)))
+                    .map(|(name, typ)| (name.locatee, RcType::from_lsyntax(typ)))
                     .collect();
                 Type::Record(fields)
             }
             SynType::Variant(constrs) => {
                 let constrs = constrs
                     .iter()
-                    .map(|(name, typ)| (*name, RcType::from_syntax(typ)))
+                    .map(|(name, typ)| (name.locatee, RcType::from_lsyntax(typ)))
                     .collect();
                 Type::Variant(constrs)
             }
         }
     }
 
+    pub fn to_lsyntax(&self) -> Located<SynType> {
+        Located::gen(self.to_syntax())
+    }
+
     pub fn to_syntax(&self) -> SynType {
         match self {
             Type::Error => SynType::Error,
-            Type::Var(var) => SynType::Var(*var),
+            Type::Var(var) => SynType::Var(Located::gen(*var)),
             Type::SynApp(var, args) => {
-                let args = args.iter().map(RcType::to_syntax).collect();
-                SynType::SynApp(*var, args)
+                let args = args.iter().map(RcType::to_lsyntax).collect();
+                SynType::SynApp(Located::gen(*var), args)
             }
             Type::Int => SynType::Int,
             Type::Bool => SynType::Bool,
             Type::Fun(params, result) => {
-                let params = params.iter().map(RcType::to_syntax).collect();
-                let result = Box::new(RcType::to_syntax(result));
+                let params = params.iter().map(RcType::to_lsyntax).collect();
+                let result = Box::new(RcType::to_lsyntax(result));
                 SynType::Fun(params, result)
             }
             Type::Record(fields) => {
                 let fields = fields
                     .iter()
-                    .map(|(name, typ)| (*name, typ.to_syntax()))
+                    .map(|(name, typ)| (Located::gen(*name), typ.to_lsyntax()))
                     .collect();
                 SynType::Record(fields)
             }
             Type::Variant(constrs) => {
                 let constrs = constrs
                     .iter()
-                    .map(|(name, typ)| (*name, typ.to_syntax()))
+                    .map(|(name, typ)| (Located::gen(*name), typ.to_lsyntax()))
                     .collect();
                 SynType::Variant(constrs)
             }

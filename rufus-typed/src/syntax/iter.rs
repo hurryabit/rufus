@@ -30,8 +30,14 @@ impl Module {
     }
 }
 
+impl LType {
+    pub fn children_mut(&mut self) -> impl Iterator<Item = &mut LType> {
+        self.locatee.children_mut()
+    }
+}
+
 impl Type {
-    pub fn children_mut(&mut self) -> impl Iterator<Item = &mut Type> {
+    pub fn children_mut(&mut self) -> impl Iterator<Item = &mut LType> {
         use genawaiter::{rc::gen, yield_};
         use Type::*;
         gen!({
@@ -39,7 +45,7 @@ impl Type {
                 Error => {}
                 Var(_) | Int | Bool => {}
                 SynApp(syn, args) => {
-                    let _: &TypeVar = syn; // We want this to break if change the type of `syn`.
+                    let _: &LTypeVar = syn; // We want this to break if change the type of `syn`.
                     for arg in args {
                         yield_!(arg);
                     }
@@ -66,8 +72,14 @@ impl Type {
     }
 }
 
+impl LExpr {
+    pub fn children_mut(&mut self) -> impl Iterator<Item = &mut LExpr> {
+        self.locatee.children_mut()
+    }
+}
+
 impl Expr {
-    pub fn children_mut(&mut self) -> impl Iterator<Item = &mut Expr> {
+    pub fn children_mut(&mut self) -> impl Iterator<Item = &mut LExpr> {
         use genawaiter::{rc::gen, yield_};
         use Expr::*;
         gen!({
@@ -88,7 +100,7 @@ impl Expr {
                     yield_!(rhs);
                 }
                 FunInst(fun, _types) => {
-                    let _: &ExprVar = fun; // We want this to fail if we change the type of `fun`.
+                    let _: &LExprVar = fun; // We want this to fail if we change the type of `fun`.
                 }
                 Let(_binder, _type, bindee, body) => {
                     yield_!(bindee);
@@ -113,7 +125,7 @@ impl Expr {
                 Match(scrut, branches) => {
                     yield_!(scrut);
                     for branch in branches {
-                        yield_!(&mut branch.rhs);
+                        yield_!(&mut branch.locatee.rhs);
                     }
                 }
             }
