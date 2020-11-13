@@ -16,9 +16,15 @@ macro_rules! ident_type {
             }
         }
 
+        impl std::fmt::Display for $type_name {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+
         impl std::fmt::Debug for $type_name {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-                f.write_fmt(format_args!("t#{}", self.0))
+                f.write_fmt(format_args!("{}({:?})", stringify!($type_name), self.0))
             }
         }
     };

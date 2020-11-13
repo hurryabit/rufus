@@ -1,3 +1,4 @@
+use std::fmt;
 use std::rc::Rc;
 
 use crate::syntax;
@@ -296,4 +297,61 @@ pub fn same_keys<'a, K: Eq, V>(vec1: &'a [(K, V)], vec2: &'a [(K, V)]) -> bool {
             .iter()
             .zip(vec2.iter())
             .all(|((k1, _), (k2, _))| k1 == k2)
+}
+
+impl fmt::Display for RcType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // NOTE(MH): Let's make sure we call the right method and don't end up
+        // in an inifite loop.
+        let typ: &Type = &*self;
+        typ.fmt(f)
+    }
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fn write_list<T, F>(fmt: &mut fmt::Formatter, list: &[T], sep: &str, f: F) -> fmt::Result
+        where
+            F: Fn(&mut fmt::Formatter, &T) -> fmt::Result
+        {
+            let mut first = true;
+            for item in list {
+                f(fmt, item)?;
+                if first {
+                    first = false;
+                } else {
+                    fmt.write_str(sep)?;
+                }
+            }
+            Ok(())
+        }
+
+        use Type::*;
+        match self {
+            Type::Error => write!(f, "???"),
+            Var(var) => write!(f, "{}", var),
+            SynApp(syn, args) => {
+                write!(f, "{}<", syn)?;
+                write_list(f, &args, ", ", |f, arg| write!(f, "{}", arg))?;
+                write!(f, ">")
+            }
+            Int => write!(f, "Int"),
+            Bool => write!(f, "Bool"),
+            Fun(params, result) => {
+                write!(f, "(")?;
+                write_list(f, &params, ", ", |f, param| write!(f, "{}", param))?;
+                write!(f, ") -> {}", result)
+            }
+            Record(fields) => {
+                f.write_str("{")?;
+                write_list(f, &fields, ", ", |f, (field, typ)| write!(f, "{}: {}", field, typ))?;
+                f.write_str("}")
+            }
+            Variant(constrs) => {
+                f.write_str("[")?;
+                write_list(f, &constrs, " | ", |f, (consts, typ)| write!(f, "{}({})", consts, typ))?;
+                f.write_str("]")
+            }
+        }
+    }
 }
