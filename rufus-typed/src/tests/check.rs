@@ -300,11 +300,7 @@ fn var_resolved() {
                 end: 11
           body:
             locatee:
-              Var:
-                locatee: A
-                span:
-                  start: 15
-                  end: 16
+              Var: A
             span:
               start: 15
               end: 16
@@ -329,11 +325,7 @@ fn var_shadows_int() {
                 end: 13
           body:
             locatee:
-              Var:
-                locatee: Int
-                span:
-                  start: 17
-                  end: 20
+              Var: Int
             span:
               start: 17
               end: 20
@@ -396,11 +388,7 @@ fn type_con_syn_shadows_int() {
                 end: 10
           body:
             locatee:
-              Var:
-                locatee: A
-                span:
-                  start: 14
-                  end: 15
+              Var: A
             span:
               start: 14
               end: 15

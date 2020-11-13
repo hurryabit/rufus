@@ -38,11 +38,7 @@ fn parse_err(
 fn type_var() {
     insta::assert_yaml_snapshot!(parse("A"), @r###"
     ---
-    Var:
-      locatee: A
-      span:
-        start: 0
-        end: 1
+    Var: A
     "###);
 }
 
@@ -53,11 +49,7 @@ fn func0() {
     Fun:
       - []
       - locatee:
-          Var:
-            locatee: Int
-            span:
-              start: 6
-              end: 9
+          Var: Int
         span:
           start: 6
           end: 9
@@ -70,20 +62,12 @@ fn func1() {
     ---
     Fun:
       - - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 1
-                end: 4
+            Var: Int
           span:
             start: 1
             end: 4
       - locatee:
-          Var:
-            locatee: Int
-            span:
-              start: 9
-              end: 12
+          Var: Int
         span:
           start: 9
           end: 12
@@ -96,20 +80,12 @@ fn func1_extra_comma() {
     ---
     Fun:
       - - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 1
-                end: 4
+            Var: Int
           span:
             start: 1
             end: 4
       - locatee:
-          Var:
-            locatee: Int
-            span:
-              start: 10
-              end: 13
+          Var: Int
         span:
           start: 10
           end: 13
@@ -126,11 +102,7 @@ fn syn_app1() {
           start: 0
           end: 1
       - - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 2
-                end: 5
+            Var: Int
           span:
             start: 2
             end: 5
@@ -147,11 +119,7 @@ fn syn_app1_extra_comma() {
           start: 0
           end: 1
       - - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 2
-                end: 5
+            Var: Int
           span:
             start: 2
             end: 5
@@ -168,20 +136,12 @@ fn syn_app2() {
           start: 0
           end: 1
       - - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 2
-                end: 5
+            Var: Int
           span:
             start: 2
             end: 5
         - locatee:
-            Var:
-              locatee: Bool
-              span:
-                start: 7
-                end: 11
+            Var: Bool
           span:
             start: 7
             end: 11
@@ -206,11 +166,7 @@ fn record1() {
             start: 1
             end: 2
         - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 4
-                end: 7
+            Var: Int
           span:
             start: 4
             end: 7
@@ -227,11 +183,7 @@ fn record1_extra_comma() {
             start: 1
             end: 2
         - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 4
-                end: 7
+            Var: Int
           span:
             start: 4
             end: 7
@@ -265,11 +217,7 @@ fn variant1_payload() {
             start: 1
             end: 2
         - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 3
-                end: 6
+            Var: Int
           span:
             start: 3
             end: 6
@@ -321,11 +269,7 @@ fn variant2_unit_payload() {
             start: 5
             end: 6
         - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 7
-                end: 10
+            Var: Int
           span:
             start: 7
             end: 10
@@ -342,11 +286,7 @@ fn variant2_payload_unit() {
             start: 1
             end: 2
         - locatee:
-            Var:
-              locatee: Bool
-              span:
-                start: 3
-                end: 7
+            Var: Bool
           span:
             start: 3
             end: 7
@@ -372,11 +312,7 @@ fn variant2_payloads() {
             start: 1
             end: 2
         - locatee:
-            Var:
-              locatee: Bool
-              span:
-                start: 3
-                end: 7
+            Var: Bool
           span:
             start: 3
             end: 7
@@ -385,11 +321,7 @@ fn variant2_payloads() {
             start: 11
             end: 12
         - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 13
-                end: 16
+            Var: Int
           span:
             start: 13
             end: 16
@@ -417,11 +349,7 @@ fn variant2_extra_bar() {
             start: 5
             end: 6
         - locatee:
-            Var:
-              locatee: Int
-              span:
-                start: 7
-                end: 10
+            Var: Int
           span:
             start: 7
             end: 10
@@ -445,13 +373,7 @@ fn func_type_zero_params_one_comma() {
                 ],
                 Located {
                     locatee: Var(
-                        Located {
-                            locatee: t#Int,
-                            span: Span {
-                                start: 7,
-                                end: 10,
-                            },
-                        },
+                        t#Int,
                     ),
                     span: Span {
                         start: 7,

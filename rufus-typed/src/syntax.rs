@@ -47,7 +47,7 @@ pub struct FuncDecl {
 #[derive(Debug, Serialize)]
 pub enum Type {
     Error,
-    Var(LTypeVar),
+    Var(TypeVar),
     SynApp(LTypeVar, Vec<LType>),
     Int,
     Bool,
@@ -61,7 +61,7 @@ pub type LType = Located<Type>;
 #[derive(Debug, Serialize)]
 pub enum Expr {
     Error,
-    Var(LExprVar),
+    Var(ExprVar),
     Num(i64),
     Bool(bool),
     Lam(Vec<(LExprVar, Option<LType>)>, Box<LExpr>),
@@ -200,6 +200,12 @@ impl<T, Pos> Located<T, Pos> {
 impl<T> Located<T, usize> {
     pub fn gen(locatee: T) -> Self {
         Self::new(locatee, Span { start: 0, end: 0 })
+    }
+}
+
+impl <T, Pos> Located<T, Pos> {
+    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Located<U, Pos> {
+        Located::new(f(self.locatee), self.span)
     }
 }
 

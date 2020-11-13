@@ -140,7 +140,7 @@ impl Type {
     pub fn from_syntax(syntax: &SynType) -> Self {
         match syntax {
             SynType::Error => Type::Error,
-            SynType::Var(var) => Type::Var(var.locatee),
+            SynType::Var(var) => Type::Var(*var),
             SynType::SynApp(var, args) => {
                 let args = args.iter().map(RcType::from_lsyntax).collect();
                 Type::SynApp(var.locatee, args)
@@ -176,7 +176,7 @@ impl Type {
     pub fn to_syntax(&self) -> SynType {
         match self {
             Type::Error => SynType::Error,
-            Type::Var(var) => SynType::Var(Located::gen(*var)),
+            Type::Var(var) => SynType::Var(*var),
             Type::SynApp(var, args) => {
                 let args = args.iter().map(RcType::to_lsyntax).collect();
                 SynType::SynApp(Located::gen(*var), args)

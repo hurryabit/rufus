@@ -207,28 +207,28 @@ impl syntax::Type {
             Self::Error => Ok(()),
             Self::Int | Self::Bool => panic!("{:?} in Type.check", self),
             Self::Var(var) => {
-                if env.type_vars.contains(&var.locatee) {
+                if env.type_vars.contains(var) {
                     Ok(())
-                } else if let Some(scheme) = env.types.get(&var.locatee) {
+                } else if let Some(scheme) = env.types.get(var) {
                     let arity = scheme.params.len();
                     if arity == 0 {
-                        *self = Self::SynApp(*var, vec![]);
+                        *self = Self::SynApp(Located::new(*var, span), vec![]);
                         Ok(())
                     } else {
                         Err(Located::new(
                             Error::KindMismatch {
-                                type_var: var.locatee,
+                                type_var: *var,
                                 expected: 0,
                                 found: arity,
                             },
                             span,
                         ))
                     }
-                } else if let Some(builtin) = env.builtin_types.get(&var.locatee) {
+                } else if let Some(builtin) = env.builtin_types.get(var) {
                     *self = builtin();
                     Ok(())
                 } else {
-                    Err(Located::new(Error::UnknownTypeVar(var.locatee), span))
+                    Err(Located::new(Error::UnknownTypeVar(*var), span))
                 }
             }
             Self::SynApp(var, args) => {
@@ -410,17 +410,17 @@ impl Expr {
         match self {
             Self::Error => Ok(RcType::new(Type::Error)),
             Self::Var(var) => {
-                if let Some(found) = env.expr_vars.get(&var.locatee) {
+                if let Some(found) = env.expr_vars.get(var) {
                     Ok(found.clone())
-                } else if let Some(TypeScheme { params, body }) = env.funcs.get(&var.locatee) {
+                } else if let Some(TypeScheme { params, body }) = env.funcs.get(var) {
                     let arity = params.len();
                     if arity == 0 {
-                        *self = Self::FunInst(*var, vec![]);
+                        *self = Self::FunInst(Located::new(*var, span), vec![]);
                         Ok(body.clone())
                     } else {
                         Err(Located::new(
                             Error::SchemeMismatch {
-                                expr_var: var.locatee,
+                                expr_var: *var,
                                 expected: 0,
                                 found: arity,
                             },
@@ -428,7 +428,7 @@ impl Expr {
                         ))
                     }
                 } else {
-                    Err(Located::new(Error::UnknownExprVar(var.locatee), span))
+                    Err(Located::new(Error::UnknownExprVar(*var), span))
                 }
             }
             Self::Num(_) => Ok(RcType::new(Type::Int)),

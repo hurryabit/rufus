@@ -32,11 +32,7 @@ fn module() {
           params: []
           body:
             locatee:
-              Var:
-                locatee: Int
-                span:
-                  start: 21
-                  end: 24
+              Var: Int
             span:
               start: 21
               end: 24
@@ -53,31 +49,19 @@ fn module() {
                   start: 41
                   end: 42
               - locatee:
-                  Var:
-                    locatee: Int
-                    span:
-                      start: 44
-                      end: 47
+                  Var: Int
                 span:
                   start: 44
                   end: 47
           return_type:
             locatee:
-              Var:
-                locatee: Mono
-                span:
-                  start: 52
-                  end: 56
+              Var: Mono
             span:
               start: 52
               end: 56
           body:
             locatee:
-              Var:
-                locatee: x
-                span:
-                  start: 59
-                  end: 60
+              Var: x
             span:
               start: 57
               end: 62
@@ -94,11 +78,7 @@ fn module() {
                 end: 82
           body:
             locatee:
-              Var:
-                locatee: A
-                span:
-                  start: 86
-                  end: 87
+              Var: A
             span:
               start: 86
               end: 87
@@ -119,11 +99,7 @@ fn module() {
                   start: 107
                   end: 108
               - locatee:
-                  Var:
-                    locatee: A
-                    span:
-                      start: 110
-                      end: 111
+                  Var: A
                 span:
                   start: 110
                   end: 111
@@ -135,11 +111,7 @@ fn module() {
                     start: 116
                     end: 120
                 - - locatee:
-                      Var:
-                        locatee: A
-                        span:
-                          start: 121
-                          end: 122
+                      Var: A
                     span:
                       start: 121
                       end: 122
@@ -148,11 +120,7 @@ fn module() {
               end: 123
           body:
             locatee:
-              Var:
-                locatee: x
-                span:
-                  start: 126
-                  end: 127
+              Var: x
             span:
               start: 124
               end: 129

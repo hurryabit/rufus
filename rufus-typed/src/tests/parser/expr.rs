@@ -46,11 +46,7 @@ fn parse_err(
 fn var() {
     insta::assert_yaml_snapshot!(parse("x"), @r###"
     ---
-    Var:
-      locatee: x
-      span:
-        start: 0
-        end: 1
+    Var: x
     "###);
 }
 
@@ -84,11 +80,7 @@ fn app0() {
     ---
     App:
       - locatee:
-          Var:
-            locatee: f
-            span:
-              start: 0
-              end: 1
+          Var: f
         span:
           start: 0
           end: 1
@@ -102,11 +94,7 @@ fn app1() {
     ---
     App:
       - locatee:
-          Var:
-            locatee: f
-            span:
-              start: 0
-              end: 1
+          Var: f
         span:
           start: 0
           end: 1
@@ -124,11 +112,7 @@ fn app1_trailing() {
     ---
     App:
       - locatee:
-          Var:
-            locatee: f
-            span:
-              start: 0
-              end: 1
+          Var: f
         span:
           start: 0
           end: 1
@@ -146,11 +130,7 @@ fn app2() {
     ---
     App:
       - locatee:
-          Var:
-            locatee: f
-            span:
-              start: 0
-              end: 1
+          Var: f
         span:
           start: 0
           end: 1
@@ -178,11 +158,7 @@ fn app_ty() {
                 start: 0
                 end: 1
             - - locatee:
-                  Var:
-                    locatee: Int
-                    span:
-                      start: 3
-                      end: 6
+                  Var: Int
                 span:
                   start: 3
                   end: 6
@@ -320,11 +296,7 @@ fn proj1() {
     ---
     Proj:
       - locatee:
-          Var:
-            locatee: r
-            span:
-              start: 0
-              end: 1
+          Var: r
         span:
           start: 0
           end: 1
@@ -343,11 +315,7 @@ fn proj2() {
       - locatee:
           Proj:
             - locatee:
-                Var:
-                  locatee: r
-                  span:
-                    start: 0
-                    end: 1
+                Var: r
               span:
                 start: 0
                 end: 1
@@ -439,21 +407,13 @@ fn prod2() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - Mul
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 2
-              end: 3
+          Var: b
         span:
           start: 2
           end: 3
@@ -468,21 +428,13 @@ fn prod3() {
       - locatee:
           BinOp:
             - locatee:
-                Var:
-                  locatee: a
-                  span:
-                    start: 0
-                    end: 1
+                Var: a
               span:
                 start: 0
                 end: 1
             - Div
             - locatee:
-                Var:
-                  locatee: b
-                  span:
-                    start: 2
-                    end: 3
+                Var: b
               span:
                 start: 2
                 end: 3
@@ -491,11 +443,7 @@ fn prod3() {
           end: 3
       - Mul
       - locatee:
-          Var:
-            locatee: c
-            span:
-              start: 4
-              end: 5
+          Var: c
         span:
           start: 4
           end: 5
@@ -508,21 +456,13 @@ fn sum2() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - Add
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 2
-              end: 3
+          Var: b
         span:
           start: 2
           end: 3
@@ -537,21 +477,13 @@ fn sum3() {
       - locatee:
           BinOp:
             - locatee:
-                Var:
-                  locatee: a
-                  span:
-                    start: 0
-                    end: 1
+                Var: a
               span:
                 start: 0
                 end: 1
             - Sub
             - locatee:
-                Var:
-                  locatee: b
-                  span:
-                    start: 2
-                    end: 3
+                Var: b
               span:
                 start: 2
                 end: 3
@@ -560,11 +492,7 @@ fn sum3() {
           end: 3
       - Add
       - locatee:
-          Var:
-            locatee: c
-            span:
-              start: 4
-              end: 5
+          Var: c
         span:
           start: 4
           end: 5
@@ -577,21 +505,13 @@ fn cmp_eq() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - Equals
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 5
-              end: 6
+          Var: b
         span:
           start: 5
           end: 6
@@ -604,21 +524,13 @@ fn cmp_neq() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - NotEq
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 5
-              end: 6
+          Var: b
         span:
           start: 5
           end: 6
@@ -631,21 +543,13 @@ fn cmp_lt() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - Less
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 4
-              end: 5
+          Var: b
         span:
           start: 4
           end: 5
@@ -658,21 +562,13 @@ fn cmp_leq() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - LessEq
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 5
-              end: 6
+          Var: b
         span:
           start: 5
           end: 6
@@ -685,21 +581,13 @@ fn cmp_gt() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - Greater
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 4
-              end: 5
+          Var: b
         span:
           start: 4
           end: 5
@@ -712,21 +600,13 @@ fn cmp_geq() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
       - GreaterEq
       - locatee:
-          Var:
-            locatee: b
-            span:
-              start: 5
-              end: 6
+          Var: b
         span:
           start: 5
           end: 6
@@ -741,21 +621,13 @@ fn cmp_mixed() {
       - locatee:
           BinOp:
             - locatee:
-                Var:
-                  locatee: a
-                  span:
-                    start: 0
-                    end: 1
+                Var: a
               span:
                 start: 0
                 end: 1
             - Add
             - locatee:
-                Var:
-                  locatee: b
-                  span:
-                    start: 4
-                    end: 5
+                Var: b
               span:
                 start: 4
                 end: 5
@@ -766,21 +638,13 @@ fn cmp_mixed() {
       - locatee:
           BinOp:
             - locatee:
-                Var:
-                  locatee: c
-                  span:
-                    start: 9
-                    end: 10
+                Var: c
               span:
                 start: 9
                 end: 10
             - Mul
             - locatee:
-                Var:
-                  locatee: d
-                  span:
-                    start: 13
-                    end: 14
+                Var: d
               span:
                 start: 13
                 end: 14
@@ -796,11 +660,7 @@ fn cmp_many() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
@@ -808,21 +668,13 @@ fn cmp_many() {
       - locatee:
           BinOp:
             - locatee:
-                Var:
-                  locatee: b
-                  span:
-                    start: 6
-                    end: 7
+                Var: b
               span:
                 start: 6
                 end: 7
             - Equals
             - locatee:
-                Var:
-                  locatee: c
-                  span:
-                    start: 11
-                    end: 12
+                Var: c
               span:
                 start: 11
                 end: 12
@@ -848,13 +700,7 @@ fn cmp_many_err() {
                 Equals,
                 Located {
                     locatee: Var(
-                        Located {
-                            locatee: e#c,
-                            span: Span {
-                                start: 10,
-                                end: 11,
-                            },
-                        },
+                        e#c,
                     ),
                     span: Span {
                         start: 10,
@@ -894,11 +740,7 @@ fn sum_prod() {
     ---
     BinOp:
       - locatee:
-          Var:
-            locatee: a
-            span:
-              start: 0
-              end: 1
+          Var: a
         span:
           start: 0
           end: 1
@@ -906,21 +748,13 @@ fn sum_prod() {
       - locatee:
           BinOp:
             - locatee:
-                Var:
-                  locatee: b
-                  span:
-                    start: 2
-                    end: 3
+                Var: b
               span:
                 start: 2
                 end: 3
             - Mul
             - locatee:
-                Var:
-                  locatee: c
-                  span:
-                    start: 4
-                    end: 5
+                Var: c
               span:
                 start: 4
                 end: 5
@@ -955,11 +789,7 @@ fn lam1() {
               end: 4
           - ~
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 8
-              end: 9
+          Var: x
         span:
           start: 6
           end: 11
@@ -977,11 +807,7 @@ fn lam1_trailing() {
               end: 4
           - ~
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 9
-              end: 10
+          Var: x
         span:
           start: 7
           end: 12
@@ -1004,11 +830,7 @@ fn lam2() {
               end: 7
           - ~
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 11
-              end: 12
+          Var: x
         span:
           start: 9
           end: 14
@@ -1024,20 +846,12 @@ fn lam1_typed() {
               start: 3
               end: 4
           - locatee:
-              Var:
-                locatee: Int
-                span:
-                  start: 6
-                  end: 9
+              Var: Int
             span:
               start: 6
               end: 9
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 13
-              end: 14
+          Var: x
         span:
           start: 11
           end: 16
@@ -1106,6 +920,7 @@ fn lam1_poly() {
                     "\";\"",
                     "\"<\"",
                     "\"<=\"",
+                    "\"=\"",
                     "\"==\"",
                     "\">\"",
                     "\">=\"",
@@ -1161,21 +976,13 @@ fn if_cmp() {
       - locatee:
           BinOp:
             - locatee:
-                Var:
-                  locatee: a
-                  span:
-                    start: 3
-                    end: 4
+                Var: a
               span:
                 start: 3
                 end: 4
             - Equals
             - locatee:
-                Var:
-                  locatee: b
-                  span:
-                    start: 8
-                    end: 9
+                Var: b
               span:
                 start: 8
                 end: 9
@@ -1199,11 +1006,7 @@ fn if_cmp() {
 fn block_atom() {
     insta::assert_yaml_snapshot!(parse_block("{ a }"), @r###"
     ---
-    Var:
-      locatee: a
-      span:
-        start: 2
-        end: 3
+    Var: a
     "###);
 }
 
@@ -1240,11 +1043,7 @@ fn let1_atom() {
           start: 10
           end: 11
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 13
-              end: 14
+          Var: x
         span:
           start: 13
           end: 14
@@ -1278,11 +1077,7 @@ fn let1_complex() {
           start: 10
           end: 15
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 17
-              end: 18
+          Var: x
         span:
           start: 17
           end: 18
@@ -1299,11 +1094,7 @@ fn let1_typed() {
           start: 6
           end: 7
       - locatee:
-          Var:
-            locatee: Int
-            span:
-              start: 9
-              end: 12
+          Var: Int
         span:
           start: 9
           end: 12
@@ -1313,11 +1104,7 @@ fn let1_typed() {
           start: 15
           end: 16
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 18
-              end: 19
+          Var: x
         span:
           start: 18
           end: 19
@@ -1340,11 +1127,7 @@ fn let1_block() {
           start: 10
           end: 15
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 17
-              end: 18
+          Var: x
         span:
           start: 17
           end: 18
@@ -1374,20 +1157,12 @@ fn let2() {
                 end: 18
             - ~
             - locatee:
-                Var:
-                  locatee: x
-                  span:
-                    start: 21
-                    end: 22
+                Var: x
               span:
                 start: 21
                 end: 22
             - locatee:
-                Var:
-                  locatee: y
-                  span:
-                    start: 24
-                    end: 25
+                Var: y
               span:
                 start: 24
                 end: 25
@@ -1403,11 +1178,7 @@ fn match1_novar() {
     ---
     Match:
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 6
-              end: 7
+          Var: x
         span:
           start: 6
           end: 7
@@ -1436,11 +1207,7 @@ fn match1_var() {
     ---
     Match:
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 6
-              end: 7
+          Var: x
         span:
           start: 6
           end: 7
@@ -1473,11 +1240,7 @@ fn match1_block() {
     ---
     Match:
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 6
-              end: 7
+          Var: x
         span:
           start: 6
           end: 7
@@ -1534,13 +1297,7 @@ fn match1_block_comma() {
             Match(
                 Located {
                     locatee: Var(
-                        Located {
-                            locatee: e#x,
-                            span: Span {
-                                start: 6,
-                                end: 7,
-                            },
-                        },
+                        e#x,
                     ),
                     span: Span {
                         start: 6,
@@ -1600,11 +1357,7 @@ fn match2_exprs() {
     ---
     Match:
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 6
-              end: 7
+          Var: x
         span:
           start: 6
           end: 7
@@ -1649,11 +1402,7 @@ fn match2_expr_block() {
     ---
     Match:
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 6
-              end: 7
+          Var: x
         span:
           start: 6
           end: 7
@@ -1698,11 +1447,7 @@ fn match2_block_expr() {
     ---
     Match:
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 6
-              end: 7
+          Var: x
         span:
           start: 6
           end: 7
@@ -1747,11 +1492,7 @@ fn match2_blocks() {
     ---
     Match:
       - locatee:
-          Var:
-            locatee: x
-            span:
-              start: 6
-              end: 7
+          Var: x
         span:
           start: 6
           end: 7

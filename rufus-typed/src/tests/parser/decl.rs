@@ -22,11 +22,7 @@ fn type_mono() {
       params: []
       body:
         locatee:
-          Var:
-            locatee: Int
-            span:
-              start: 9
-              end: 12
+          Var: Int
         span:
           start: 9
           end: 12
@@ -50,11 +46,7 @@ fn type_poly() {
             end: 8
       body:
         locatee:
-          Var:
-            locatee: A
-            span:
-              start: 12
-              end: 13
+          Var: A
         span:
           start: 12
           end: 13
@@ -78,31 +70,19 @@ fn func_mono() {
               start: 6
               end: 7
           - locatee:
-              Var:
-                locatee: Int
-                span:
-                  start: 9
-                  end: 12
+              Var: Int
             span:
               start: 9
               end: 12
       return_type:
         locatee:
-          Var:
-            locatee: Int
-            span:
-              start: 17
-              end: 20
+          Var: Int
         span:
           start: 17
           end: 20
       body:
         locatee:
-          Var:
-            locatee: x
-            span:
-              start: 23
-              end: 24
+          Var: x
         span:
           start: 21
           end: 26
@@ -130,31 +110,19 @@ fn func_poly() {
               start: 9
               end: 10
           - locatee:
-              Var:
-                locatee: A
-                span:
-                  start: 12
-                  end: 13
+              Var: A
             span:
               start: 12
               end: 13
       return_type:
         locatee:
-          Var:
-            locatee: A
-            span:
-              start: 18
-              end: 19
+          Var: A
         span:
           start: 18
           end: 19
       body:
         locatee:
-          Var:
-            locatee: x
-            span:
-              start: 22
-              end: 23
+          Var: x
         span:
           start: 20
           end: 25
