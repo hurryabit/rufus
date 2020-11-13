@@ -1,6 +1,7 @@
 use crate::*;
 use syntax::Module;
 
+mod signatures;
 mod types;
 
 fn check(input: &str) -> Module {
