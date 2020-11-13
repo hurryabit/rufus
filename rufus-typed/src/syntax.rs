@@ -1,10 +1,11 @@
-use lalrpop_intern::InternedString;
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 use std::fmt;
 use debug::DebugWriter;
 
 mod debruijn;
 mod debug;
+#[macro_use]
+mod ident;
 mod iter;
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -103,19 +104,13 @@ pub enum OpCode {
     GreaterEq,
 }
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub struct TypeVar(InternedString);
-
+ident_type!(TypeVar);
 pub type LTypeVar = Located<TypeVar>;
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub struct ExprVar(InternedString);
-
+ident_type!(ExprVar);
 pub type LExprVar = Located<ExprVar>;
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub struct ExprCon(InternedString);
-
+ident_type!(ExprCon);
 pub type LExprCon = Located<ExprCon>;
 
 impl Default for Type {
@@ -127,81 +122,6 @@ impl Default for Type {
 impl Default for Expr {
     fn default() -> Self {
         Self::Error
-    }
-}
-
-impl TypeVar {
-    pub fn new(x: &str) -> Self {
-        Self(lalrpop_intern::intern(x))
-    }
-
-    pub fn with_name<R, F>(&self, f: F) -> R where F: FnOnce(&str) -> R {
-        lalrpop_intern::read(|interner| f(interner.data(self.0)))
-    }
-}
-
-impl fmt::Debug for TypeVar {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("t#{}", self.0))
-    }
-}
-
-impl Serialize for TypeVar {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.with_name(|name| name.serialize(serializer))
-    }
-}
-
-impl ExprVar {
-    pub fn new(x: &str) -> Self {
-        Self(lalrpop_intern::intern(x))
-    }
-
-    pub fn with_name<R, F>(&self, f: F) -> R where F: FnOnce(&str) -> R {
-        lalrpop_intern::read(|interner| f(interner.data(self.0)))
-    }
-}
-
-impl fmt::Debug for ExprVar {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("t#{}", self.0))
-    }
-}
-
-impl Serialize for ExprVar {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.with_name(|name| name.serialize(serializer))
-    }
-}
-
-impl ExprCon {
-    pub fn new(x: &str) -> Self {
-        Self(lalrpop_intern::intern(x))
-    }
-
-    pub fn with_name<R, F>(&self, f: F) -> R where F: FnOnce(&str) -> R {
-        lalrpop_intern::read(|interner| f(interner.data(self.0)))
-    }
-}
-
-impl fmt::Debug for ExprCon {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("t#{}", self.0))
-    }
-}
-
-impl Serialize for ExprCon {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.with_name(|name| name.serialize(serializer))
     }
 }
 
