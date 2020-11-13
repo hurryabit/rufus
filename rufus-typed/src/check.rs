@@ -665,6 +665,7 @@ fn check_let_bindee(
     bindee: &mut LExpr,
 ) -> Result<RcType, LError> {
     if let Some(type_ann) = opt_type_ann {
+        type_ann.check(&env.kind_env)?;
         let typ = RcType::from_lsyntax(type_ann);
         bindee.check(env, &typ)?;
         Ok(typ)

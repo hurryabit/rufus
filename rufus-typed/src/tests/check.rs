@@ -1,6 +1,7 @@
 use crate::*;
 use syntax::Module;
 
+mod expressions;
 mod signatures;
 mod types;
 
