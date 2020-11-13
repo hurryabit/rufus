@@ -196,7 +196,7 @@ fn validate_document(
                     range,
                     severity: Some(DiagnosticSeverity::Error),
                     source: Some("rufus".to_string()),
-                    message: format!("{:?}", error.locatee),
+                    message: format!("{}", error.locatee),
                     ..Diagnostic::default()
                 };
                 diagnostics.push(diagnostic);

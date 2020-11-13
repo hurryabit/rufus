@@ -1,10 +1,12 @@
 use crate::syntax;
+pub use error::{Error, LError};
 use std::collections;
 use std::hash::Hash;
 use std::rc::Rc;
 use syntax::*;
 use types::*;
 
+mod error;
 pub mod types;
 
 type Arity = usize;
@@ -24,49 +26,6 @@ pub struct TypeEnv {
     funcs: Rc<collections::HashMap<ExprVar, TypeScheme>>,
     expr_vars: im::HashMap<ExprVar, RcType>,
 }
-
-#[derive(Debug)]
-pub enum Error<Pos = usize> {
-    UnknownTypeVar(TypeVar),
-    UnknownExprVar(ExprVar),
-    UnknownField(ExprVar),
-    KindMismatch {
-        type_var: TypeVar,
-        expected: Arity,
-        found: Arity,
-    },
-    SchemeMismatch {
-        expr_var: ExprVar,
-        expected: Arity,
-        found: Arity,
-    },
-    TypeMismatch {
-        expected: RcType,
-        found: RcType,
-    },
-    DuplicateTypeVar {
-        var: TypeVar,
-        original: Span<Pos>,
-    },
-    DuplicateTypeDecl {
-        var: TypeVar,
-        original: Span<Pos>,
-    },
-    DuplicateExprVar {
-        var: ExprVar,
-        original: Span<Pos>,
-    },
-    BadRecordProj(RcType, ExprVar),
-    BadApp(RcType, Arity),
-    BadLam(RcType, Arity),
-    BadVariant(RcType, ExprCon),
-    BadMatch(RcType),
-    BadBranch(RcType, ExprCon),
-    EmptyMatch,
-    TypeAnnsNeeded,
-}
-
-pub type LError<Pos = usize> = Located<Error<Pos>, Pos>;
 
 impl Module {
     pub fn check(&mut self) -> Result<(), LError> {
@@ -216,14 +175,7 @@ impl syntax::Type {
                         *self = Self::SynApp(Located::new(*var, span), vec![]);
                         Ok(())
                     } else {
-                        Err(Located::new(
-                            Error::KindMismatch {
-                                type_var: *var,
-                                expected: 0,
-                                found: arity,
-                            },
-                            span,
-                        ))
+                        Err(Located::new(Error::UnexpectedGeneric(*var, arity), span))
                     }
                 } else if let Some(builtin) = env.builtin_types.get(var) {
                     *self = builtin();
@@ -237,10 +189,10 @@ impl syntax::Type {
                 assert!(num_args > 0);
                 if env.type_vars.contains(&var.locatee) {
                     Err(Located::new(
-                        Error::KindMismatch {
+                        Error::GenericTypeArityMismatch {
                             type_var: var.locatee,
-                            expected: num_args,
-                            found: 0,
+                            expected: 0,
+                            found: num_args,
                         },
                         span,
                     ))
@@ -253,20 +205,20 @@ impl syntax::Type {
                         Ok(())
                     } else {
                         Err(Located::new(
-                            Error::KindMismatch {
+                            Error::GenericTypeArityMismatch {
                                 type_var: var.locatee,
-                                expected: num_args,
-                                found: arity,
+                                expected: arity,
+                                found: num_args,
                             },
                             span,
                         ))
                     }
                 } else if env.builtin_types.contains_key(&var.locatee) {
                     Err(Located::new(
-                        Error::KindMismatch {
+                        Error::GenericTypeArityMismatch {
                             type_var: var.locatee,
-                            expected: num_args,
-                            found: 0,
+                            expected: 0,
+                            found: num_args,
                         },
                         span,
                     ))
@@ -355,13 +307,13 @@ impl Expr {
                         arg.check(env, arg_typ)
                     } else {
                         Err(Located::new(
-                            Error::BadVariant(expected.clone(), con.locatee),
+                            Error::BadVariantConstr(expected.clone(), con.locatee),
                             span,
                         ))
                     }
                 }
                 _ => Err(Located::new(
-                    Error::BadVariant(expected.clone(), con.locatee),
+                    Error::UnexpectedVariantType(expected.clone(), con.locatee),
                     span,
                 )),
             },
@@ -420,7 +372,7 @@ impl Expr {
                         Ok(body.clone())
                     } else {
                         Err(Located::new(
-                            Error::SchemeMismatch {
+                            Error::GenericFuncArityMismatch {
                                 expr_var: *var,
                                 expected: 0,
                                 found: arity,
@@ -448,16 +400,31 @@ impl Expr {
                 let result = body.infer(env)?;
                 Ok(RcType::new(Type::Fun(param_types, result)))
             }
-            Self::App(fun, args) => {
-                let fun_type = fun.infer(env)?;
-                match &*fun_type.weak_normalize_env(env) {
-                    Type::Fun(params, result) if params.len() == args.len() => {
+            Self::App(func, args) => {
+                let func_type = func.infer(env)?;
+                let num_args = args.len();
+                match &*func_type.weak_normalize_env(env) {
+                    Type::Fun(params, result) if params.len() == num_args => {
                         for (arg, typ) in args.iter_mut().zip(params.iter()) {
                             arg.check(env, typ)?;
                         }
                         Ok(result.clone())
                     }
-                    _ => Err(Located::new(Error::BadApp(fun_type, args.len()), span)),
+                    _ => {
+                        let func = match func.locatee {
+                            Expr::Var(var) => Some(var),
+                            Expr::FunInst(func, _) => Some(func.locatee),
+                            _ => None,
+                        };
+                        Err(Located::new(
+                            Error::BadApp {
+                                func,
+                                func_type,
+                                num_args,
+                            },
+                            span,
+                        ))
+                    }
                 }
             }
             Self::BinOp(lhs, op, rhs) => match op {
@@ -486,10 +453,10 @@ impl Expr {
                 }
                 if env.expr_vars.contains_key(&var.locatee) {
                     Err(Located::new(
-                        Error::SchemeMismatch {
+                        Error::GenericFuncArityMismatch {
                             expr_var: var.locatee,
-                            expected: num_types,
-                            found: 0,
+                            expected: 0,
+                            found: num_types,
                         },
                         span,
                     ))
@@ -500,10 +467,10 @@ impl Expr {
                         Ok(scheme.instantiate(&types))
                     } else {
                         Err(Located::new(
-                            Error::SchemeMismatch {
+                            Error::GenericFuncArityMismatch {
                                 expr_var: var.locatee,
-                                expected: num_types,
-                                found: arity,
+                                expected: arity,
+                                found: num_types,
                             },
                             span,
                         ))
@@ -530,20 +497,21 @@ impl Expr {
                 Ok(RcType::new(Type::Record(fields)))
             }
             Self::Proj(record, field) => {
-                let record_typ = record.infer(env)?;
-                match &*record_typ.weak_normalize_env(env) {
+                let record_type = record.infer(env)?;
+                let field = field.locatee;
+                match &*record_type.weak_normalize_env(env) {
                     Type::Record(fields) => {
-                        if let Some(field_typ) = find_by_key(&fields, &field.locatee) {
+                        if let Some(field_typ) = find_by_key(&fields, &field) {
                             Ok(field_typ.clone())
                         } else {
                             Err(Located::new(
-                                Error::BadRecordProj(record_typ, field.locatee),
+                                Error::BadRecordProj { record_type, field },
                                 span,
                             ))
                         }
                     }
                     _ => Err(Located::new(
-                        Error::BadRecordProj(record_typ, field.locatee),
+                        Error::BadRecordProj { record_type, field },
                         span,
                     )),
                 }

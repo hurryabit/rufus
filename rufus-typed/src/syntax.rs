@@ -117,6 +117,12 @@ impl Default for Expr {
     }
 }
 
+impl<Pos: fmt::Display> fmt::Display for Span<Pos> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}-{}", self.start, self.end)
+    }
+}
+
 impl<T, Pos> Located<T, Pos> {
     pub fn new(locatee: T, span: Span<Pos>) -> Self {
         Self { locatee, span }
