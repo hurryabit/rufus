@@ -188,7 +188,10 @@ fn validate_document(
         if let Some(mut module) = opt_module {
             if let Err(error) = module.check() {
                 let span = error.span;
-                let range = Range::new(trans.position(span.start).to_lsp(), trans.position(span.end).to_lsp());
+                let range = Range::new(
+                    trans.position(span.start).to_lsp(),
+                    trans.position(span.end).to_lsp(),
+                );
                 let diagnostic = Diagnostic {
                     range,
                     severity: Some(DiagnosticSeverity::Error),
