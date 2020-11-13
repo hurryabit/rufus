@@ -1,8 +1,10 @@
 use lalrpop_intern::InternedString;
 use serde::{Serialize, Serializer};
 use std::fmt;
+use debug::DebugWriter;
 
 mod debruijn;
+mod debug;
 mod iter;
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -17,25 +19,25 @@ pub struct Located<T, Pos = usize> {
     pub span: Span<Pos>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub struct Module {
     pub decls: Vec<Decl>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub enum Decl {
     Type(TypeDecl),
     Func(FuncDecl),
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub struct TypeDecl {
     pub name: LTypeVar,
     pub params: Vec<LTypeVar>,
     pub body: LType,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub struct FuncDecl {
     pub name: LExprVar,
     pub type_params: Vec<LTypeVar>,
@@ -44,7 +46,7 @@ pub struct FuncDecl {
     pub body: LExpr,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub enum Type {
     Error,
     Var(TypeVar),
@@ -58,7 +60,7 @@ pub enum Type {
 
 pub type LType = Located<Type>;
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub enum Expr {
     Error,
     Var(ExprVar),
@@ -78,7 +80,7 @@ pub enum Expr {
 
 pub type LExpr = Located<Expr>;
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub struct Branch {
     pub con: LExprCon,
     pub var: Option<LExprVar>,
@@ -87,7 +89,7 @@ pub struct Branch {
 
 pub type LBranch = Located<Branch>;
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Serialize)]
 pub enum OpCode {
     Add,
     Sub,
@@ -132,6 +134,10 @@ impl TypeVar {
     pub fn new(x: &str) -> Self {
         Self(lalrpop_intern::intern(x))
     }
+
+    pub fn with_name<R, F>(&self, f: F) -> R where F: FnOnce(&str) -> R {
+        lalrpop_intern::read(|interner| f(interner.data(self.0)))
+    }
 }
 
 impl fmt::Debug for TypeVar {
@@ -145,7 +151,7 @@ impl Serialize for TypeVar {
     where
         S: Serializer,
     {
-        lalrpop_intern::read(|interner| interner.data(self.0).serialize(serializer))
+        self.with_name(|name| name.serialize(serializer))
     }
 }
 
@@ -153,11 +159,15 @@ impl ExprVar {
     pub fn new(x: &str) -> Self {
         Self(lalrpop_intern::intern(x))
     }
+
+    pub fn with_name<R, F>(&self, f: F) -> R where F: FnOnce(&str) -> R {
+        lalrpop_intern::read(|interner| f(interner.data(self.0)))
+    }
 }
 
 impl fmt::Debug for ExprVar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("e#{}", self.0))
+        f.write_fmt(format_args!("t#{}", self.0))
     }
 }
 
@@ -166,7 +176,7 @@ impl Serialize for ExprVar {
     where
         S: Serializer,
     {
-        lalrpop_intern::read(|interner| interner.data(self.0).serialize(serializer))
+        self.with_name(|name| name.serialize(serializer))
     }
 }
 
@@ -174,11 +184,15 @@ impl ExprCon {
     pub fn new(x: &str) -> Self {
         Self(lalrpop_intern::intern(x))
     }
+
+    pub fn with_name<R, F>(&self, f: F) -> R where F: FnOnce(&str) -> R {
+        lalrpop_intern::read(|interner| f(interner.data(self.0)))
+    }
 }
 
 impl fmt::Debug for ExprCon {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!("c#{}", self.0))
+        f.write_fmt(format_args!("t#{}", self.0))
     }
 }
 
@@ -187,7 +201,7 @@ impl Serialize for ExprCon {
     where
         S: Serializer,
     {
-        lalrpop_intern::read(|interner| interner.data(self.0).serialize(serializer))
+        self.with_name(|name| name.serialize(serializer))
     }
 }
 
@@ -203,7 +217,7 @@ impl<T> Located<T, usize> {
     }
 }
 
-impl <T, Pos> Located<T, Pos> {
+impl<T, Pos> Located<T, Pos> {
     pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Located<U, Pos> {
         Located::new(f(self.locatee), self.span)
     }
@@ -215,5 +229,29 @@ impl<T, Pos: Copy> Located<T, Pos> {
             locatee: &self.locatee,
             span: self.span,
         }
+    }
+}
+
+impl fmt::Debug for Module {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        DebugWriter::fmt(self, f)
+    }
+}
+
+impl fmt::Debug for Decl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        DebugWriter::fmt(self, f)
+    }
+}
+
+impl fmt::Debug for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        DebugWriter::fmt(self, f)
+    }
+}
+
+impl fmt::Debug for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        DebugWriter::fmt(self, f)
     }
 }

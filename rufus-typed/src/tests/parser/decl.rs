@@ -11,120 +11,44 @@ fn parse(input: &str) -> Decl {
 
 #[test]
 fn type_mono() {
-    insta::assert_yaml_snapshot!(parse("type T = Int"), @r###"
-    ---
-    Type:
-      name:
-        locatee: T
-        span:
-          start: 5
-          end: 6
-      params: []
-      body:
-        locatee:
-          Var: Int
-        span:
-          start: 9
-          end: 12
+    insta::assert_debug_snapshot!(parse("type T = Int"), @r###"
+    TYPEDECL
+      name: T @ 5...6
+      type: Int @ 9...12
     "###);
 }
 
 #[test]
 fn type_poly() {
-    insta::assert_yaml_snapshot!(parse("type T<A> = A"), @r###"
-    ---
-    Type:
-      name:
-        locatee: T
-        span:
-          start: 5
-          end: 6
-      params:
-        - locatee: A
-          span:
-            start: 7
-            end: 8
-      body:
-        locatee:
-          Var: A
-        span:
-          start: 12
-          end: 13
+    insta::assert_debug_snapshot!(parse("type T<A> = A"), @r###"
+    TYPEDECL
+      name: T @ 5...6
+      type_param: A @ 7...8
+      type: A @ 12...13
     "###);
 }
 
 #[test]
 fn func_mono() {
-    insta::assert_yaml_snapshot!(parse("fn id(x: Int) -> Int { x }"), @r###"
-    ---
-    Func:
-      name:
-        locatee: id
-        span:
-          start: 3
-          end: 5
-      type_params: []
-      expr_params:
-        - - locatee: x
-            span:
-              start: 6
-              end: 7
-          - locatee:
-              Var: Int
-            span:
-              start: 9
-              end: 12
-      return_type:
-        locatee:
-          Var: Int
-        span:
-          start: 17
-          end: 20
-      body:
-        locatee:
-          Var: x
-        span:
-          start: 21
-          end: 26
+    insta::assert_debug_snapshot!(parse("fn id(x: Int) -> Int { x }"), @r###"
+    FUNCDECL
+      name: id @ 3...5
+      param: x @ 6...7
+      type: Int @ 9...12
+      result: Int @ 17...20
+      body: x @ 21...26
     "###);
 }
 
 #[test]
 fn func_poly() {
-    insta::assert_yaml_snapshot!(parse("fn id<A>(x: A) -> A { x }"), @r###"
-    ---
-    Func:
-      name:
-        locatee: id
-        span:
-          start: 3
-          end: 5
-      type_params:
-        - locatee: A
-          span:
-            start: 6
-            end: 7
-      expr_params:
-        - - locatee: x
-            span:
-              start: 9
-              end: 10
-          - locatee:
-              Var: A
-            span:
-              start: 12
-              end: 13
-      return_type:
-        locatee:
-          Var: A
-        span:
-          start: 18
-          end: 19
-      body:
-        locatee:
-          Var: x
-        span:
-          start: 20
-          end: 25
+    insta::assert_debug_snapshot!(parse("fn id<A>(x: A) -> A { x }"), @r###"
+    FUNCDECL
+      name: id @ 3...5
+      type_param: A @ 6...7
+      param: x @ 9...10
+      type: A @ 12...13
+      result: A @ 18...19
+      body: x @ 20...25
     "###);
 }

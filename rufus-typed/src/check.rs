@@ -205,7 +205,8 @@ impl syntax::Type {
     fn check(&mut self, span: Span, env: &KindEnv) -> Result<(), LError> {
         match self {
             Self::Error => Ok(()),
-            Self::Int | Self::Bool => panic!("{:?} in Type.check", self),
+            Self::Int => panic!("Int in Type.check"),
+            Self::Bool => panic!("Bool in Type.check"),
             Self::Var(var) => {
                 if env.type_vars.contains(var) {
                     Ok(())

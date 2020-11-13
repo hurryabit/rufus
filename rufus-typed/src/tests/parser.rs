@@ -15,114 +15,34 @@ fn parse(input: &str) -> Module {
 
 #[test]
 fn module() {
-    insta::assert_yaml_snapshot!(parse(r#"
+    insta::assert_debug_snapshot!(parse(r#"
         type Mono = Int
         fn mono(x: Int) -> Mono { x }
         type Poly<A> = A
         fn poly<A>(x: A) -> Poly<A> { x }
         "#), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Mono
-            span:
-              start: 14
-              end: 18
-          params: []
-          body:
-            locatee:
-              Var: Int
-            span:
-              start: 21
-              end: 24
-      - Func:
-          name:
-            locatee: mono
-            span:
-              start: 36
-              end: 40
-          type_params: []
-          expr_params:
-            - - locatee: x
-                span:
-                  start: 41
-                  end: 42
-              - locatee:
-                  Var: Int
-                span:
-                  start: 44
-                  end: 47
-          return_type:
-            locatee:
-              Var: Mono
-            span:
-              start: 52
-              end: 56
-          body:
-            locatee:
-              Var: x
-            span:
-              start: 57
-              end: 62
-      - Type:
-          name:
-            locatee: Poly
-            span:
-              start: 76
-              end: 80
-          params:
-            - locatee: A
-              span:
-                start: 81
-                end: 82
-          body:
-            locatee:
-              Var: A
-            span:
-              start: 86
-              end: 87
-      - Func:
-          name:
-            locatee: poly
-            span:
-              start: 99
-              end: 103
-          type_params:
-            - locatee: A
-              span:
-                start: 104
-                end: 105
-          expr_params:
-            - - locatee: x
-                span:
-                  start: 107
-                  end: 108
-              - locatee:
-                  Var: A
-                span:
-                  start: 110
-                  end: 111
-          return_type:
-            locatee:
-              SynApp:
-                - locatee: Poly
-                  span:
-                    start: 116
-                    end: 120
-                - - locatee:
-                      Var: A
-                    span:
-                      start: 121
-                      end: 122
-            span:
-              start: 116
-              end: 123
-          body:
-            locatee:
-              Var: x
-            span:
-              start: 124
-              end: 129
+    MODULE
+      decl: TYPEDECL
+        name: Mono @ 14...18
+        type: Int @ 21...24
+      decl: FUNCDECL
+        name: mono @ 36...40
+        param: x @ 41...42
+        type: Int @ 44...47
+        result: Mono @ 52...56
+        body: x @ 57...62
+      decl: TYPEDECL
+        name: Poly @ 76...80
+        type_param: A @ 81...82
+        type: A @ 86...87
+      decl: FUNCDECL
+        name: poly @ 99...103
+        type_param: A @ 104...105
+        param: x @ 107...108
+        type: A @ 110...111
+        result: APP @ 116...123
+          syn: Poly @ 116...120
+          type_arg: A @ 121...122
+        body: x @ 124...129
     "###);
 }

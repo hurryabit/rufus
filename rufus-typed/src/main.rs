@@ -201,7 +201,7 @@ fn validate_document(
                 };
                 diagnostics.push(diagnostic);
             }
-            info!("{}", serde_yaml::to_string(&module)?);
+            info!("{:?}", module);
         }
     }
     let params = PublishDiagnosticsParams {
@@ -234,13 +234,6 @@ where
     req.extract(R::METHOD)
 }
 
-// #[derive(Debug)]
-// enum Error {
-//     Io(std::io::Error),
-//     Parse(lalrpop_util::ParseError<usize, String, &'static str>),
-//     Yaml(serde_yaml::Error),
-// }
-
 // impl From<std::io::Error> for Error {
 //     fn from(err: std::io::Error) -> Self {
 //         Self::Io(err)
@@ -250,12 +243,6 @@ where
 // impl From<lalrpop_util::ParseError<usize, parser::Token<'_>, &'static str>> for Error {
 //     fn from(err: lalrpop_util::ParseError<usize, parser::Token<'_>, &'static str>) -> Self {
 //         Self::Parse(err.map_token(|t| format!("{}", t)))
-//     }
-// }
-
-// impl From<serde_yaml::Error> for Error {
-//     fn from(err: serde_yaml::Error) -> Self {
-//         Self::Yaml(err)
 //     }
 // }
 

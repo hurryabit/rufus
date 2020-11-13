@@ -206,212 +206,86 @@ fn wrong_arity_type_con_syn() {
 
 #[test]
 fn int_resolved() {
-    insta::assert_yaml_snapshot!(check("type Here = Int"), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Here
-            span:
-              start: 5
-              end: 9
-          params: []
-          body:
-            locatee: Int
-            span:
-              start: 12
-              end: 15
+    insta::assert_debug_snapshot!(check("type Here = Int"), @r###"
+    MODULE
+      decl: TYPEDECL
+        name: Here @ 5...9
+        type: INT @ 12...15
     "###);
 }
 
 #[test]
 fn bool_resolved() {
-    insta::assert_yaml_snapshot!(check("type Here = Bool"), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Here
-            span:
-              start: 5
-              end: 9
-          params: []
-          body:
-            locatee: Bool
-            span:
-              start: 12
-              end: 16
+    insta::assert_debug_snapshot!(check("type Here = Bool"), @r###"
+    MODULE
+      decl: TYPEDECL
+        name: Here @ 5...9
+        type: BOOL @ 12...16
     "###);
 }
 
 #[test]
 fn syn_resolved() {
-    insta::assert_yaml_snapshot!(check("type Syn = Int\ntype Here = Syn"), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Syn
-            span:
-              start: 5
-              end: 8
-          params: []
-          body:
-            locatee: Int
-            span:
-              start: 11
-              end: 14
-      - Type:
-          name:
-            locatee: Here
-            span:
-              start: 20
-              end: 24
-          params: []
-          body:
-            locatee:
-              SynApp:
-                - locatee: Syn
-                  span:
-                    start: 27
-                    end: 30
-                - []
-            span:
-              start: 27
-              end: 30
+    insta::assert_debug_snapshot!(check("type Syn = Int\ntype Here = Syn"), @r###"
+    MODULE
+      decl: TYPEDECL
+        name: Syn @ 5...8
+        type: INT @ 11...14
+      decl: TYPEDECL
+        name: Here @ 20...24
+        type: APP @ 27...30
+          syn: Syn @ 27...30
     "###);
 }
 
 #[test]
 fn var_resolved() {
-    insta::assert_yaml_snapshot!(check("type Here<A> = A"), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Here
-            span:
-              start: 5
-              end: 9
-          params:
-            - locatee: A
-              span:
-                start: 10
-                end: 11
-          body:
-            locatee:
-              Var: A
-            span:
-              start: 15
-              end: 16
+    insta::assert_debug_snapshot!(check("type Here<A> = A"), @r###"
+    MODULE
+      decl: TYPEDECL
+        name: Here @ 5...9
+        type_param: A @ 10...11
+        type: A @ 15...16
     "###);
 }
 
 #[test]
 fn var_shadows_int() {
-    insta::assert_yaml_snapshot!(check("type Here<Int> = Int"), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Here
-            span:
-              start: 5
-              end: 9
-          params:
-            - locatee: Int
-              span:
-                start: 10
-                end: 13
-          body:
-            locatee:
-              Var: Int
-            span:
-              start: 17
-              end: 20
+    insta::assert_debug_snapshot!(check("type Here<Int> = Int"), @r###"
+    MODULE
+      decl: TYPEDECL
+        name: Here @ 5...9
+        type_param: Int @ 10...13
+        type: Int @ 17...20
     "###);
 }
 
 #[test]
 fn type_syn_shadows_int() {
-    insta::assert_yaml_snapshot!(check("type Int = Bool\ntype Here = Int"), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Int
-            span:
-              start: 5
-              end: 8
-          params: []
-          body:
-            locatee: Bool
-            span:
-              start: 11
-              end: 15
-      - Type:
-          name:
-            locatee: Here
-            span:
-              start: 21
-              end: 25
-          params: []
-          body:
-            locatee:
-              SynApp:
-                - locatee: Int
-                  span:
-                    start: 28
-                    end: 31
-                - []
-            span:
-              start: 28
-              end: 31
+    insta::assert_debug_snapshot!(check("type Int = Bool\ntype Here = Int"), @r###"
+    MODULE
+      decl: TYPEDECL
+        name: Int @ 5...8
+        type: BOOL @ 11...15
+      decl: TYPEDECL
+        name: Here @ 21...25
+        type: APP @ 28...31
+          syn: Int @ 28...31
     "###);
 }
 
 #[test]
 fn type_con_syn_shadows_int() {
-    insta::assert_yaml_snapshot!(check("type Int<A> = A\ntype Here = Int<Bool>"), @r###"
-    ---
-    decls:
-      - Type:
-          name:
-            locatee: Int
-            span:
-              start: 5
-              end: 8
-          params:
-            - locatee: A
-              span:
-                start: 9
-                end: 10
-          body:
-            locatee:
-              Var: A
-            span:
-              start: 14
-              end: 15
-      - Type:
-          name:
-            locatee: Here
-            span:
-              start: 21
-              end: 25
-          params: []
-          body:
-            locatee:
-              SynApp:
-                - locatee: Int
-                  span:
-                    start: 28
-                    end: 31
-                - - locatee: Bool
-                    span:
-                      start: 32
-                      end: 36
-            span:
-              start: 28
-              end: 37
+    insta::assert_debug_snapshot!(check("type Int<A> = A\ntype Here = Int<Bool>"), @r###"
+    MODULE
+      decl: TYPEDECL
+        name: Int @ 5...8
+        type_param: A @ 9...10
+        type: A @ 14...15
+      decl: TYPEDECL
+        name: Here @ 21...25
+        type: APP @ 28...37
+          syn: Int @ 28...31
+          type_arg: BOOL @ 32...36
     "###);
 }
