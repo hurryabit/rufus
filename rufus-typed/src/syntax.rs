@@ -17,25 +17,25 @@ pub struct Located<T, Pos = usize> {
     pub span: Span<Pos>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Module {
     pub decls: Vec<Decl>,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub enum Decl {
     Type(TypeDecl),
     Func(FuncDecl),
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct TypeDecl {
     pub name: LTypeVar,
     pub params: Vec<LTypeVar>,
     pub body: LType,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct FuncDecl {
     pub name: LExprVar,
     pub type_params: Vec<LTypeVar>,
@@ -44,7 +44,7 @@ pub struct FuncDecl {
     pub body: LExpr,
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub enum Type {
     Error,
     Var(LTypeVar),
@@ -58,7 +58,7 @@ pub enum Type {
 
 pub type LType = Located<Type>;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub enum Expr {
     Error,
     Var(LExprVar),
@@ -78,7 +78,7 @@ pub enum Expr {
 
 pub type LExpr = Located<Expr>;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Branch {
     pub con: LExprCon,
     pub var: Option<LExprVar>,

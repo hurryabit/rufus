@@ -13,7 +13,7 @@ type Type = types::Type;
 
 #[derive(Clone)]
 pub struct KindEnv {
-    builtin_types: Rc<collections::HashMap<TypeVar, syntax::Type>>,
+    builtin_types: Rc<collections::HashMap<TypeVar, Box<dyn Fn() -> syntax::Type>>>,
     types: Rc<collections::HashMap<TypeVar, TypeScheme>>,
     type_vars: im::HashSet<TypeVar>,
 }
@@ -71,8 +71,8 @@ pub type LError<Pos = usize> = Located<Error<Pos>, Pos>;
 impl Module {
     pub fn check(&mut self) -> Result<(), LError> {
         let mut builtin_types = collections::HashMap::new();
-        builtin_types.insert(TypeVar::new("Int"), syntax::Type::Int);
-        builtin_types.insert(TypeVar::new("Bool"), syntax::Type::Bool);
+        builtin_types.insert(TypeVar::new("Int"), Box::new(|| syntax::Type::Int) as Box<dyn Fn() -> syntax::Type>);
+        builtin_types.insert(TypeVar::new("Bool"), Box::new(|| syntax::Type::Bool) as Box<dyn Fn() -> syntax::Type>);
 
         if let Some((span, name)) = find_duplicate(self.type_decls().map(|decl| decl.name.as_ref())) {
             return Err(Located::new(Error::DuplicateTypeDecl {
@@ -212,7 +212,7 @@ impl syntax::Type {
                         }, span))
                     }
                 } else if let Some(builtin) = env.builtin_types.get(&var.locatee) {
-                    *self = builtin.clone();
+                    *self = builtin();
                     Ok(())
                 } else {
                     Err(Located::new(Error::UnknownTypeVar(var.locatee), span))
