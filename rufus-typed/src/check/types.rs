@@ -312,7 +312,7 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fn write_list<T, F>(fmt: &mut fmt::Formatter, list: &[T], sep: &str, f: F) -> fmt::Result
         where
-            F: Fn(&mut fmt::Formatter, &T) -> fmt::Result
+            F: Fn(&mut fmt::Formatter, &T) -> fmt::Result,
         {
             let mut first = true;
             for item in list {
@@ -344,12 +344,16 @@ impl fmt::Display for Type {
             }
             Record(fields) => {
                 f.write_str("{")?;
-                write_list(f, &fields, ", ", |f, (field, typ)| write!(f, "{}: {}", field, typ))?;
+                write_list(f, &fields, ", ", |f, (field, typ)| {
+                    write!(f, "{}: {}", field, typ)
+                })?;
                 f.write_str("}")
             }
             Variant(constrs) => {
                 f.write_str("[")?;
-                write_list(f, &constrs, " | ", |f, (consts, typ)| write!(f, "{}({})", consts, typ))?;
+                write_list(f, &constrs, " | ", |f, (consts, typ)| {
+                    write!(f, "{}({})", consts, typ)
+                })?;
                 f.write_str("]")
             }
         }

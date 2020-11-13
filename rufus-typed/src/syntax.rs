@@ -1,5 +1,5 @@
-use std::fmt;
 use debug::DebugWriter;
+use std::fmt;
 
 mod debruijn;
 mod debug;

@@ -38,7 +38,13 @@ impl Debug for TypeDecl {
 
 impl Debug for FuncDecl {
     fn write(&self, writer: &mut DebugWriter) -> fmt::Result {
-        let Self { name, type_params, expr_params, return_type, body } = self;
+        let Self {
+            name,
+            type_params,
+            expr_params,
+            return_type,
+            body,
+        } = self;
         writer.node("FUNCDECL", |writer| {
             writer.child("name", name)?;
             for type_param in type_params {
@@ -94,7 +100,7 @@ impl Debug for Type {
                     writer.child("type", typ)?;
                 }
                 Ok(())
-            })
+            }),
         }
     }
 }
@@ -188,7 +194,11 @@ impl Debug for Expr {
 
 impl Debug for Branch {
     fn write(&self, writer: &mut DebugWriter) -> fmt::Result {
-        let Self { con, var: opt_binder, rhs } = self;
+        let Self {
+            con,
+            var: opt_binder,
+            rhs,
+        } = self;
         writer.node("BRANCH", |writer| {
             writer.child("constr", con)?;
             if let Some(binder) = opt_binder {
@@ -265,7 +275,6 @@ impl<'a> DebugWriter<'a> {
         } else {
             self.writer.write_str(label)
         }
-
     }
 
     pub fn node<F>(&mut self, label: &str, f: F) -> fmt::Result
