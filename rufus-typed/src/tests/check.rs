@@ -15,63 +15,122 @@ fn check_err(input: &str) -> String {
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
-    let lerror = module.check().unwrap_err();
-    format!("{}: {}", lerror.span, lerror.locatee)
+    let error = module.check().unwrap_err();
+    let trans = util::PositionTranslator::new(input);
+    let span = trans.span(error.span);
+    let error = error.locatee;
+    if span.start.line == span.end.line {
+        let line = input.lines().nth(span.start.line).unwrap();
+        format!(
+            "{:3} | {}\n{}{}\n{}",
+            span.start.line,
+            line,
+            " ".repeat(span.start.column + 6),
+            "~".repeat(span.end.column - span.start.column),
+            error
+        )
+    } else {
+        format!("{}: {}", span, error)
+    }
 }
 
 #[test]
 fn unknown_type_var() {
-    insta::assert_snapshot!(check_err("type Bad = Unknown"), @"11-18: Undeclared type variable `Unknown`.");
+    insta::assert_snapshot!(check_err("type Bad = Unknown"), @r###"
+      0 | type Bad = Unknown
+                     ~~~~~~~
+    Undeclared type variable `Unknown`.
+    "###);
 }
 
 #[test]
 fn unexpected_type_con_at_top() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = Id"), @"26-28: Expected a type but found the generic type `Id`.");
+    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = Id"), @r###"
+      1 | type Bad = Id
+                     ~~
+    Expected a type but found the generic type `Id`.
+    "###);
 }
 
 #[test]
 fn unexpected_type_con_in_type_args() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype List<A> = A\ntype Bad = List<Id>"), @"48-50: Expected a type but found the generic type `Id`.");
+    insta::assert_snapshot!(check_err("type Id<A> = A\ntype List<A> = A\ntype Bad = List<Id>"), @r###"
+      2 | type Bad = List<Id>
+                          ~~
+    Expected a type but found the generic type `Id`.
+    "###);
 }
 
 #[test]
 fn unexpected_type_con_in_func_args() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = (Id) -> Int"), @"27-29: Expected a type but found the generic type `Id`.");
+    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = (Id) -> Int"), @r###"
+      1 | type Bad = (Id) -> Int
+                      ~~
+    Expected a type but found the generic type `Id`.
+    "###);
 }
 
 #[test]
 fn unexpected_type_con_in_func_result() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = () -> Id"), @"32-34: Expected a type but found the generic type `Id`.");
+    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = () -> Id"), @r###"
+      1 | type Bad = () -> Id
+                           ~~
+    Expected a type but found the generic type `Id`.
+    "###);
 }
 
 #[test]
 fn unexpected_type_con_in_record() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = {field: Id}"), @"34-36: Expected a type but found the generic type `Id`.");
+    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = {field: Id}"), @r###"
+      1 | type Bad = {field: Id}
+                             ~~
+    Expected a type but found the generic type `Id`.
+    "###);
 }
 
 #[test]
 fn unexpected_type_con_in_variant() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = [Constr(Id)]"), @"34-36: Expected a type but found the generic type `Id`.");
+    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = [Constr(Id)]"), @r###"
+      1 | type Bad = [Constr(Id)]
+                             ~~
+    Expected a type but found the generic type `Id`.
+    "###);
 }
 
 #[test]
 fn wrong_arity_var() {
-    insta::assert_snapshot!(check_err("type Bad<F> = F<Int>"), @"14-20: Type `F` is not a generic type but is applied to 1 type argument.");
+    insta::assert_snapshot!(check_err("type Bad<F> = F<Int>"), @r###"
+      0 | type Bad<F> = F<Int>
+                        ~~~~~~
+    Type `F` is not a generic type but is applied to 1 type argument.
+    "###);
 }
 
 #[test]
 fn wrong_arity_builtin() {
-    insta::assert_snapshot!(check_err("type Bad<A> = Int<A>"), @"14-20: Type `Int` is not a generic type but is applied to 1 type argument.");
+    insta::assert_snapshot!(check_err("type Bad<A> = Int<A>"), @r###"
+      0 | type Bad<A> = Int<A>
+                        ~~~~~~
+    Type `Int` is not a generic type but is applied to 1 type argument.
+    "###);
 }
 
 #[test]
 fn wrong_arity_type_syn() {
-    insta::assert_snapshot!(check_err("type Syn = Int\ntype Bad = Syn<Int>"), @"26-34: Type `Syn` is not a generic type but is applied to 1 type argument.");
+    insta::assert_snapshot!(check_err("type Syn = Int\ntype Bad = Syn<Int>"), @r###"
+      1 | type Bad = Syn<Int>
+                     ~~~~~~~~
+    Type `Syn` is not a generic type but is applied to 1 type argument.
+    "###);
 }
 
 #[test]
 fn wrong_arity_type_con_syn() {
-    insta::assert_snapshot!(check_err("type Syn<A> = A\ntype Bad = Syn<Int, Int>"), @"27-40: Generic type `Syn` expects 1 type argument but is applied to 2 type arguments.");
+    insta::assert_snapshot!(check_err("type Syn<A> = A\ntype Bad = Syn<Int, Int>"), @r###"
+      1 | type Bad = Syn<Int, Int>
+                     ~~~~~~~~~~~~~
+    Generic type `Syn` expects 1 type argument but is applied to 2 type arguments.
+    "###);
 }
 
 #[test]

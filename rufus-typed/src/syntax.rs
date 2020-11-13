@@ -117,6 +117,15 @@ impl Default for Expr {
     }
 }
 
+impl<Pos> Span<Pos> {
+    pub fn map<Pos2, F: Fn(Pos) -> Pos2>(self, f: F) -> Span<Pos2> {
+        Span {
+            start: f(self.start),
+            end: f(self.end),
+        }
+    }
+}
+
 impl<Pos: fmt::Display> fmt::Display for Span<Pos> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}-{}", self.start, self.end)

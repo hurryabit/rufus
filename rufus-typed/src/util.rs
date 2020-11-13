@@ -1,3 +1,5 @@
+use crate::syntax::Span;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Position {
     pub line: usize,
@@ -39,6 +41,10 @@ impl PositionTranslator {
             .binary_search(&index)
             .unwrap_or_else(|x| x - 1);
         Position::new(line, index - self.line_starts[line])
+    }
+
+    pub fn span(&self, span: Span<usize>) -> Span<Position> {
+        span.map(|pos| self.position(pos))
     }
 }
 
