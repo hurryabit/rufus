@@ -100,6 +100,15 @@ fn wrong_arity_type_con_syn() {
 }
 
 #[test]
+fn duplicate_type_var() {
+    insta::assert_snapshot!(check_err("type Syn<A, A> = A"), @r###"
+      0 | type Syn<A, A> = A
+                      ~
+    Duplicate type variable `A`.
+    "###);
+}
+
+#[test]
 fn int_resolved() {
     insta::assert_debug_snapshot!(check("type Here = Int"), @r###"
     MODULE

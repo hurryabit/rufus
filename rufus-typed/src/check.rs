@@ -622,7 +622,7 @@ impl LTypeVar {
                     var: *lvar.locatee,
                     original: span,
                 },
-                span,
+                lvar.span,
             ))
         } else {
             Ok(())
