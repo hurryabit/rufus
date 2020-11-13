@@ -21,14 +21,5 @@ macro_rules! ident_type {
                 f.write_fmt(format_args!("t#{}", self.0))
             }
         }
-
-        impl serde::Serialize for $type_name {
-            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: serde::Serializer,
-            {
-                self.with_name(|name| name.serialize(serializer))
-            }
-        }
     };
 }

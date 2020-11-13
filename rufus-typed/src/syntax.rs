@@ -1,4 +1,3 @@
-use serde::Serialize;
 use std::fmt;
 use debug::DebugWriter;
 
@@ -8,37 +7,33 @@ mod debug;
 mod ident;
 mod iter;
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug)]
 pub struct Span<Pos = usize> {
     pub start: Pos,
     pub end: Pos,
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug)]
 pub struct Located<T, Pos = usize> {
     pub locatee: T,
     pub span: Span<Pos>,
 }
 
-#[derive(Serialize)]
 pub struct Module {
     pub decls: Vec<Decl>,
 }
 
-#[derive(Serialize)]
 pub enum Decl {
     Type(TypeDecl),
     Func(FuncDecl),
 }
 
-#[derive(Serialize)]
 pub struct TypeDecl {
     pub name: LTypeVar,
     pub params: Vec<LTypeVar>,
     pub body: LType,
 }
 
-#[derive(Serialize)]
 pub struct FuncDecl {
     pub name: LExprVar,
     pub type_params: Vec<LTypeVar>,
@@ -47,7 +42,6 @@ pub struct FuncDecl {
     pub body: LExpr,
 }
 
-#[derive(Serialize)]
 pub enum Type {
     Error,
     Var(TypeVar),
@@ -61,7 +55,6 @@ pub enum Type {
 
 pub type LType = Located<Type>;
 
-#[derive(Serialize)]
 pub enum Expr {
     Error,
     Var(ExprVar),
@@ -81,7 +74,6 @@ pub enum Expr {
 
 pub type LExpr = Located<Expr>;
 
-#[derive(Serialize)]
 pub struct Branch {
     pub con: LExprCon,
     pub var: Option<LExprVar>,
@@ -90,7 +82,7 @@ pub struct Branch {
 
 pub type LBranch = Located<Branch>;
 
-#[derive(Clone, Copy, Serialize)]
+#[derive(Clone, Copy)]
 pub enum OpCode {
     Add,
     Sub,

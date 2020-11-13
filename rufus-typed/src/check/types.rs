@@ -1,4 +1,3 @@
-use serde::{Serialize, Serializer};
 use std::rc::Rc;
 
 use crate::syntax;
@@ -6,7 +5,7 @@ use syntax::{ExprCon, ExprVar, Located, TypeVar};
 
 type SynType = syntax::Type;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub enum Type<T = RcType> {
     Error,
     Var(TypeVar),
@@ -21,7 +20,7 @@ pub enum Type<T = RcType> {
 #[derive(Clone, Debug)]
 pub struct RcType(Rc<Type>);
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct TypeScheme {
     pub params: Vec<TypeVar>,
     pub body: RcType,
@@ -288,15 +287,6 @@ impl std::ops::Deref for RcType {
 impl AsRef<Type> for RcType {
     fn as_ref(&self) -> &Type {
         self.0.as_ref()
-    }
-}
-
-impl Serialize for RcType {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.0.serialize(serializer)
     }
 }
 
