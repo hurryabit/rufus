@@ -200,7 +200,7 @@ fn proj2() {
 fn variant0() {
     insta::assert_debug_snapshot!(parse("A"), @r###"
     VARIANT
-      constr: A @ 0...1
+      constr: A
     "###);
 }
 
@@ -208,7 +208,7 @@ fn variant0() {
 fn variant1() {
     insta::assert_debug_snapshot!(parse("A(0)"), @r###"
     VARIANT
-      constr: A @ 0...1
+      constr: A
       payload: 0 @ 2...3
     "###);
 }
@@ -217,7 +217,7 @@ fn variant1() {
 fn variant_int() {
     insta::assert_debug_snapshot!(parse("Int"), @r###"
     VARIANT
-      constr: Int @ 0...3
+      constr: Int
     "###);
 }
 
@@ -225,7 +225,7 @@ fn variant_int() {
 fn variant_bool() {
     insta::assert_debug_snapshot!(parse("Bool"), @r###"
     VARIANT
-      constr: Bool @ 0...4
+      constr: Bool
     "###);
 }
 

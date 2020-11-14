@@ -302,23 +302,23 @@ impl Expr {
                 elze.check(env, &expected)?;
                 Ok(())
             }
-            Self::Variant(con, opt_payload) => match &*expected.weak_normalize_env(env) {
+            Self::Variant(constr, opt_payload) => match &*expected.weak_normalize_env(env) {
                 Type::Variant(cons) => {
-                    if let Some(opt_typ) = find_by_key(&cons, &con.locatee) {
+                    if let Some(opt_typ) = find_by_key(&cons, constr) {
                         match (opt_payload, opt_typ) {
                             (None, None) => Ok(()),
                             (Some(payload), Some(typ)) => payload.check(env, typ),
-                            (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, expected, con.locatee, span),
+                            (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, expected, *constr, span),
                         }
                     } else {
                         Err(Located::new(
-                            Error::BadVariantConstr(expected.clone(), con.locatee),
+                            Error::BadVariantConstr(expected.clone(), *constr),
                             span,
                         ))
                     }
                 }
                 _ => Err(Located::new(
-                    Error::UnexpectedVariantType(expected.clone(), con.locatee),
+                    Error::UnexpectedVariantType(expected.clone(), *constr),
                     span,
                 )),
             },
