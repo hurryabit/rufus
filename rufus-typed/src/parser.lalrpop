@@ -113,7 +113,7 @@ LAtomExpr: LExpr = {
 // brackets, but that would make the expression `f(g<a, b>(c))` ambiguous
 // to parse. With `f(g@<a, b>(c))` there's no ambiguity.
 FunInst: Expr = {
-    <LExprVar> "@" "<" <List1<LType, ",">> ">" => Expr::FunInst(<>),
+    <LExprVar> "@" "<" <List0<LType, ",">> ">" => Expr::FunInst(<>),
 }
 
 TypeAnn: LType = {

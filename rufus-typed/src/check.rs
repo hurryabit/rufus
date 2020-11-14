@@ -427,7 +427,6 @@ impl Expr {
             },
             Self::FunInst(var, types) => {
                 let num_types = types.len();
-                assert!(num_types > 0);
                 for typ in types.iter_mut() {
                     typ.check(env)?;
                 }
@@ -442,7 +441,7 @@ impl Expr {
                     ))
                 } else if let Some(scheme) = env.func_sigs.get(&var.locatee) {
                     let arity = scheme.params.len();
-                    if arity == num_types {
+                    if arity == num_types && num_types > 0 {
                         let types = types.iter().map(RcType::from_lsyntax).collect();
                         Ok(scheme.instantiate(&types))
                     } else {
@@ -456,7 +455,7 @@ impl Expr {
                         ))
                     }
                 } else {
-                    Err(Located::new(Error::UnknownExprVar(var.locatee), span))
+                    Err(Located::new(Error::UnknownExprVar(var.locatee), var.span))
                 }
             }
             Self::Let(binder, opt_type_ann, bindee, body) => {

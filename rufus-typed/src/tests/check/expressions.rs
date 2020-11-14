@@ -104,6 +104,32 @@ fn rule_var() {
 }
 
 #[test]
+fn rule_var_unknown() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        x
+    }
+    "#), @r###"
+      2 |         x
+                  ~
+    Undeclared variable `x`.
+    "###);
+}
+
+#[test]
+fn rule_var_unknown_as_func() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        g(1)
+    }
+    "#), @r###"
+      2 |         g(1)
+                  ~
+    Undeclared variable `g`.
+    "###);
+}
+
+#[test]
 fn rule_lit_int_0() {
     check_success(r#"
     fn f() -> Int {
@@ -328,7 +354,47 @@ fn rule_func_inst_1() {
 }
 
 #[test]
-fn rule_func_inst_on_var() {
+fn rule_func_inst_unknown_0() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        g@<>()
+    }
+    "#), @r###"
+      2 |         g@<>()
+                  ~
+    Undeclared variable `g`.
+    "###);
+}
+
+#[test]
+fn rule_func_inst_unknown_1() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        g@<Int>()
+    }
+    "#), @r###"
+      2 |         g@<Int>()
+                  ~
+    Undeclared variable `g`.
+    "###);
+}
+
+#[test]
+fn rule_func_inst_on_var_0() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let g = fn () { 0 };
+        g@<>()
+    }
+    "#), @r###"
+      3 |         g@<>()
+                  ~~~~
+    `g` is not a generic function and must be called as `g(...)`.
+    "###);
+}
+
+#[test]
+fn rule_func_inst_on_var_1() {
     insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let g = fn () { 0 };
@@ -342,7 +408,21 @@ fn rule_func_inst_on_var() {
 }
 
 #[test]
-fn rule_func_inst_on_mono_func() {
+fn rule_func_inst_on_mono_func_0() {
+    insta::assert_snapshot!(check_error(r#"
+    fn g() -> Int { 0 }
+    fn f() -> Int {
+        g@<>()
+    }
+    "#), @r###"
+      3 |         g@<>()
+                  ~~~~
+    `g` is not a generic function and must be called as `g(...)`.
+    "###);
+}
+
+#[test]
+fn rule_func_inst_on_mono_func_1() {
     insta::assert_snapshot!(check_error(r#"
     fn g() -> Int { 0 }
     fn f() -> Int {
@@ -365,6 +445,20 @@ fn rule_func_inst_no_types_on_poly_func() {
     "#), @r###"
       3 |         g(1)
                   ~
+    Generic function `g` expects 1 type argument but is applied to 0 type arguments.
+    "###);
+}
+
+#[test]
+fn rule_func_inst_zero_types_on_poly_func() {
+    insta::assert_snapshot!(check_error(r#"
+    fn g<A>(x: A) -> A { x }
+    fn f() -> Int {
+        g@<>(1)
+    }
+    "#), @r###"
+      3 |         g@<>(1)
+                  ~~~~
     Generic function `g` expects 1 type argument but is applied to 0 type arguments.
     "###);
 }

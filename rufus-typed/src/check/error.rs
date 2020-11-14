@@ -133,22 +133,24 @@ impl fmt::Display for Error {
             ),
             GenericFuncArityMismatch {
                 expr_var,
-                expected: 0,
-                found,
-            } => write!(
-                f,
-                "`{}` is not a generic function but is applied to {} type argument{}.",
-                expr_var, found, plural(*found)
-            ),
-            GenericFuncArityMismatch {
-                expr_var,
                 expected,
                 found,
-            } => write!(
-                f,
-                "Generic function `{}` expects {} type argument{} but is applied to {} type argument{}.",
-                expr_var, expected, plural(*expected), found, plural(*found)
-            ),
+            } => {
+                if *expected > 0 {
+                    write!(
+                    f,
+                    "Generic function `{}` expects {} type argument{} but is applied to {} type argument{}.",
+                    expr_var, expected, plural(*expected), found, plural(*found))
+                } else if *found == 0 {
+                    write!(f, "`{}` is not a generic function and must be called as `{}(...)`.", expr_var, expr_var)
+                } else {
+                    write!(
+                        f,
+                        "`{}` is not a generic function but is applied to {} type argument{}.",
+                        expr_var, found, plural(*found)
+                    )
+                }
+            }
             TypeMismatch { expected, found } => write!(
                 f,
                 "Expected an expression of type `{}` but found an expression of type `{}`.",
