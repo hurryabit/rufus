@@ -386,3 +386,81 @@ fn rule_app_bad_result() {
     Expected an expression of type `Int` but found an expression of type `Bool`.
     "###);
 }
+
+#[test]
+fn rule_binop_arith_lhs() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        true + 0
+    }
+    "#), @r###"
+      2 |         true + 0
+                  ~~~~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_binop_arith_rhs() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        0 * true
+    }
+    "#), @r###"
+      2 |         0 * true
+                      ~~~~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_binop_arith_result() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Bool {
+        0 - 1
+    }
+    "#), @r###"
+      2 |         0 - 1
+                  ~~~~~
+    Expected an expression of type `Bool` but found an expression of type `Int`.
+    "###);
+}
+
+#[test]
+fn rule_binop_cmp_lhs_not_inferrable() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Bool {
+        Nil == Nil
+    }
+    "#), @r###"
+      2 |         Nil == Nil
+                  ~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_binop_cmp_lhs_inferrable() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Bool {
+        0 == None
+    }
+    "#), @r###"
+      2 |         0 == None
+                       ~~~~
+    Expected an expression of type `Int` but found variant constructor.
+    "###);
+}
+
+#[test]
+fn rule_binop_cmp_result() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        0 == 1
+    }
+    "#), @r###"
+      2 |         0 == 1
+                  ~~~~~~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
