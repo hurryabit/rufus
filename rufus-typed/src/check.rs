@@ -142,15 +142,14 @@ impl FuncDecl {
             return_type,
             body,
         } = self;
-        LExprVar::check_unique(expr_params.iter().map(|(var, _)| var))?;
         let env = &mut env.clone();
         env.kind_env.type_vars = type_params.iter().map(|param| param.locatee).collect();
-        env.expr_vars = expr_params
-            .iter()
-            .map(|(var, typ)| (var.locatee, RcType::from_lsyntax(typ)))
-            .collect();
-        body.check(env, &RcType::from_lsyntax(return_type))?;
-        Ok(())
+        env.intro_params(
+            expr_params
+                .iter()
+                .map(|(var, typ)| Ok((*var, RcType::from_lsyntax(typ)))),
+            |env| body.check(env, &RcType::from_lsyntax(return_type)),
+        )
     }
 }
 
@@ -256,35 +255,38 @@ impl Expr {
     pub fn check(&mut self, span: Span, env: &TypeEnv, expected: &RcType) -> Result<(), LError> {
         match self {
             Self::Lam(params, body) => {
-                check_lam_params(params, env)?;
                 match &*expected.weak_normalize_env(env) {
                     Type::Fun(param_types, result) if params.len() == param_types.len() => {
                         let env = &mut env.clone();
-                        // TODO(MH): Replace `x` with a pattern once
-                        // https://github.com/rust-lang/rust/issues/68354
-                        // has been stabilized.
-                        for mut x in params.iter_mut().zip(param_types.iter()) {
-                            let (var, opt_type_ann) = &mut x.0;
-                            let expected = x.1;
-                            if let Some(type_ann) = opt_type_ann {
-                                let found = RcType::from_lsyntax(type_ann);
-                                if !found.equiv(expected, &env.kind_env.types) {
-                                    return Err(Located::new(
-                                        Error::ParamTypeMismatch {
-                                            param: var.locatee,
-                                            found,
-                                            expected: expected.clone(),
-                                        },
-                                        type_ann.span,
-                                    ));
+                        env.intro_params(
+                            // TODO(MH): Replace `x` with a pattern once
+                            // https://github.com/rust-lang/rust/issues/68354
+                            // has been stabilized.
+                            params.iter_mut().zip(param_types.iter()).map(|mut x| {
+                                let (var, opt_type_ann) = &mut x.0;
+                                let expected = x.1;
+                                if let Some(type_ann) = opt_type_ann {
+                                    type_ann.check(&env.kind_env)?;
+                                    let found = RcType::from_lsyntax(type_ann);
+                                    if !found.equiv(expected, &env.kind_env.types) {
+                                        return Err(Located::new(
+                                            Error::ParamTypeMismatch {
+                                                param: var.locatee,
+                                                found,
+                                                expected: expected.clone(),
+                                            },
+                                            type_ann.span,
+                                        ));
+                                    }
+                                    Ok((*var, found))
+                                } else {
+                                    *opt_type_ann =
+                                        Some(Located::new(expected.to_syntax(), var.span));
+                                    Ok((*var, expected.clone()))
                                 }
-                                env.expr_vars.insert(var.locatee, found);
-                            } else {
-                                *opt_type_ann = Some(Located::new(expected.to_syntax(), var.span));
-                                env.expr_vars.insert(var.locatee, expected.clone());
-                            }
-                        }
-                        body.check(env, result)
+                            }),
+                            |env| body.check(env, result),
+                        )
                     }
                     _ => Err(Located::new(
                         Error::BadLam(expected.clone(), params.len()),
@@ -388,32 +390,21 @@ impl Expr {
             Self::Num(_) => Ok(RcType::new(Type::Int)),
             Self::Bool(_) => Ok(RcType::new(Type::Bool)),
             Self::Lam(params, body) => {
-                check_lam_params(params, env)?;
-                let opt_bad_param =
-                    params.iter().find_map(
-                        |(param, typ)| {
-                            if typ.is_none() {
-                                Some(param)
-                            } else {
-                                None
-                            }
-                        },
-                    );
-                if let Some(bad_param) = opt_bad_param {
-                    Err(bad_param.map(Error::ParamNeedsType))
-                } else {
-                    let env = &mut env.clone();
-                    let param_types = params
-                        .iter()
-                        .map(|(var, opt_type_ann)| {
-                            let typ = RcType::from_lsyntax(opt_type_ann.as_ref().unwrap());
-                            env.expr_vars.insert(var.locatee, typ.clone());
-                            typ
-                        })
-                        .collect();
-                    let result = body.infer(env)?;
-                    Ok(RcType::new(Type::Fun(param_types, result)))
-                }
+                let mut param_types = Vec::with_capacity(params.len());
+                let result = env.intro_params(
+                    params.iter_mut().map(|(var, opt_typ)| {
+                        if let Some(typ) = opt_typ {
+                            typ.check(&env.kind_env)?;
+                            let typ = RcType::from_lsyntax(typ);
+                            param_types.push(typ.clone());
+                            Ok((*var, typ))
+                        } else {
+                            Err(var.map(Error::ParamNeedsType))
+                        }
+                    }),
+                    |env| body.infer(env),
+                )?;
+                Ok(RcType::new(Type::Fun(param_types, result)))
             }
             Self::App(func, args) => {
                 let func_type = func.infer(env)?;
@@ -549,18 +540,43 @@ impl Expr {
 }
 
 impl TypeEnv {
-    fn intro_binder<F, R>(&self, var: &LExprVar, typ: RcType, f: F) -> R
+    fn intro_binder<F, R>(&self, var: &LExprVar, typ: RcType, f: F) -> Result<R, LError>
     where
-        F: FnOnce(&Self) -> R,
+        F: FnOnce(&Self) -> Result<R, LError>,
     {
         let mut env = self.clone();
         env.expr_vars.insert(var.locatee, typ);
         f(&env)
     }
 
-    fn intro_opt_binder<F, R>(&self, binder: Option<(&LExprVar, RcType)>, f: F) -> R
+    fn intro_params<I, F, R>(&self, params: I, f: F) -> Result<R, LError>
     where
-        F: FnOnce(&Self) -> R,
+        I: IntoIterator<Item = Result<(LExprVar, RcType), LError>>,
+        F: FnOnce(&Self) -> Result<R, LError>,
+    {
+        let mut seen = std::collections::HashMap::new();
+        let mut env = self.clone();
+        for binder_or_err in params {
+            let (var, typ) = binder_or_err?;
+            if let Some(&original) = seen.get(&var.locatee) {
+                return Err(Located::new(
+                    Error::DuplicateParam {
+                        var: var.locatee,
+                        original,
+                    },
+                    var.span,
+                ));
+            } else {
+                seen.insert(var.locatee, var.span);
+                env.expr_vars.insert(var.locatee, typ.clone());
+            }
+        }
+        f(&env)
+    }
+
+    fn intro_opt_binder<F, R>(&self, binder: Option<(&LExprVar, RcType)>, f: F) -> Result<R, LError>
+    where
+        F: FnOnce(&Self) -> Result<R, LError>,
     {
         if let Some((var, typ)) = binder {
             self.intro_binder(var, typ, f)
@@ -584,34 +600,6 @@ impl LTypeVar {
             Ok(())
         }
     }
-}
-
-impl LExprVar {
-    fn check_unique<'a, I: Iterator<Item = &'a LExprVar>>(iter: I) -> Result<(), LError> {
-        if let Some((span, lvar)) = find_duplicate(iter.map(Located::as_ref)) {
-            Err(Located::new(
-                Error::DuplicateParam {
-                    var: *lvar.locatee,
-                    original: span,
-                },
-                lvar.span,
-            ))
-        } else {
-            Ok(())
-        }
-    }
-}
-
-fn check_lam_params(
-    params: &mut Vec<(LExprVar, Option<syntax::LType>)>,
-    env: &TypeEnv,
-) -> Result<(), LError> {
-    for (_, opt_typ) in params.iter_mut() {
-        if let Some(typ) = opt_typ {
-            typ.check(&env.kind_env)?;
-        }
-    }
-    LExprVar::check_unique(params.iter().map(|(name, _)| name))
 }
 
 fn check_let_bindee(

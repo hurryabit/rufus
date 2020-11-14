@@ -38,7 +38,7 @@ fn unknown_type_var_in_let() {
 #[test]
 fn unknown_type_var_in_inferrable_lambda() {
     insta::assert_snapshot!(check_error(r#"
-    fn f() -> Int {
+    fn f() -> (Int) -> Int {
         fn (x: A) { 0 }
     }
     "#), @r###"
@@ -51,7 +51,7 @@ fn unknown_type_var_in_inferrable_lambda() {
 #[test]
 fn unknown_type_var_in_checkable_lambda() {
     insta::assert_snapshot!(check_error(r#"
-    fn f() -> Int {
+    fn f() -> (Int, Int) -> Int {
         fn (x: A, y) { 0 }
     }
     "#), @r###"
