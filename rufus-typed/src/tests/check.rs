@@ -14,6 +14,14 @@ fn check_output(input: &str) -> Module {
     module
 }
 
+fn check_success(input: &str) {
+    let parser = parser::ModuleParser::new();
+    let mut errors = Vec::new();
+    let mut module = parser.parse(&mut errors, input).unwrap();
+    assert_eq!(errors, vec![]);
+    assert!(module.check().is_ok());
+}
+
 fn check_error(input: &str) -> String {
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();

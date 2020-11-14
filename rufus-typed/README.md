@@ -26,17 +26,25 @@ This is the core library for a typed version of the rufus language, containing t
   E |- b => Bool
 
 
+  x1, ..., xn mutually distinct
   E, x1: s1, ..., xn: sn |- e => t
 -------------------------------------------------- LamInfer
   E |- fn (x1: s1, ..., xn: sn) { e }
     => (s1, ..., sn) -> t
 
 
+  x1, ..., xn mutually distinct
   si ~ si'
   E, x1: s1, ..., sn: tn |- e <= t
 -------------------------------------------------- LamCheck
   E |- fn (x1, ..., xi: si', ..., xn) { e }
     <= (s1, ..., sn) -> t
+
+
+  fn f<A1, ..., Am>(x1: s1, ..., xn: sn) -> t
+-------------------------------------------------- FuncInst
+  E |- f@<u1, ..., um>
+    => ((s1, ..., sn) -> t)[u1/A1, ..., um/Am]
 
 
   E |- f => (s1, ..., sn) -> t

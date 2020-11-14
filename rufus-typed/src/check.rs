@@ -255,7 +255,7 @@ impl LExpr {
 impl Expr {
     pub fn check(&mut self, span: Span, env: &TypeEnv, expected: &RcType) -> Result<(), LError> {
         match self {
-            Self::Lam(params, body) if params.iter().any(|(_, opt_typ)| opt_typ.is_none()) => {
+            Self::Lam(params, body) => {
                 check_lam_params(params, env)?;
                 match &*expected.weak_normalize_env(env) {
                     Type::Fun(param_types, result) if params.len() == param_types.len() => {
@@ -338,7 +338,6 @@ impl Expr {
             | Self::Var(_)
             | Self::Num(_)
             | Self::Bool(_)
-            | Self::Lam(_, _)
             | Self::App(_, _)
             | Self::BinOp(_, _, _)
             | Self::FunInst(_, _)
@@ -649,11 +648,11 @@ impl LExprVar {
     fn check_unique<'a, I: Iterator<Item = &'a LExprVar>>(iter: I) -> Result<(), LError> {
         if let Some((span, lvar)) = find_duplicate(iter.map(Located::as_ref)) {
             Err(Located::new(
-                Error::DuplicateExprVar {
+                Error::DuplicateParam {
                     var: *lvar.locatee,
                     original: span,
                 },
-                span,
+                lvar.span,
             ))
         } else {
             Ok(())

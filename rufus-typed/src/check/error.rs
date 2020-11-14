@@ -37,7 +37,7 @@ pub enum Error<Pos = usize> {
         var: TypeVar,
         original: Span<Pos>,
     },
-    DuplicateExprVar {
+    DuplicateParam {
         var: ExprVar,
         original: Span<Pos>,
     },
@@ -129,7 +129,7 @@ impl fmt::Display for Error {
             DuplicateTypeDecl { var, original: _ } => {
                 write!(f, "Duplicate definition of type `{}`.", var)
             }
-            DuplicateExprVar { var, original: _ } => write!(f, "Duplicate variable `{}`.", var),
+            DuplicateParam { var, original: _ } => write!(f, "Duplicate paramter `{}`.", var),
             BadApp {
                 func: Some(func),
                 func_type,
@@ -163,10 +163,10 @@ impl fmt::Display for Error {
                 "`{}` is not a possible constructor for variant type `{}`.",
                 con, expected
             ),
-            UnexpectedVariantType(expected, _con) => write!(
+            UnexpectedVariantType(expected, con) => write!(
                 f,
-                "Expected an expression of type `{}` but found variant constructor.",
-                expected
+                "Expected an expression of type `{}` but found variant constructor `{}`.",
+                expected, con
             ),
             EmptyMatch => write!(f, "Match expressions must have at least one branch."),
             BadMatch(scrut_type) => {
