@@ -14,31 +14,16 @@ type Arity = usize;
 type Type = types::Type;
 
 #[derive(Clone)]
-pub struct KindEnv {
+pub struct Env {
     builtin_types: Rc<collections::HashMap<TypeVar, Box<dyn Fn() -> syntax::Type>>>,
-    types: Rc<collections::HashMap<TypeVar, TypeScheme>>,
+    type_defs: Rc<collections::HashMap<TypeVar, TypeScheme>>,
+    func_sigs: Rc<collections::HashMap<ExprVar, TypeScheme>>,
     type_vars: im::HashSet<TypeVar>,
-}
-
-#[derive(Clone)]
-pub struct TypeEnv {
-    kind_env: KindEnv,
-    funcs: Rc<collections::HashMap<ExprVar, TypeScheme>>,
     expr_vars: im::HashMap<ExprVar, RcType>,
 }
 
 impl Module {
     pub fn check(&mut self) -> Result<(), LError> {
-        let mut builtin_types = collections::HashMap::new();
-        builtin_types.insert(
-            TypeVar::new("Int"),
-            Box::new(|| syntax::Type::Int) as Box<dyn Fn() -> syntax::Type>,
-        );
-        builtin_types.insert(
-            TypeVar::new("Bool"),
-            Box::new(|| syntax::Type::Bool) as Box<dyn Fn() -> syntax::Type>,
-        );
-
         if let Some((span, name)) = find_duplicate(self.type_decls().map(|decl| decl.name.as_ref()))
         {
             return Err(Located::new(
@@ -49,35 +34,24 @@ impl Module {
                 name.span,
             ));
         }
-
-        let types = self.types();
-        let type_vars = im::HashSet::new();
-        let mut kind_env = KindEnv {
-            builtin_types: Rc::new(builtin_types),
-            types: Rc::new(types),
-            type_vars,
-        };
+        let mut env = Env::new();
+        env.type_defs = Rc::new(self.type_defs());
         for type_decl in self.type_decls_mut() {
-            type_decl.check(&kind_env)?;
+            type_decl.check(&env)?;
         }
-        kind_env.types = Rc::new(self.types());
-        let funcs = self
+        env.type_defs = Rc::new(self.type_defs());
+        let func_sigs = self
             .func_decls_mut()
-            .map(|decl| Ok((decl.name.locatee, decl.check_signature(&kind_env)?)))
+            .map(|decl| Ok((decl.name.locatee, decl.check_signature(&env)?)))
             .collect::<Result<_, _>>()?;
-        let expr_vars = im::HashMap::new();
-        let type_env = TypeEnv {
-            kind_env,
-            funcs: Rc::new(funcs),
-            expr_vars,
-        };
+        env.func_sigs = Rc::new(func_sigs);
         for decl in self.func_decls_mut() {
-            decl.check(&type_env)?;
+            decl.check(&env)?;
         }
         Ok(())
     }
 
-    fn types(&self) -> collections::HashMap<TypeVar, TypeScheme> {
+    fn type_defs(&self) -> collections::HashMap<TypeVar, TypeScheme> {
         self.type_decls()
             .map(|TypeDecl { name, params, body }| {
                 (
@@ -93,7 +67,7 @@ impl Module {
 }
 
 impl TypeDecl {
-    pub fn check(&mut self, env: &KindEnv) -> Result<(), LError> {
+    pub fn check(&mut self, env: &Env) -> Result<(), LError> {
         let Self {
             name: _,
             params,
@@ -107,7 +81,7 @@ impl TypeDecl {
 }
 
 impl FuncDecl {
-    pub fn check_signature(&mut self, env: &KindEnv) -> Result<TypeScheme, LError> {
+    pub fn check_signature(&mut self, env: &Env) -> Result<TypeScheme, LError> {
         let Self {
             name: _,
             type_params,
@@ -134,7 +108,7 @@ impl FuncDecl {
         })
     }
 
-    pub fn check(&mut self, env: &TypeEnv) -> Result<(), LError> {
+    pub fn check(&mut self, env: &Env) -> Result<(), LError> {
         let Self {
             name: _,
             type_params,
@@ -143,7 +117,7 @@ impl FuncDecl {
             body,
         } = self;
         let env = &mut env.clone();
-        env.kind_env.type_vars = type_params.iter().map(|param| param.locatee).collect();
+        env.type_vars = type_params.iter().map(|param| param.locatee).collect();
         env.intro_params(
             expr_params
                 .iter()
@@ -154,13 +128,13 @@ impl FuncDecl {
 }
 
 impl LType {
-    fn check(&mut self, env: &KindEnv) -> Result<(), LError> {
+    fn check(&mut self, env: &Env) -> Result<(), LError> {
         self.locatee.check(self.span, env)
     }
 }
 
 impl syntax::Type {
-    fn check(&mut self, span: Span, env: &KindEnv) -> Result<(), LError> {
+    fn check(&mut self, span: Span, env: &Env) -> Result<(), LError> {
         match self {
             Self::Error => Ok(()),
             Self::Int => panic!("Int in Type.check"),
@@ -168,7 +142,7 @@ impl syntax::Type {
             Self::Var(var) => {
                 if env.type_vars.contains(var) {
                     Ok(())
-                } else if let Some(scheme) = env.types.get(var) {
+                } else if let Some(scheme) = env.type_defs.get(var) {
                     let arity = scheme.params.len();
                     if arity == 0 {
                         *self = Self::SynApp(Located::new(*var, span), vec![]);
@@ -195,7 +169,7 @@ impl syntax::Type {
                         },
                         span,
                     ))
-                } else if let Some(scheme) = env.types.get(&var.locatee) {
+                } else if let Some(scheme) = env.type_defs.get(&var.locatee) {
                     let arity = scheme.params.len();
                     if arity == num_args {
                         for arg in args {
@@ -236,23 +210,23 @@ impl syntax::Type {
 }
 
 impl RcType {
-    pub fn weak_normalize_env(&self, env: &TypeEnv) -> Self {
-        self.weak_normalize(&env.kind_env.types)
+    pub fn weak_normalize_env(&self, env: &Env) -> Self {
+        self.weak_normalize(&env.type_defs)
     }
 }
 
 impl LExpr {
-    pub fn check(&mut self, env: &TypeEnv, expected: &RcType) -> Result<(), LError> {
+    pub fn check(&mut self, env: &Env, expected: &RcType) -> Result<(), LError> {
         self.locatee.check(self.span, env, expected)
     }
 
-    fn infer(&mut self, env: &TypeEnv) -> Result<RcType, LError> {
+    fn infer(&mut self, env: &Env) -> Result<RcType, LError> {
         self.locatee.infer(self.span, env)
     }
 }
 
 impl Expr {
-    pub fn check(&mut self, span: Span, env: &TypeEnv, expected: &RcType) -> Result<(), LError> {
+    pub fn check(&mut self, span: Span, env: &Env, expected: &RcType) -> Result<(), LError> {
         match self {
             Self::Lam(params, body) => {
                 match &*expected.weak_normalize_env(env) {
@@ -266,9 +240,9 @@ impl Expr {
                                 let (var, opt_type_ann) = &mut x.0;
                                 let expected = x.1;
                                 if let Some(type_ann) = opt_type_ann {
-                                    type_ann.check(&env.kind_env)?;
+                                    type_ann.check(env)?;
                                     let found = RcType::from_lsyntax(type_ann);
-                                    if !found.equiv(expected, &env.kind_env.types) {
+                                    if !found.equiv(expected, &env.type_defs) {
                                         return Err(Located::new(
                                             Error::ParamTypeMismatch {
                                                 param: var.locatee,
@@ -347,7 +321,7 @@ impl Expr {
             | Self::Record(_)
             | Self::Proj(_, _) => {
                 let found = self.infer(span, env)?;
-                if found.equiv(expected, &env.kind_env.types) {
+                if found.equiv(expected, &env.type_defs) {
                     Ok(())
                 } else {
                     Err(Located::new(
@@ -362,13 +336,13 @@ impl Expr {
         }
     }
 
-    fn infer(&mut self, span: Span, env: &TypeEnv) -> Result<RcType, LError> {
+    fn infer(&mut self, span: Span, env: &Env) -> Result<RcType, LError> {
         match self {
             Self::Error => Ok(RcType::new(Type::Error)),
             Self::Var(var) => {
                 if let Some(found) = env.expr_vars.get(var) {
                     Ok(found.clone())
-                } else if let Some(TypeScheme { params, body }) = env.funcs.get(var) {
+                } else if let Some(TypeScheme { params, body }) = env.func_sigs.get(var) {
                     let arity = params.len();
                     if arity == 0 {
                         *self = Self::FunInst(Located::new(*var, span), vec![]);
@@ -394,7 +368,7 @@ impl Expr {
                 let result = env.intro_params(
                     params.iter_mut().map(|(var, opt_typ)| {
                         if let Some(typ) = opt_typ {
-                            typ.check(&env.kind_env)?;
+                            typ.check(env)?;
                             let typ = RcType::from_lsyntax(typ);
                             param_types.push(typ.clone());
                             Ok((*var, typ))
@@ -455,7 +429,7 @@ impl Expr {
                 let num_types = types.len();
                 assert!(num_types > 0);
                 for typ in types.iter_mut() {
-                    typ.check(&env.kind_env)?;
+                    typ.check(env)?;
                 }
                 if env.expr_vars.contains_key(&var.locatee) {
                     Err(Located::new(
@@ -466,7 +440,7 @@ impl Expr {
                         },
                         span,
                     ))
-                } else if let Some(scheme) = env.funcs.get(&var.locatee) {
+                } else if let Some(scheme) = env.func_sigs.get(&var.locatee) {
                     let arity = scheme.params.len();
                     if arity == num_types {
                         let types = types.iter().map(RcType::from_lsyntax).collect();
@@ -539,7 +513,26 @@ impl Expr {
     }
 }
 
-impl TypeEnv {
+impl Env {
+    fn new() -> Self {
+        let mut builtin_types = collections::HashMap::new();
+        builtin_types.insert(
+            TypeVar::new("Int"),
+            Box::new(|| syntax::Type::Int) as Box<dyn Fn() -> syntax::Type>,
+        );
+        builtin_types.insert(
+            TypeVar::new("Bool"),
+            Box::new(|| syntax::Type::Bool) as Box<dyn Fn() -> syntax::Type>,
+        );
+        Self {
+            builtin_types: Rc::new(builtin_types),
+            type_defs: Rc::new(collections::HashMap::new()),
+            func_sigs: Rc::new(collections::HashMap::new()),
+            type_vars: im::HashSet::new(),
+            expr_vars: im::HashMap::new(),
+        }
+    }
+
     fn intro_binder<F, R>(&self, var: &LExprVar, typ: RcType, f: F) -> Result<R, LError>
     where
         F: FnOnce(&Self) -> Result<R, LError>,
@@ -603,13 +596,13 @@ impl LTypeVar {
 }
 
 fn check_let_bindee(
-    env: &TypeEnv,
+    env: &Env,
     binder: &LExprVar,
     opt_type_ann: &mut Option<syntax::LType>,
     bindee: &mut LExpr,
 ) -> Result<RcType, LError> {
     if let Some(type_ann) = opt_type_ann {
-        type_ann.check(&env.kind_env)?;
+        type_ann.check(env)?;
         let typ = RcType::from_lsyntax(type_ann);
         bindee.check(env, &typ)?;
         Ok(typ)
@@ -621,7 +614,7 @@ fn check_let_bindee(
 }
 
 fn check_match_patterns<'a>(
-    env: &TypeEnv,
+    env: &Env,
     scrut: &mut LExpr,
     branches: &'a mut [Branch],
 ) -> Result<Vec<(Option<(&'a LExprVar, RcType)>, &'a mut LExpr)>, LError> {
