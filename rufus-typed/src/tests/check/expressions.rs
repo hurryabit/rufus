@@ -1254,6 +1254,21 @@ fn rule_match_infer_scrutinee_not_variant() {
 }
 
 #[test]
+fn rule_match_infer_no_branches() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        let r = match x {
+        };
+        r
+    }
+    "#), @r###"
+      2 |         let r = match x {
+                                ~
+    Match expressions must have at least one branch.
+    "###);
+}
+
+#[test]
 fn rule_match_infer_unknown_constructor_without_payload() {
     insta::assert_snapshot!(check_error(r#"
     fn f(x: [A]) -> Int {
@@ -1462,6 +1477,20 @@ fn rule_match_check_scrutinee_not_variant() {
       2 |         match 0 {
                         ~
     Cannot match on expressions of type `Int`.
+    "###);
+}
+
+#[test]
+fn rule_match_check_no_branches() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        match x {
+        }
+    }
+    "#), @r###"
+      2 |         match x {
+                        ~
+    Match expressions must have at least one branch.
     "###);
 }
 

@@ -51,7 +51,7 @@ pub Expr: Expr = {
     BinOp<LSumExpr, CompOp, LSumExpr>,
     "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<LBlockExpr>> => Expr::Lam(<>),
     "if" <Box<LExpr>> <Box<LBlockExpr>> "else" <Box<LBlockExpr>> => Expr::If(<>),
-    "match" <Box<LExpr>> "{" <Branch+> "}" => Expr::Match(<>),
+    "match" <Box<LExpr>> "{" <Branch*> "}" => Expr::Match(<>),
 }
 
 LExpr: LExpr = {
