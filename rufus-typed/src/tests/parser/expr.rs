@@ -12,11 +12,11 @@ fn parse(input: &str) -> Expr {
 }
 
 fn parse_block(input: &str) -> Expr {
-    let parser = parser::BlockExprParser::new();
+    let parser = parser::LBlockExprParser::new();
     let mut errors = Vec::new();
     let expr = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
-    expr
+    expr.locatee
 }
 
 fn parse_err(
@@ -419,7 +419,7 @@ fn sum_prod() {
 fn lam0() {
     insta::assert_debug_snapshot!(parse("fn() { 0 }"), @r###"
     LAM
-      body: 0 @ 5...10
+      body: 0 @ 7...8
     "###);
 }
 
@@ -428,7 +428,7 @@ fn lam1() {
     insta::assert_debug_snapshot!(parse("fn(x) { x }"), @r###"
     LAM
       param: x @ 3...4
-      body: x @ 6...11
+      body: x @ 8...9
     "###);
 }
 
@@ -437,7 +437,7 @@ fn lam1_trailing() {
     insta::assert_debug_snapshot!(parse("fn(x,) { x }"), @r###"
     LAM
       param: x @ 3...4
-      body: x @ 7...12
+      body: x @ 9...10
     "###);
 }
 
@@ -447,7 +447,7 @@ fn lam2() {
     LAM
       param: x @ 3...4
       param: y @ 6...7
-      body: x @ 9...14
+      body: x @ 11...12
     "###);
 }
 #[test]
@@ -456,7 +456,7 @@ fn lam1_typed() {
     LAM
       param: x @ 3...4
       type: Int @ 6...9
-      body: x @ 11...16
+      body: x @ 13...14
     "###);
 }
 
@@ -552,8 +552,8 @@ fn if_atom() {
     insta::assert_debug_snapshot!(parse("if true { 0 } else { 1 }"), @r###"
     IF
       cond: true @ 3...7
-      then: 0 @ 8...13
-      else: 1 @ 19...24
+      then: 0 @ 10...11
+      else: 1 @ 21...22
     "###);
 }
 
@@ -565,8 +565,8 @@ fn if_cmp() {
         lhs: a @ 3...4
         op: EQUALS
         rhs: b @ 8...9
-      then: 0 @ 10...15
-      else: 1 @ 21...26
+      then: 0 @ 12...13
+      else: 1 @ 23...24
     "###);
 }
 
@@ -623,7 +623,7 @@ fn let1_block() {
     insta::assert_debug_snapshot!(parse_block("{ let x = { 1 }; x }"), @r###"
     LET
       binder: x @ 6...7
-      bindee: 1 @ 10...15
+      bindee: 1 @ 12...13
       body: x @ 17...18
     "###);
 }
@@ -671,7 +671,7 @@ fn match1_block() {
       scrut: x @ 6...7
       branch: BRANCH @ 10...20
         constr: A @ 10...11
-        body: 1 @ 15...20
+        body: 1 @ 17...18
     "###);
 }
 
@@ -756,7 +756,7 @@ fn match2_expr_block() {
         body: 1 @ 15...16
       branch: BRANCH @ 18...28
         constr: B @ 18...19
-        body: 2 @ 23...28
+        body: 2 @ 25...26
     "###);
 }
 
@@ -767,7 +767,7 @@ fn match2_block_expr() {
       scrut: x @ 6...7
       branch: BRANCH @ 10...20
         constr: A @ 10...11
-        body: 1 @ 15...20
+        body: 1 @ 17...18
       branch: BRANCH @ 21...28
         constr: B @ 21...22
         body: 2 @ 26...27
@@ -781,9 +781,9 @@ fn match2_blocks() {
       scrut: x @ 6...7
       branch: BRANCH @ 10...20
         constr: A @ 10...11
-        body: 1 @ 15...20
+        body: 1 @ 17...18
       branch: BRANCH @ 21...31
         constr: B @ 21...22
-        body: 2 @ 26...31
+        body: 2 @ 28...29
     "###);
 }

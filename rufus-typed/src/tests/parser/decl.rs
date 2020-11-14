@@ -36,7 +36,7 @@ fn func_mono() {
       param: x @ 6...7
       type: Int @ 9...12
       result: Int @ 17...20
-      body: x @ 21...26
+      body: x @ 23...24
     "###);
 }
 
@@ -49,6 +49,6 @@ fn func_poly() {
       param: x @ 9...10
       type: A @ 12...13
       result: A @ 18...19
-      body: x @ 20...25
+      body: x @ 22...23
     "###);
 }

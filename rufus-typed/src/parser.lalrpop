@@ -61,12 +61,9 @@ LExpr: LExpr = {
     Located<Expr>,
 }
 
-pub BlockExpr: Expr = {
-    "{" <Statements> "}",
-}
-
-LBlockExpr: LExpr = {
-    Located<BlockExpr>,
+// NOTE(MH): We want to take the location insider the curlies.
+pub LBlockExpr: LExpr = {
+    "{" <LStatements> "}"
 }
 
 Statements: Expr = {

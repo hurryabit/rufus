@@ -30,7 +30,7 @@ fn module() {
         param: x @ 41...42
         type: Int @ 44...47
         result: Mono @ 52...56
-        body: x @ 57...62
+        body: x @ 59...60
       decl: TYPEDECL
         name: Poly @ 76...80
         type_param: A @ 81...82
@@ -43,6 +43,6 @@ fn module() {
         result: APP @ 116...123
           syn: Poly @ 116...120
           type_arg: A @ 121...122
-        body: x @ 124...129
+        body: x @ 126...127
     "###);
 }

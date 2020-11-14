@@ -51,7 +51,7 @@ fn rule_check_infer() {
     fn f() -> Int { true }
     "#), @r###"
       1 |     fn f() -> Int { true }
-                            ~~~~~~~~
+                              ~~~~
     Expected an expression of type `Int` but found an expression of type `Bool`.
     "###);
 }
@@ -84,7 +84,7 @@ fn rule_var() {
     fn f(x: Bool) -> Int { x }
     "#), @r###"
       1 |     fn f(x: Bool) -> Int { x }
-                                   ~~~~~
+                                     ~
     Expected an expression of type `Int` but found an expression of type `Bool`.
     "###);
 }
@@ -95,7 +95,7 @@ fn rule_lit_int() {
     fn f() -> Bool { 0 }
     "#), @r###"
       1 |     fn f() -> Bool { 0 }
-                             ~~~~~
+                               ~
     Expected an expression of type `Bool` but found an expression of type `Int`.
     "###);
 }
@@ -106,7 +106,7 @@ fn rule_lit_bool_true() {
     fn f() -> Int { true }
     "#), @r###"
       1 |     fn f() -> Int { true }
-                            ~~~~~~~~
+                              ~~~~
     Expected an expression of type `Int` but found an expression of type `Bool`.
     "###);
 }
@@ -117,7 +117,7 @@ fn rule_lit_bool_false() {
     fn f() -> Int { false }
     "#), @r###"
       1 |     fn f() -> Int { false }
-                            ~~~~~~~~~
+                              ~~~~~
     Expected an expression of type `Int` but found an expression of type `Bool`.
     "###);
 }
@@ -139,7 +139,7 @@ fn rule_lam_check_no_func() {
     fn f() -> Int { fn () { 0 } }
     "#), @r###"
       1 |     fn f() -> Int { fn () { 0 } }
-                            ~~~~~~~~~~~~~~~
+                              ~~~~~~~~~~~
     Expected an expression of type `Int` but found an expression of type `() -> Int`.
     "###);
 }
@@ -150,7 +150,7 @@ fn rule_lam_check_bad_arity() {
     fn f() -> () -> Int { fn (x) { 0 } }
     "#), @r###"
       1 |     fn f() -> () -> Int { fn (x) { 0 } }
-                                  ~~~~~~~~~~~~~~~~
+                                    ~~~~~~~~~~~~
     Expected an expression of type `() -> Int` but found a lambda with 1 parameter.
     "###);
 }
@@ -172,7 +172,7 @@ fn rule_lam_check_bad_result() {
     fn f() -> (Int, Int) -> Bool { fn (x, y: Int) { x + y } }
     "#), @r###"
       1 |     fn f() -> (Int, Int) -> Bool { fn (x, y: Int) { x + y } }
-                                                            ~~~~~~~~~
+                                                              ~~~~~
     Expected an expression of type `Bool` but found an expression of type `Int`.
     "###);
 }
