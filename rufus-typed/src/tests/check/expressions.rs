@@ -928,3 +928,80 @@ fn rule_if_check_else_bad() {
     Expected an expression of type `Int` but found variant constructor `CheckMe`.
     "###);
 }
+
+#[test]
+fn rule_record_infer() {
+    check_success(r#"
+    fn f() -> {a: Int, b: Bool} {
+        let x = {a = 0, b = true};
+        x
+    }
+    "#);
+}
+
+#[test]
+fn rule_record_infer_field_1_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let x = {a = InferMe};
+        0
+    }
+    "#), @r###"
+      2 |         let x = {a = InferMe};
+                               ~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_record_infer_field_2_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let x = {a = 0, b = InferMe};
+        0
+    }
+    "#), @r###"
+      2 |         let x = {a = 0, b = InferMe};
+                                      ~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_proj() {
+    check_success(r#"
+    fn f() -> Int {
+        let x = {
+            let r = {a = 0, b = true};
+            r.a
+        };
+        x
+    }
+    "#);
+}
+
+#[test]
+fn rule_proj_record_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        InferMe.a
+    }
+    "#), @r###"
+      2 |         InferMe.a
+                  ~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_proj_bad_field() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        {a = 1}.b
+    }
+    "#), @r###"
+      2 |         {a = 1}.b
+                  ~~~~~~~~~
+    Expression of type `{a: Int}` do not contain a field named `b`.
+    "###);
+}
