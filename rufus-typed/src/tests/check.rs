@@ -5,7 +5,7 @@ mod expressions;
 mod signatures;
 mod types;
 
-fn check(input: &str) -> Module {
+fn check_output(input: &str) -> Module {
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
@@ -14,7 +14,7 @@ fn check(input: &str) -> Module {
     module
 }
 
-fn check_err(input: &str) -> String {
+fn check_error(input: &str) -> String {
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();

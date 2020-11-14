@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn unknown_type_var_in_let() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x: A = 0;
         x
@@ -16,7 +16,7 @@ fn unknown_type_var_in_let() {
 
 #[test]
 fn unknown_type_var_in_inferrable_lambda() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         fn (x: A) { 0 }
     }
@@ -29,7 +29,7 @@ fn unknown_type_var_in_inferrable_lambda() {
 
 #[test]
 fn unknown_type_var_in_checkable_lambda() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         fn (x: A, y) { 0 }
     }
@@ -42,7 +42,7 @@ fn unknown_type_var_in_checkable_lambda() {
 
 #[test]
 fn unknown_type_var_in_func_inst() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g<A>(x: A) -> A { x }
     fn f() -> Int {
         g@<A>()
@@ -56,7 +56,7 @@ fn unknown_type_var_in_func_inst() {
 
 #[test]
 fn rule_check_infer() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int { true }
     "#), @r###"
       1 |     fn f() -> Int { true }
@@ -67,7 +67,7 @@ fn rule_check_infer() {
 
 #[test]
 fn rule_var() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f(x: Bool) -> Int { x }
     "#), @r###"
       1 |     fn f(x: Bool) -> Int { x }
@@ -78,7 +78,7 @@ fn rule_var() {
 
 #[test]
 fn rule_lit_int() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Bool { 0 }
     "#), @r###"
       1 |     fn f() -> Bool { 0 }
@@ -89,7 +89,7 @@ fn rule_lit_int() {
 
 #[test]
 fn rule_lit_bool_true() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int { true }
     "#), @r###"
       1 |     fn f() -> Int { true }
@@ -100,7 +100,7 @@ fn rule_lit_bool_true() {
 
 #[test]
 fn rule_lit_bool_false() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int { false }
     "#), @r###"
       1 |     fn f() -> Int { false }
@@ -111,7 +111,7 @@ fn rule_lit_bool_false() {
 
 #[test]
 fn rule_lam_infer() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let f = fn (x: Int) { x };
         f
@@ -125,7 +125,7 @@ fn rule_lam_infer() {
 
 #[test]
 fn rule_lam_infer_impossible() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> (Int) -> Int {
         let f = fn (x) { x + 0 };
         f
@@ -139,7 +139,7 @@ fn rule_lam_infer_impossible() {
 
 #[test]
 fn rule_lam_check_no_func() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         fn () { 0 }
     }
@@ -152,7 +152,7 @@ fn rule_lam_check_no_func() {
 
 #[test]
 fn rule_lam_check_bad_arity() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> () -> Int {
         fn (x) { 0 }
     }
@@ -165,7 +165,7 @@ fn rule_lam_check_bad_arity() {
 
 #[test]
 fn rule_lam_check_bad_param() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> (Int, Int) -> Int {
         fn (x, y: Bool) { 0 }
     }
@@ -178,7 +178,7 @@ fn rule_lam_check_bad_param() {
 
 #[test]
 fn rule_lam_check_bad_result() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> (Int, Int) -> Bool {
         fn (x, y: Int) { x + y }
     }
@@ -191,7 +191,7 @@ fn rule_lam_check_bad_result() {
 
 #[test]
 fn rule_type_app_args_on_var() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let g = fn () { 0 };
         g@<Int>()
@@ -205,7 +205,7 @@ fn rule_type_app_args_on_var() {
 
 #[test]
 fn rule_type_app_args_on_mono_func() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g() -> Int { 0 }
     fn f() -> Int {
         g@<Int>()
@@ -219,7 +219,7 @@ fn rule_type_app_args_on_mono_func() {
 
 #[test]
 fn rule_type_app_no_args_on_poly_func() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g<A>(x: A) -> A { x }
     fn f() -> Int {
         g(1)
@@ -233,7 +233,7 @@ fn rule_type_app_no_args_on_poly_func() {
 
 #[test]
 fn rule_type_app_bad_arity_on_poly_func() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g<A>(x: A) -> A { x }
     fn f() -> Int {
         g@<Int, Bool>(1)
@@ -247,7 +247,7 @@ fn rule_type_app_bad_arity_on_poly_func() {
 
 #[test]
 fn rule_type_app_instantiate_param() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g<A>(x: A) -> Int { 0 }
     fn f() -> Int {
         g@<Int>(true)
@@ -261,7 +261,7 @@ fn rule_type_app_instantiate_param() {
 
 #[test]
 fn rule_type_app_instantiate_result() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g<A>(x: A) -> A { x }
     fn f() -> Int {
         g@<Bool>(true)
@@ -275,7 +275,7 @@ fn rule_type_app_instantiate_result() {
 
 #[test]
 fn rule_app_no_func() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = 1;
         x()
@@ -289,7 +289,7 @@ fn rule_app_no_func() {
 
 #[test]
 fn rule_app_var_too_many_args() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let g = fn () { 0 };
         g(1)
@@ -303,7 +303,7 @@ fn rule_app_var_too_many_args() {
 
 #[test]
 fn rule_app_var_too_few_args() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let g = fn (x: Int) { x };
         g()
@@ -317,7 +317,7 @@ fn rule_app_var_too_few_args() {
 
 #[test]
 fn rule_app_func_too_many_args() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g() -> Int { 0 }
     fn f() -> Int {
         g(1)
@@ -331,7 +331,7 @@ fn rule_app_func_too_many_args() {
 
 #[test]
 fn rule_app_func_too_few_args() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g(x: Int) -> Int { x }
     fn f() -> Int {
         g()
@@ -345,7 +345,7 @@ fn rule_app_func_too_few_args() {
 
 #[test]
 fn rule_app_bad_arg1() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g(x: Int) -> Int { x }
     fn f() -> Int {
         g(true)
@@ -359,7 +359,7 @@ fn rule_app_bad_arg1() {
 
 #[test]
 fn rule_app_bad_arg2() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g(x: Int, y: Bool) -> Int { x }
     fn f() -> Int {
         g(1, 2)
@@ -373,7 +373,7 @@ fn rule_app_bad_arg2() {
 
 #[test]
 fn rule_app_bad_result() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn g() -> Bool { true }
     fn f() -> Int {
         g()
@@ -387,7 +387,7 @@ fn rule_app_bad_result() {
 
 #[test]
 fn rule_binop_arith_lhs() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         true + 0
     }
@@ -400,7 +400,7 @@ fn rule_binop_arith_lhs() {
 
 #[test]
 fn rule_binop_arith_rhs() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         0 * true
     }
@@ -413,7 +413,7 @@ fn rule_binop_arith_rhs() {
 
 #[test]
 fn rule_binop_arith_result() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Bool {
         0 - 1
     }
@@ -426,7 +426,7 @@ fn rule_binop_arith_result() {
 
 #[test]
 fn rule_binop_cmp_lhs_not_inferrable() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Bool {
         Nil == Nil
     }
@@ -439,7 +439,7 @@ fn rule_binop_cmp_lhs_not_inferrable() {
 
 #[test]
 fn rule_binop_cmp_lhs_inferrable() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Bool {
         0 == None
     }
@@ -452,7 +452,7 @@ fn rule_binop_cmp_lhs_inferrable() {
 
 #[test]
 fn rule_binop_cmp_result() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         0 == 1
     }
@@ -465,7 +465,7 @@ fn rule_binop_cmp_result() {
 
 #[test]
 fn rule_let_infer_infer_bindee_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = {
             let y = None;
@@ -482,7 +482,7 @@ fn rule_let_infer_infer_bindee_bad() {
 
 #[test]
 fn rule_let_infer_infer_body_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = {
             let y = 0;
@@ -499,7 +499,7 @@ fn rule_let_infer_infer_body_bad() {
 
 #[test]
 fn rule_let_infer_infer_both_good() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = {
             let y = true;
@@ -516,7 +516,7 @@ fn rule_let_infer_infer_both_good() {
 
 #[test]
 fn rule_let_check_infer_bindee_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = {
             let y: Int = true;
@@ -533,7 +533,7 @@ fn rule_let_check_infer_bindee_bad() {
 
 #[test]
 fn rule_let_check_infer_body_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = {
             let y: Int = 0;
@@ -550,7 +550,7 @@ fn rule_let_check_infer_body_bad() {
 
 #[test]
 fn rule_let_check_infer_both_good() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = {
             let y: Bool = true;
@@ -567,7 +567,7 @@ fn rule_let_check_infer_both_good() {
 
 #[test]
 fn rule_let_infer_check_bindee_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = None;
         x
@@ -581,7 +581,7 @@ fn rule_let_infer_check_bindee_bad() {
 
 #[test]
 fn rule_let_infer_check_bindee_good() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = true;
         x
@@ -595,7 +595,7 @@ fn rule_let_infer_check_bindee_good() {
 
 #[test]
 fn rule_let_check_check_bindee_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x: Int = true;
         x
@@ -609,7 +609,7 @@ fn rule_let_check_check_bindee_bad() {
 
 #[test]
 fn rule_let_check_check_bindee_good() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x: Bool = true;
         x
@@ -623,7 +623,7 @@ fn rule_let_check_check_bindee_good() {
 
 #[test]
 fn rule_if_infer_cond_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = if None { 1 } else { 2 };
         x
@@ -637,7 +637,7 @@ fn rule_if_infer_cond_bad() {
 
 #[test]
 fn rule_if_infer_then_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = if true { None } else { 1 };
         x
@@ -651,7 +651,7 @@ fn rule_if_infer_then_bad() {
 
 #[test]
 fn rule_if_infer_else_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         let x = if true { 0 } else { None };
         x
@@ -665,7 +665,7 @@ fn rule_if_infer_else_bad() {
 
 #[test]
 fn rule_if_infer_all_good() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Bool {
         let x = if true { 0 } else { 1 };
         x
@@ -679,7 +679,7 @@ fn rule_if_infer_all_good() {
 
 #[test]
 fn rule_if_check_cond_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         if None { 1 } else { 2 }
     }
@@ -692,7 +692,7 @@ fn rule_if_check_cond_bad() {
 
 #[test]
 fn rule_if_check_then_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         if true { None } else { 1 }
     }
@@ -705,7 +705,7 @@ fn rule_if_check_then_bad() {
 
 #[test]
 fn rule_if_check_else_bad() {
-    insta::assert_snapshot!(check_err(r#"
+    insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
         if true { 0 } else { None }
     }

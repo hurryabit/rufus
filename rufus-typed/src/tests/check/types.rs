@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn unknown_type_var() {
-    insta::assert_snapshot!(check_err("type Bad = Unknown"), @r###"
+    insta::assert_snapshot!(check_error("type Bad = Unknown"), @r###"
       0 | type Bad = Unknown
                      ~~~~~~~
     Undeclared type variable `Unknown`.
@@ -11,7 +11,7 @@ fn unknown_type_var() {
 
 #[test]
 fn unexpected_type_con_at_top() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = Id"), @r###"
+    insta::assert_snapshot!(check_error("type Id<A> = A\ntype Bad = Id"), @r###"
       1 | type Bad = Id
                      ~~
     Expected a type but found the generic type `Id`.
@@ -20,7 +20,7 @@ fn unexpected_type_con_at_top() {
 
 #[test]
 fn unexpected_type_con_in_type_args() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype List<A> = A\ntype Bad = List<Id>"), @r###"
+    insta::assert_snapshot!(check_error("type Id<A> = A\ntype List<A> = A\ntype Bad = List<Id>"), @r###"
       2 | type Bad = List<Id>
                           ~~
     Expected a type but found the generic type `Id`.
@@ -29,7 +29,7 @@ fn unexpected_type_con_in_type_args() {
 
 #[test]
 fn unexpected_type_con_in_func_args() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = (Id) -> Int"), @r###"
+    insta::assert_snapshot!(check_error("type Id<A> = A\ntype Bad = (Id) -> Int"), @r###"
       1 | type Bad = (Id) -> Int
                       ~~
     Expected a type but found the generic type `Id`.
@@ -38,7 +38,7 @@ fn unexpected_type_con_in_func_args() {
 
 #[test]
 fn unexpected_type_con_in_func_result() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = () -> Id"), @r###"
+    insta::assert_snapshot!(check_error("type Id<A> = A\ntype Bad = () -> Id"), @r###"
       1 | type Bad = () -> Id
                            ~~
     Expected a type but found the generic type `Id`.
@@ -47,7 +47,7 @@ fn unexpected_type_con_in_func_result() {
 
 #[test]
 fn unexpected_type_con_in_record() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = {field: Id}"), @r###"
+    insta::assert_snapshot!(check_error("type Id<A> = A\ntype Bad = {field: Id}"), @r###"
       1 | type Bad = {field: Id}
                              ~~
     Expected a type but found the generic type `Id`.
@@ -56,7 +56,7 @@ fn unexpected_type_con_in_record() {
 
 #[test]
 fn unexpected_type_con_in_variant() {
-    insta::assert_snapshot!(check_err("type Id<A> = A\ntype Bad = [Constr(Id)]"), @r###"
+    insta::assert_snapshot!(check_error("type Id<A> = A\ntype Bad = [Constr(Id)]"), @r###"
       1 | type Bad = [Constr(Id)]
                              ~~
     Expected a type but found the generic type `Id`.
@@ -65,7 +65,7 @@ fn unexpected_type_con_in_variant() {
 
 #[test]
 fn wrong_arity_var() {
-    insta::assert_snapshot!(check_err("type Bad<F> = F<Int>"), @r###"
+    insta::assert_snapshot!(check_error("type Bad<F> = F<Int>"), @r###"
       0 | type Bad<F> = F<Int>
                         ~~~~~~
     Type `F` is not a generic type but is applied to 1 type argument.
@@ -74,7 +74,7 @@ fn wrong_arity_var() {
 
 #[test]
 fn wrong_arity_builtin() {
-    insta::assert_snapshot!(check_err("type Bad<A> = Int<A>"), @r###"
+    insta::assert_snapshot!(check_error("type Bad<A> = Int<A>"), @r###"
       0 | type Bad<A> = Int<A>
                         ~~~~~~
     Type `Int` is not a generic type but is applied to 1 type argument.
@@ -83,7 +83,7 @@ fn wrong_arity_builtin() {
 
 #[test]
 fn wrong_arity_type_syn() {
-    insta::assert_snapshot!(check_err("type Syn = Int\ntype Bad = Syn<Int>"), @r###"
+    insta::assert_snapshot!(check_error("type Syn = Int\ntype Bad = Syn<Int>"), @r###"
       1 | type Bad = Syn<Int>
                      ~~~~~~~~
     Type `Syn` is not a generic type but is applied to 1 type argument.
@@ -92,7 +92,7 @@ fn wrong_arity_type_syn() {
 
 #[test]
 fn wrong_arity_type_con_syn() {
-    insta::assert_snapshot!(check_err("type Syn<A> = A\ntype Bad = Syn<Int, Int>"), @r###"
+    insta::assert_snapshot!(check_error("type Syn<A> = A\ntype Bad = Syn<Int, Int>"), @r###"
       1 | type Bad = Syn<Int, Int>
                      ~~~~~~~~~~~~~
     Generic type `Syn` expects 1 type argument but is applied to 2 type arguments.
@@ -101,7 +101,7 @@ fn wrong_arity_type_con_syn() {
 
 #[test]
 fn duplicate_type_var() {
-    insta::assert_snapshot!(check_err("type Syn<A, A> = A"), @r###"
+    insta::assert_snapshot!(check_error("type Syn<A, A> = A"), @r###"
       0 | type Syn<A, A> = A
                       ~
     Duplicate type variable `A`.
@@ -110,7 +110,7 @@ fn duplicate_type_var() {
 
 #[test]
 fn int_resolved() {
-    insta::assert_debug_snapshot!(check("type Here = Int"), @r###"
+    insta::assert_debug_snapshot!(check_output("type Here = Int"), @r###"
     MODULE
       decl: TYPEDECL
         name: Here @ 5...9
@@ -120,7 +120,7 @@ fn int_resolved() {
 
 #[test]
 fn bool_resolved() {
-    insta::assert_debug_snapshot!(check("type Here = Bool"), @r###"
+    insta::assert_debug_snapshot!(check_output("type Here = Bool"), @r###"
     MODULE
       decl: TYPEDECL
         name: Here @ 5...9
@@ -130,7 +130,7 @@ fn bool_resolved() {
 
 #[test]
 fn syn_resolved() {
-    insta::assert_debug_snapshot!(check("type Syn = Int\ntype Here = Syn"), @r###"
+    insta::assert_debug_snapshot!(check_output("type Syn = Int\ntype Here = Syn"), @r###"
     MODULE
       decl: TYPEDECL
         name: Syn @ 5...8
@@ -144,7 +144,7 @@ fn syn_resolved() {
 
 #[test]
 fn var_resolved() {
-    insta::assert_debug_snapshot!(check("type Here<A> = A"), @r###"
+    insta::assert_debug_snapshot!(check_output("type Here<A> = A"), @r###"
     MODULE
       decl: TYPEDECL
         name: Here @ 5...9
@@ -155,7 +155,7 @@ fn var_resolved() {
 
 #[test]
 fn var_shadows_int() {
-    insta::assert_debug_snapshot!(check("type Here<Int> = Int"), @r###"
+    insta::assert_debug_snapshot!(check_output("type Here<Int> = Int"), @r###"
     MODULE
       decl: TYPEDECL
         name: Here @ 5...9
@@ -166,7 +166,7 @@ fn var_shadows_int() {
 
 #[test]
 fn type_syn_shadows_int() {
-    insta::assert_debug_snapshot!(check("type Int = Bool\ntype Here = Int"), @r###"
+    insta::assert_debug_snapshot!(check_output("type Int = Bool\ntype Here = Int"), @r###"
     MODULE
       decl: TYPEDECL
         name: Int @ 5...8
@@ -180,7 +180,7 @@ fn type_syn_shadows_int() {
 
 #[test]
 fn type_con_syn_shadows_int() {
-    insta::assert_debug_snapshot!(check("type Int<A> = A\ntype Here = Int<Bool>"), @r###"
+    insta::assert_debug_snapshot!(check_output("type Int<A> = A\ntype Here = Int<Bool>"), @r###"
     MODULE
       decl: TYPEDECL
         name: Int @ 5...8
