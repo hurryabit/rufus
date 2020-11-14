@@ -66,34 +66,6 @@ fn rule_check_infer() {
 }
 
 #[test]
-fn rule_ann() {
-    insta::assert_snapshot!(check_err(r#"
-    fn f() -> Int {
-        let x: Int = true;
-        0
-    }
-    "#), @r###"
-      2 |         let x: Int = true;
-                               ~~~~
-    Expected an expression of type `Int` but found an expression of type `Bool`.
-    "###);
-}
-
-#[test]
-fn rule_no_ann() {
-    insta::assert_snapshot!(check_err(r#"
-    fn f() -> Int {
-        let x = true;
-        x
-    }
-    "#), @r###"
-      3 |         x
-                  ~
-    Expected an expression of type `Int` but found an expression of type `Bool`.
-    "###);
-}
-
-#[test]
 fn rule_var() {
     insta::assert_snapshot!(check_err(r#"
     fn f(x: Bool) -> Int { x }
@@ -487,6 +459,164 @@ fn rule_binop_cmp_result() {
     "#), @r###"
       2 |         0 == 1
                   ~~~~~~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_let_infer_infer_bindee_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = {
+            let y = None;
+            y
+        };
+        x
+    }
+    "#), @r###"
+      3 |             let y = None;
+                              ~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_let_infer_infer_body_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = {
+            let y = 0;
+            None
+        };
+        x
+    }
+    "#), @r###"
+      4 |             None
+                      ~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_let_infer_infer_both_good() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = {
+            let y = true;
+            y
+        };
+        x
+    }
+    "#), @r###"
+      6 |         x
+                  ~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_let_check_infer_bindee_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = {
+            let y: Int = true;
+            y
+        };
+        x
+    }
+    "#), @r###"
+      3 |             let y: Int = true;
+                                   ~~~~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_let_check_infer_body_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = {
+            let y: Int = 0;
+            None
+        };
+        0
+    }
+    "#), @r###"
+      4 |             None
+                      ~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_let_check_infer_both_good() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = {
+            let y: Bool = true;
+            y
+        };
+        x
+    }
+    "#), @r###"
+      6 |         x
+                  ~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_let_infer_check_bindee_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = None;
+        x
+    }
+    "#), @r###"
+      2 |         let x = None;
+                          ~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_let_infer_check_bindee_good() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = true;
+        x
+    }
+    "#), @r###"
+      3 |         x
+                  ~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_let_check_check_bindee_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x: Int = true;
+        x
+    }
+    "#), @r###"
+      2 |         let x: Int = true;
+                               ~~~~
+    Expected an expression of type `Int` but found an expression of type `Bool`.
+    "###);
+}
+
+#[test]
+fn rule_let_check_check_bindee_good() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x: Bool = true;
+        x
+    }
+    "#), @r###"
+      3 |         x
+                  ~
     Expected an expression of type `Int` but found an expression of type `Bool`.
     "###);
 }

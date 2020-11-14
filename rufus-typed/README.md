@@ -11,16 +11,6 @@ This is the core library for a typed version of the rufus language, containing t
   E |- e <= t
 
 
-  E |- e <= t
--------------------------------------------------- Ann
-  E |- e: t => t
-
-
-  E |- e => t
--------------------------------------------------- NoAnn
-  E |- e: _ => t
-
-
   (x: t) in E
 -------------------------------------------------- Var
   E |- x => t
@@ -71,16 +61,28 @@ This is the core library for a typed version of the rufus language, containing t
   E |- e1 § e2 => Bool
 
 
-  E |- e1: s? => s'
-  E, x: s' |- e2 => t
--------------------------------------------------- LetInfer
-  E |- let x: s? = e1 in e2 => t
+  E |- e1 => s
+  E, x: s |- e2 => t
+-------------------------------------------------- LetInferInfer
+  E |- let x = e1 in e2 => t
 
 
-  E |- e1: s? => s'
-  E, x: s' |- e2 <= t
--------------------------------------------------- LetCheck
-  E |- let x: s? = e1 in e2 <= t
+  E |- e1 <= s
+  E, x: s |- e2 => t
+-------------------------------------------------- LetCheckInfer
+  E |- let x: s = e1 in e2 => t
+
+
+  E |- e1 => s
+  E, x: s |- e2 <= t
+-------------------------------------------------- LetInferCheck
+  E |- let x = e1 in e2 <= t
+
+
+  E |- e1 <= s
+  E, x: s |- e2 <= t
+-------------------------------------------------- LetCheckCheck
+  E |- let x: s = e1 in e2 <= t
 
 
   E |- e1 <= Bool
