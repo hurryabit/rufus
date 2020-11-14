@@ -28,6 +28,7 @@ pub enum Error<Pos = usize> {
         expected: RcType,
         found: RcType,
     },
+    ParamNeedsType(ExprVar),
     DuplicateTypeVar {
         var: TypeVar,
         original: Span<Pos>,
@@ -123,6 +124,7 @@ impl fmt::Display for Error {
                 "Expected parameter `{}` to have type `{}` but found a type annotation `{}`.",
                 param, expected, found,
             ),
+            ParamNeedsType(param) => write!(f, "Cannot infer the type of parameter `{}`. A type annoation is needed.", param),
             DuplicateTypeVar { var, original: _ } => write!(f, "Duplicate type variable `{}`.", var),
             DuplicateTypeDecl { var, original: _ } => {
                 write!(f, "Duplicate definition of type `{}`.", var)

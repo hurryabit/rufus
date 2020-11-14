@@ -387,19 +387,33 @@ impl Expr {
             }
             Self::Num(_) => Ok(RcType::new(Type::Int)),
             Self::Bool(_) => Ok(RcType::new(Type::Bool)),
-            Self::Lam(params, body) if params.iter().all(|(_, opt_typ)| opt_typ.is_some()) => {
+            Self::Lam(params, body) => {
                 check_lam_params(params, env)?;
-                let env = &mut env.clone();
-                let param_types = params
-                    .iter()
-                    .map(|(var, opt_type_ann)| {
-                        let typ = RcType::from_lsyntax(opt_type_ann.as_ref().unwrap());
-                        env.expr_vars.insert(var.locatee, typ.clone());
-                        typ
-                    })
-                    .collect();
-                let result = body.infer(env)?;
-                Ok(RcType::new(Type::Fun(param_types, result)))
+                let opt_bad_param =
+                    params.iter().find_map(
+                        |(param, typ)| {
+                            if typ.is_none() {
+                                Some(param)
+                            } else {
+                                None
+                            }
+                        },
+                    );
+                if let Some(bad_param) = opt_bad_param {
+                    Err(bad_param.map(Error::ParamNeedsType))
+                } else {
+                    let env = &mut env.clone();
+                    let param_types = params
+                        .iter()
+                        .map(|(var, opt_type_ann)| {
+                            let typ = RcType::from_lsyntax(opt_type_ann.as_ref().unwrap());
+                            env.expr_vars.insert(var.locatee, typ.clone());
+                            typ
+                        })
+                        .collect();
+                    let result = body.infer(env)?;
+                    Ok(RcType::new(Type::Fun(param_types, result)))
+                }
             }
             Self::App(func, args) => {
                 let func_type = func.infer(env)?;
@@ -534,7 +548,7 @@ impl Expr {
                     _ => Err(Located::new(Error::BadMatch(scrut_typ), span)),
                 }
             }
-            Self::Lam(_, _) | Self::Variant(_, _) => Err(Located::new(Error::TypeAnnsNeeded, span)),
+            Self::Variant(_, _) => Err(Located::new(Error::TypeAnnsNeeded, span)),
         }
     }
 }

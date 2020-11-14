@@ -142,8 +142,8 @@ fn rule_lam_infer_impossible() {
     }
     "#), @r###"
       2 |         let f = fn (x) { x + 0 };
-                          ~~~~~~~~~~~~~~~~
-    Cannot infer the type of the expression. Further type annotations are required.
+                              ~
+    Cannot infer the type of parameter `x`. A type annoation is needed.
     "###);
 }
 
