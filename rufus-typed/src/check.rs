@@ -335,7 +335,7 @@ impl Expr {
                             Err(Located::new(Error::EmptyMatch, span))
                         }
                     }
-                    _ => Err(Located::new(Error::BadMatch(scrut_typ), span)),
+                    _ => Err(Located::new(Error::BadMatch(scrut_typ), scrut.span)),
                 }
             }
             Self::Error
@@ -548,7 +548,7 @@ impl Expr {
                             Err(Located::new(Error::EmptyMatch, span))
                         }
                     }
-                    _ => Err(Located::new(Error::BadMatch(scrut_typ), span)),
+                    _ => Err(Located::new(Error::BadMatch(scrut_typ), scrut.span)),
                 }
             }
             Self::Variant(_, _) => Err(Located::new(Error::TypeAnnsNeeded, span)),

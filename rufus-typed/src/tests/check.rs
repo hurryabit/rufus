@@ -19,7 +19,8 @@ fn check_success(input: &str) {
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
-    assert!(module.check().is_ok());
+    module.check().unwrap();
+    // assert!(module.check().is_ok());
 }
 
 fn check_error(input: &str) -> String {

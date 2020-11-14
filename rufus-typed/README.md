@@ -5,6 +5,7 @@ This is the core library for a typed version of the rufus language, containing t
 
 ## Typing rules
 
+Type rules for expressions:
 ```
   E |- e => t
 -------------------------------------------------- CheckInfer
@@ -123,41 +124,64 @@ This is the core library for a typed version of the rufus language, containing t
     <= {x1: t1, ..., xn: tn}
 
 
-  E |- e => {x1: t1, ..., xn: tn}
+  E |- e => s
+  s = {..., a: t, ...}
 -------------------------------------------------- Proj
-  E |- e.xi => ti
+  E |- e.a => t
 
 
   .
 -------------------------------------------------- VariantWithoutPayload
-  E |- ci <= [... | ci | ...]
+  E |- c <= [... | c | ...]
 
 
   E |- e <= t
 -------------------------------------------------- VariantWithPayload
-  E |- ci(e) <= [... | ci(t) | ...]
+  E |- c(e) <= [... | c(t) | ...]
 
 
-  E |- e => [d1(s1) | ... | dm(sm)]
-  F: {1, ..., n} -> {1, ..., m}
-  c1 = d_F(1), ..., cn = d_F(n)
-  E, x1: s_F(1) |- e1 => t
-  E, x2: s_F(2) |- e2 <= t
+  E |- e => s
+  s = [...]
+  E |- branch s { p1 => e1 } => t
+  E |- branch s { p2 => e2 } <= t
   ...
-  E, xn: s_F(n) |- en <= t
+  E |- branch s { pn => en } <= t
 -------------------------------------------------- MatchInfer
-  E |- match e {c1(x1) => e1, ..., cn(xn) => en}
+  E |- match e {p1 => e1, ..., pn -> en} => t
+
+
+  E |- e => s
+  s = [...]
+  E |- branch s { p1 => e1 } <= t
+  ...
+  E |- branch s { pn => en } <= t
+-------------------------------------------------- MatchCheck
+  E |- match e {p1 -> e1, ..., pn -> en} <= t
+```
+
+Typing rules for `match` branches `branch s {p => e}`:
+```
+  E |- e => t
+-------------------------------------------------- BranchWithoutPayloadInfer
+  E |- branch [... | c | ...] { c => e }
     => t
 
 
-  E |- e => [d1(s1) | ... | dm(sm)]
-  F: {1, ..., n} -> {1, ..., m}
-  c1 = d_F(1), ..., cn = d_F(n)
-  E, x1: s_F(1) |- e1 <= t
-  ...
-  E, xn: s_F(n) |- en <= t
--------------------------------------------------- MatchCheck
-  E |- match e {c1(x1) => e1, ..., cn(xn) => en}
+  E |- e <= t
+-------------------------------------------------- BranchWithoutPayloadCheck
+  E |- branch [... | c | ...] { c => e }
+    <= t
+
+
+  E, x: s |- e => t
+-------------------------------------------------- BranchWithPayloadInfer
+  E |- branch [... | c(s) | ...] { c(x) => e }
+    => t
+
+
+  E, x: s |- e <= t
+-------------------------------------------------- BranchWithPayloadCheck
+  E |- branch [... | c(s) | ...] { c(x) => e }
     <= t
 ```
 

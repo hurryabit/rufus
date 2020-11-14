@@ -1160,3 +1160,364 @@ fn rule_variant_with_payload_mismatch() {
     Expected an expression of type `Int` but found variant constructor `CheckMeToo`.
     "###);
 }
+
+#[test]
+fn rule_match_infer_without_without_payload() {
+    check_success(r#"
+    fn check_me() -> [CheckMe] { CheckMe }
+    fn f(x: [A | B | C([CheckMe])]) -> [CheckMe] {
+        let r = match x {
+            A => check_me(),
+            B => CheckMe,
+        };
+        r
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_infer_with_without_payload() {
+    check_success(r#"
+    fn f(x: [A | B | C([CheckMe])]) -> [CheckMe] {
+        let r = match x {
+            C(y) => y,
+            B => CheckMe,
+        };
+        r
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_infer_without_with_payload() {
+    check_success(r#"
+    fn check_me() -> [CheckMe] { CheckMe }
+    fn f(x: [A | B | C([CheckMe])]) -> [CheckMe] {
+        let r = match x {
+            A => check_me(),
+            C(y) => {
+                let u: [CheckMe] = y;
+                CheckMe
+            }
+        };
+        r
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_infer_with_with_payload() {
+    check_success(r#"
+    fn f(x: [A | B([CheckMe]) | C([CheckMe])]) -> [CheckMe] {
+        let r = match x {
+            B(y) => y,
+            C(z) => {
+                let u: [CheckMe] = z;
+                CheckMe
+            }
+        };
+        r
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_infer_scrutinee_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let r = match InferMe {
+            A => 0,
+        };
+        r
+    }
+    "#), @r###"
+      2 |         let r = match InferMe {
+                                ~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_scrutinee_not_variant() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let r = match 0 {
+            A => 0,
+        };
+        r
+    }
+    "#), @r###"
+      2 |         let r = match 0 {
+                                ~
+    Cannot match on expressions of type `Int`.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_unknown_constructor_without_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        let r = match x {
+            B => 0,
+        };
+        r
+    }
+    "#), @r###"
+      3 |             B => 0,
+                      ~~~~~~~
+    `B` is not a possible constructor for variant type `[A]`.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_unknown_constructor_with_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        let r = match x {
+            B(y) => 0,
+        };
+        r
+    }
+    "#), @r###"
+      3 |             B(y) => 0,
+                      ~~~~~~~~~~
+    `B` is not a possible constructor for variant type `[A]`.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_unexpected_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        let r = match x {
+            A(y) => 0,
+        };
+        r
+    }
+    "#), @r###"
+      3 |             A(y) => 0,
+                      ~~~~~~~~~~
+    Constructor `A` of variant type `[A]` does not take a payload.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_expected_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A(Int)]) -> Int {
+        let r = match x {
+            A => 0,
+        };
+        r
+    }
+    "#), @r###"
+      3 |             A => 0,
+                      ~~~~~~~
+    Constructor `A` of variant type `[A(Int)]` needs a payload.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_branch1_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        let r = match x {
+            A => InferMe,
+        };
+        r
+    }
+    "#), @r###"
+      3 |             A => InferMe,
+                           ~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_branch2_mismatch() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A | B]) -> Int {
+        let r = match x {
+            A => 0,
+            B => CheckMe,
+        };
+        r
+    }
+    "#), @r###"
+      4 |             B => CheckMe,
+                           ~~~~~~~
+    Expected an expression of type `Int` but found variant constructor `CheckMe`.
+    "###);
+}
+
+#[test]
+fn rule_match_check_without_without_payload() {
+    check_success(r#"
+    fn f(x: [A | B | C([CheckMe])]) -> [CheckMe] {
+        match x {
+            A => CheckMe,
+            B => CheckMe,
+        }
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_check_with_without_payload() {
+    check_success(r#"
+    fn f(x: [A | B | C([CheckMe])]) -> [CheckMe] {
+        match x {
+            C(y) => y,
+            B => CheckMe,
+        }
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_check_without_with_payload() {
+    check_success(r#"
+    fn check_me() -> [CheckMe] { CheckMe }
+    fn f(x: [A | B | C([CheckMe])]) -> [CheckMe] {
+        match x {
+            A => CheckMe,
+            C(y) => y,
+        }
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_check_with_with_payload() {
+    check_success(r#"
+    fn f(x: [A | B([CheckMe]) | C([CheckMe])]) -> [CheckMe] {
+        let r = match x {
+            B(y) => y,
+            C(z) => z,
+        };
+        r
+    }
+    "#);
+}
+
+#[test]
+fn rule_match_check_scrutinee_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        match InferMe {
+            A => 0,
+        }
+    }
+    "#), @r###"
+      2 |         match InferMe {
+                        ~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_match_check_scrutinee_not_variant() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        match 0 {
+            A => 0,
+        }
+    }
+    "#), @r###"
+      2 |         match 0 {
+                        ~
+    Cannot match on expressions of type `Int`.
+    "###);
+}
+
+#[test]
+fn rule_match_check_unknown_constructor_without_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        match x {
+            B => 0,
+        }
+    }
+    "#), @r###"
+      3 |             B => 0,
+                      ~~~~~~~
+    `B` is not a possible constructor for variant type `[A]`.
+    "###);
+}
+
+#[test]
+fn rule_match_check_unknown_constructor_with_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        match x {
+            B(y) => 0,
+        }
+    }
+    "#), @r###"
+      3 |             B(y) => 0,
+                      ~~~~~~~~~~
+    `B` is not a possible constructor for variant type `[A]`.
+    "###);
+}
+
+#[test]
+fn rule_match_check_unexpected_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        match x {
+            A(y) => 0,
+        }
+    }
+    "#), @r###"
+      3 |             A(y) => 0,
+                      ~~~~~~~~~~
+    Constructor `A` of variant type `[A]` does not take a payload.
+    "###);
+}
+
+#[test]
+fn rule_match_check_expected_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A(Int)]) -> Int {
+        match x {
+            A => 0,
+        }
+    }
+    "#), @r###"
+      3 |             A => 0,
+                      ~~~~~~~
+    Constructor `A` of variant type `[A(Int)]` needs a payload.
+    "###);
+}
+
+#[test]
+fn rule_match_check_branch1_mismatch() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A]) -> Int {
+        match x {
+            A => CheckMe,
+        }
+    }
+    "#), @r###"
+      3 |             A => CheckMe,
+                           ~~~~~~~
+    Expected an expression of type `Int` but found variant constructor `CheckMe`.
+    "###);
+}
+
+#[test]
+fn rule_match_check_branch2_mismatch() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A | B]) -> Int {
+        let r = match x {
+            A => 0,
+            B => CheckMe,
+        };
+        r
+    }
+    "#), @r###"
+      4 |             B => CheckMe,
+                           ~~~~~~~
+    Expected an expression of type `Int` but found variant constructor `CheckMe`.
+    "###);
+}
