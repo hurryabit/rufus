@@ -620,3 +620,98 @@ fn rule_let_check_check_bindee_good() {
     Expected an expression of type `Int` but found an expression of type `Bool`.
     "###);
 }
+
+#[test]
+fn rule_if_infer_cond_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = if None { 1 } else { 2 };
+        x
+    }
+    "#), @r###"
+      2 |         let x = if None { 1 } else { 2 };
+                             ~~~~
+    Expected an expression of type `Bool` but found variant constructor.
+    "###);
+}
+
+#[test]
+fn rule_if_infer_then_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = if true { None } else { 1 };
+        x
+    }
+    "#), @r###"
+      2 |         let x = if true { None } else { 1 };
+                                    ~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_if_infer_else_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        let x = if true { 0 } else { None };
+        x
+    }
+    "#), @r###"
+      2 |         let x = if true { 0 } else { None };
+                                               ~~~~
+    Expected an expression of type `Int` but found variant constructor.
+    "###);
+}
+
+#[test]
+fn rule_if_infer_all_good() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Bool {
+        let x = if true { 0 } else { 1 };
+        x
+    }
+    "#), @r###"
+      3 |         x
+                  ~
+    Expected an expression of type `Bool` but found an expression of type `Int`.
+    "###);
+}
+
+#[test]
+fn rule_if_check_cond_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        if None { 1 } else { 2 }
+    }
+    "#), @r###"
+      2 |         if None { 1 } else { 2 }
+                     ~~~~
+    Expected an expression of type `Bool` but found variant constructor.
+    "###);
+}
+
+#[test]
+fn rule_if_check_then_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        if true { None } else { 1 }
+    }
+    "#), @r###"
+      2 |         if true { None } else { 1 }
+                            ~~~~
+    Expected an expression of type `Int` but found variant constructor.
+    "###);
+}
+
+#[test]
+fn rule_if_check_else_bad() {
+    insta::assert_snapshot!(check_err(r#"
+    fn f() -> Int {
+        if true { 0 } else { None }
+    }
+    "#), @r###"
+      2 |         if true { 0 } else { None }
+                                       ~~~~
+    Expected an expression of type `Int` but found variant constructor.
+    "###);
+}
