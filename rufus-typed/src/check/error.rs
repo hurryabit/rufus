@@ -23,6 +23,11 @@ pub enum Error<Pos = usize> {
         expected: RcType,
         found: RcType,
     },
+    ParamTypeMismatch {
+        param: ExprVar,
+        expected: RcType,
+        found: RcType,
+    },
     DuplicateTypeVar {
         var: TypeVar,
         original: Span<Pos>,
@@ -101,8 +106,13 @@ impl fmt::Display for Error {
             ),
             TypeMismatch { expected, found } => write!(
                 f,
-                "Expected an expression of type `{}` but found an expression of type {}.",
+                "Expected an expression of type `{}` but found an expression of type `{}`.",
                 expected, found,
+            ),
+            ParamTypeMismatch { param, expected, found } => write!(
+                f,
+                "Expected parameter `{}` to have type `{}` but found a type annotation `{}`.",
+                param, expected, found,
             ),
             DuplicateTypeVar { var, original: _ } => write!(f, "Duplicate type variable `{}`.", var),
             DuplicateTypeDecl { var, original: _ } => {

@@ -270,11 +270,12 @@ impl Expr {
                                 let found = RcType::from_lsyntax(type_ann);
                                 if !found.equiv(expected, &env.kind_env.types) {
                                     return Err(Located::new(
-                                        Error::TypeMismatch {
+                                        Error::ParamTypeMismatch {
+                                            param: var.locatee,
                                             found,
                                             expected: expected.clone(),
                                         },
-                                        span,
+                                        type_ann.span,
                                     ));
                                 }
                                 env.expr_vars.insert(var.locatee, found);
