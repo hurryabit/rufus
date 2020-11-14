@@ -375,8 +375,8 @@ impl Expr {
                         Err(Located::new(
                             Error::GenericFuncArityMismatch {
                                 expr_var: *var,
-                                expected: 0,
-                                found: arity,
+                                expected: arity,
+                                found: 0,
                             },
                             span,
                         ))
