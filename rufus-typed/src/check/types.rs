@@ -109,14 +109,13 @@ impl RcType {
                 }
                 (Variant(constrs1), Variant(constrs2)) => {
                     same_keys(&constrs1, &constrs2)
-                        && constrs1
-                            .iter()
-                            .zip(constrs2.iter())
-                            .all(|((_, opt_typ1), (_, opt_typ2))| match (opt_typ1, opt_typ2) {
-                                (None, None)  => true,
+                        && constrs1.iter().zip(constrs2.iter()).all(
+                            |((_, opt_typ1), (_, opt_typ2))| match (opt_typ1, opt_typ2) {
+                                (None, None) => true,
                                 (None, Some(_)) | (Some(_), None) => false,
                                 (Some(typ1), Some(typ2)) => typ1.equiv(typ2, type_defs),
-                            })
+                            },
+                        )
                 }
                 (Var(_), _)
                 | (Int, _)
@@ -166,7 +165,9 @@ impl Type {
             SynType::Variant(constrs) => {
                 let constrs = constrs
                     .iter()
-                    .map(|(name, opt_typ)| (name.locatee, opt_typ.as_ref().map(RcType::from_lsyntax)))
+                    .map(|(name, opt_typ)| {
+                        (name.locatee, opt_typ.as_ref().map(RcType::from_lsyntax))
+                    })
                     .collect();
                 Type::Variant(constrs)
             }
@@ -202,7 +203,12 @@ impl Type {
             Type::Variant(constrs) => {
                 let constrs = constrs
                     .iter()
-                    .map(|(name, opt_typ)| (Located::gen(*name), opt_typ.as_ref().map(|typ| typ.to_lsyntax())))
+                    .map(|(name, opt_typ)| {
+                        (
+                            Located::gen(*name),
+                            opt_typ.as_ref().map(|typ| typ.to_lsyntax()),
+                        )
+                    })
                     .collect();
                 SynType::Variant(constrs)
             }

@@ -308,7 +308,13 @@ impl Expr {
                         match (opt_payload, opt_typ) {
                             (None, None) => Ok(()),
                             (Some(payload), Some(typ)) => payload.check(env, typ),
-                            (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, expected, *constr, span),
+                            (opt_payload, opt_typ) => LError::variant_payload(
+                                opt_payload,
+                                opt_typ,
+                                expected,
+                                *constr,
+                                span,
+                            ),
                         }
                     } else {
                         Err(Located::new(
@@ -330,7 +336,7 @@ impl Expr {
                     } else {
                         body.check(env, expected)?
                     }
-                };
+                }
                 Ok(())
             }
             Self::Error
@@ -532,7 +538,9 @@ impl Expr {
             Self::Match(scrut, branches) => {
                 let branches = check_match_patterns(env, scrut, branches)?;
                 let mut iter = branches.into_iter();
-                let (opt_binder, body) = iter.next().expect("IMPOSSIBLE: check_match_pattern ensures we have at least one branch");
+                let (opt_binder, body) = iter
+                    .next()
+                    .expect("IMPOSSIBLE: check_match_pattern ensures we have at least one branch");
                 let body_type = if let Some((var, typ)) = opt_binder {
                     body.infer(&env.intro_expr_var(var, typ.clone()))?
                 } else {
@@ -544,7 +552,7 @@ impl Expr {
                     } else {
                         body.check(env, &body_type)?
                     }
-                };
+                }
                 Ok(body_type)
             }
             Self::Variant(_, _) => Err(Located::new(Error::TypeAnnsNeeded, span)),
@@ -631,21 +639,30 @@ fn check_match_patterns<'a>(
     match &*scrut_type.weak_normalize_env(env) {
         Type::Variant(constrs) => {
             if branches.len() > 0 {
-                branches.iter_mut().map(|Branch { pattern, body }| {
-                    let constr = pattern.locatee.constr;
-                    if let Some(opt_typ) = find_by_key(constrs, &constr) {
-                        match (&pattern.locatee.binder, opt_typ) {
-                            (None, None) => Ok((None, body)),
-                            (Some(var), Some(typ)) => Ok((Some((var, typ.clone())), body)),
-                            (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, &scrut_type, constr, pattern.span),
+                branches
+                    .iter_mut()
+                    .map(|Branch { pattern, body }| {
+                        let constr = pattern.locatee.constr;
+                        if let Some(opt_typ) = find_by_key(constrs, &constr) {
+                            match (&pattern.locatee.binder, opt_typ) {
+                                (None, None) => Ok((None, body)),
+                                (Some(var), Some(typ)) => Ok((Some((var, typ.clone())), body)),
+                                (opt_payload, opt_typ) => LError::variant_payload(
+                                    opt_payload,
+                                    opt_typ,
+                                    &scrut_type,
+                                    constr,
+                                    pattern.span,
+                                ),
+                            }
+                        } else {
+                            Err(Located::new(
+                                Error::BadBranch(scrut_type.clone(), constr),
+                                pattern.span,
+                            ))
                         }
-                    } else {
-                        Err(Located::new(
-                            Error::BadBranch(scrut_type.clone(), constr),
-                            pattern.span,
-                        ))
-                    }
-                }).collect::<Result<_, _>>()
+                    })
+                    .collect::<Result<_, _>>()
             } else {
                 Err(Located::new(Error::EmptyMatch, scrut.span))
             }
