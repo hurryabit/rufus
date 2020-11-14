@@ -199,17 +199,23 @@ impl Debug for Expr {
 
 impl Debug for Branch {
     fn write(&self, writer: &mut DebugWriter) -> fmt::Result {
-        let Self {
-            con,
-            var: opt_binder,
-            rhs,
-        } = self;
+        let Self { pattern, body: rhs } = self;
         writer.node("BRANCH", |writer| {
-            writer.child("constr", con)?;
-            if let Some(binder) = opt_binder {
+            writer.child("pattern", pattern)?;
+            writer.child("body", rhs)
+        })
+    }
+}
+
+impl Debug for Pattern {
+    fn write(&self, writer: &mut DebugWriter) -> fmt::Result {
+        let Self { constr, binder } = self;
+        writer.node("PATTERN", |writer| {
+            writer.child("constr", constr)?;
+            if let Some(binder) = binder {
                 writer.child("binder", binder)?;
             }
-            writer.child("body", rhs)
+            Ok(())
         })
     }
 }

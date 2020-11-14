@@ -1264,7 +1264,7 @@ fn rule_match_infer_unknown_constructor_without_payload() {
     }
     "#), @r###"
       3 |             B => 0,
-                      ~~~~~~~
+                      ~
     `B` is not a possible constructor for variant type `[A]`.
     "###);
 }
@@ -1280,7 +1280,7 @@ fn rule_match_infer_unknown_constructor_with_payload() {
     }
     "#), @r###"
       3 |             B(y) => 0,
-                      ~~~~~~~~~~
+                      ~~~~
     `B` is not a possible constructor for variant type `[A]`.
     "###);
 }
@@ -1296,7 +1296,7 @@ fn rule_match_infer_unexpected_payload() {
     }
     "#), @r###"
       3 |             A(y) => 0,
-                      ~~~~~~~~~~
+                      ~~~~
     Constructor `A` of variant type `[A]` does not take a payload.
     "###);
 }
@@ -1312,7 +1312,7 @@ fn rule_match_infer_expected_payload() {
     }
     "#), @r###"
       3 |             A => 0,
-                      ~~~~~~~
+                      ~
     Constructor `A` of variant type `[A(Int)]` needs a payload.
     "###);
 }
@@ -1440,7 +1440,7 @@ fn rule_match_check_unknown_constructor_without_payload() {
     }
     "#), @r###"
       3 |             B => 0,
-                      ~~~~~~~
+                      ~
     `B` is not a possible constructor for variant type `[A]`.
     "###);
 }
@@ -1455,7 +1455,7 @@ fn rule_match_check_unknown_constructor_with_payload() {
     }
     "#), @r###"
       3 |             B(y) => 0,
-                      ~~~~~~~~~~
+                      ~~~~
     `B` is not a possible constructor for variant type `[A]`.
     "###);
 }
@@ -1470,7 +1470,7 @@ fn rule_match_check_unexpected_payload() {
     }
     "#), @r###"
       3 |             A(y) => 0,
-                      ~~~~~~~~~~
+                      ~~~~
     Constructor `A` of variant type `[A]` does not take a payload.
     "###);
 }
@@ -1485,7 +1485,7 @@ fn rule_match_check_expected_payload() {
     }
     "#), @r###"
       3 |             A => 0,
-                      ~~~~~~~
+                      ~
     Constructor `A` of variant type `[A(Int)]` needs a payload.
     "###);
 }

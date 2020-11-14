@@ -643,8 +643,9 @@ fn match1_novar() {
     insta::assert_debug_snapshot!(parse("match x { A => 1, }"), @r###"
     MATCH
       scrut: x @ 6...7
-      branch: BRANCH @ 10...17
-        constr: A @ 10...11
+      branch: BRANCH
+        pattern: PATTERN @ 10...11
+          constr: A
         body: 1 @ 15...16
     "###);
 }
@@ -654,9 +655,10 @@ fn match1_var() {
     insta::assert_debug_snapshot!(parse("match x { A(y) => 1, }"), @r###"
     MATCH
       scrut: x @ 6...7
-      branch: BRANCH @ 10...20
-        constr: A @ 10...11
-        binder: y @ 12...13
+      branch: BRANCH
+        pattern: PATTERN @ 10...14
+          constr: A
+          binder: y @ 12...13
         body: 1 @ 18...19
     "###);
 }
@@ -666,8 +668,9 @@ fn match1_block() {
     insta::assert_debug_snapshot!(parse("match x { A => { 1 } }"), @r###"
     MATCH
       scrut: x @ 6...7
-      branch: BRANCH @ 10...20
-        constr: A @ 10...11
+      branch: BRANCH
+        pattern: PATTERN @ 10...11
+          constr: A
         body: 1 @ 17...18
     "###);
 }
@@ -705,8 +708,9 @@ fn match1_block_comma() {
         Some(
             MATCH
               scrut: x @ 6...7
-              branch: BRANCH @ 10...21
-                constr: A @ 10...11
+              branch: BRANCH
+                pattern: PATTERN @ 10...11
+                  constr: A
                 body: ERROR @ 15...20,
         ),
         [
@@ -734,11 +738,13 @@ fn match2_exprs() {
     insta::assert_debug_snapshot!(parse("match x { A => 1, B => 2, }"), @r###"
     MATCH
       scrut: x @ 6...7
-      branch: BRANCH @ 10...17
-        constr: A @ 10...11
+      branch: BRANCH
+        pattern: PATTERN @ 10...11
+          constr: A
         body: 1 @ 15...16
-      branch: BRANCH @ 18...25
-        constr: B @ 18...19
+      branch: BRANCH
+        pattern: PATTERN @ 18...19
+          constr: B
         body: 2 @ 23...24
     "###);
 }
@@ -748,11 +754,13 @@ fn match2_expr_block() {
     insta::assert_debug_snapshot!(parse("match x { A => 1, B => { 2 } }"), @r###"
     MATCH
       scrut: x @ 6...7
-      branch: BRANCH @ 10...17
-        constr: A @ 10...11
+      branch: BRANCH
+        pattern: PATTERN @ 10...11
+          constr: A
         body: 1 @ 15...16
-      branch: BRANCH @ 18...28
-        constr: B @ 18...19
+      branch: BRANCH
+        pattern: PATTERN @ 18...19
+          constr: B
         body: 2 @ 25...26
     "###);
 }
@@ -762,11 +770,13 @@ fn match2_block_expr() {
     insta::assert_debug_snapshot!(parse("match x { A => { 1 } B => 2, }"), @r###"
     MATCH
       scrut: x @ 6...7
-      branch: BRANCH @ 10...20
-        constr: A @ 10...11
+      branch: BRANCH
+        pattern: PATTERN @ 10...11
+          constr: A
         body: 1 @ 17...18
-      branch: BRANCH @ 21...28
-        constr: B @ 21...22
+      branch: BRANCH
+        pattern: PATTERN @ 21...22
+          constr: B
         body: 2 @ 26...27
     "###);
 }
@@ -776,11 +786,13 @@ fn match2_blocks() {
     insta::assert_debug_snapshot!(parse("match x { A => { 1 } B => { 2 } }"), @r###"
     MATCH
       scrut: x @ 6...7
-      branch: BRANCH @ 10...20
-        constr: A @ 10...11
+      branch: BRANCH
+        pattern: PATTERN @ 10...11
+          constr: A
         body: 1 @ 17...18
-      branch: BRANCH @ 21...31
-        constr: B @ 21...22
+      branch: BRANCH
+        pattern: PATTERN @ 21...22
+          constr: B
         body: 2 @ 28...29
     "###);
 }

@@ -51,7 +51,7 @@ pub Expr: Expr = {
     BinOp<LSumExpr, CompOp, LSumExpr>,
     "fn" "(" <List0<Param<OptTypeAnn>, ",">> ")" <Box<LBlockExpr>> => Expr::Lam(<>),
     "if" <Box<LExpr>> <Box<LBlockExpr>> "else" <Box<LBlockExpr>> => Expr::If(<>),
-    "match" <Box<LExpr>> "{" <LBranch+> "}" => Expr::Match(<>),
+    "match" <Box<LExpr>> "{" <Branch+> "}" => Expr::Match(<>),
 }
 
 LExpr: LExpr = {
@@ -135,12 +135,12 @@ RecordAssign: (LExprVar, LExpr) = {
 }
 
 Branch: Branch = {
-    <con: LExprCon> <var: InParens<LExprVar>?> "=>" <rhs: LBlockExpr> => Branch { con, var, rhs },
-    <con: LExprCon> <var: InParens<LExprVar>?> "=>" <rhs: LExpr> "," => Branch { con, var, rhs },
+    <pattern: Located<Pattern>> "=>" <body: LBlockExpr> => Branch { pattern, body },
+    <pattern: Located<Pattern>> "=>" <body: LExpr> "," => Branch { pattern, body },
 }
 
-LBranch: LBranch = {
-    Located<Branch>,
+Pattern: Pattern = {
+    <constr: ExprCon> <binder: InParens<LExprVar>?> => Pattern { constr, binder },
 }
 
 TypeVar: TypeVar = {

@@ -69,18 +69,22 @@ pub enum Expr {
     Record(Vec<(LExprVar, LExpr)>),
     Proj(Box<LExpr>, LExprVar),
     Variant(LExprCon, Option<Box<LExpr>>),
-    Match(Box<LExpr>, Vec<LBranch>),
+    Match(Box<LExpr>, Vec<Branch>),
 }
 
 pub type LExpr = Located<Expr>;
 
 pub struct Branch {
-    pub con: LExprCon,
-    pub var: Option<LExprVar>,
-    pub rhs: LExpr,
+    pub pattern: LPattern,
+    pub body: LExpr,
 }
 
-pub type LBranch = Located<Branch>;
+pub struct Pattern {
+    pub constr: ExprCon,
+    pub binder: Option<LExprVar>,
+}
+
+pub type LPattern = Located<Pattern>;
 
 #[derive(Clone, Copy)]
 pub enum OpCode {

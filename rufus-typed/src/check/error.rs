@@ -2,7 +2,7 @@ use super::types::*;
 use super::Arity;
 use crate::syntax;
 use std::fmt;
-use syntax::{ExprCon, ExprVar, LExprCon, Located, Span, TypeVar};
+use syntax::{ExprCon, ExprVar, Located, Span, TypeVar};
 
 #[derive(Debug)]
 pub enum Error<Pos = usize> {
@@ -74,21 +74,22 @@ impl LError {
         opt_payload: &Option<T>,
         opt_payload_type: &Option<RcType>,
         variant_type: &RcType,
-        constr: &LExprCon,
+        constr: ExprCon,
         span: Span<Pos>,
     ) -> Result<R, LError<Pos>> {
         // TODO(MH): Use `!` instead of `()` once the never type is stable.
+        let variant_type = variant_type.clone();
         let error = match (opt_payload, opt_payload_type) {
             (None, None) | (Some(_), Some(_)) => {
                 panic!("IMPOSSIBLE: Error::variant_payload with None/None or Some/Some")
             }
             (None, Some(_)) => Error::VariantExpectedPayload {
-                variant_type: variant_type.clone(),
-                constr: constr.locatee,
+                variant_type,
+                constr,
             },
             (Some(_), None) => Error::VariantUnexpectedPayload {
-                variant_type: variant_type.clone(),
-                constr: constr.locatee,
+                variant_type,
+                constr,
             },
         };
         Err(Located::new(error, span))

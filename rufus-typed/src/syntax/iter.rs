@@ -129,7 +129,7 @@ impl Expr {
                 Match(scrut, branches) => {
                     yield_!(scrut);
                     for branch in branches {
-                        yield_!(&mut branch.locatee.rhs);
+                        yield_!(&mut branch.body);
                     }
                 }
             }
