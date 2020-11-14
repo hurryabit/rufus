@@ -82,8 +82,8 @@ impl RcType {
                     .all(|(arg1, arg2)| arg1.equiv(arg2, type_defs))
             }
             _ => match (
-                &*self.weak_normalize(type_defs),
-                &*expected.weak_normalize(type_defs),
+                self.weak_normalize(type_defs).as_ref(),
+                expected.weak_normalize(type_defs).as_ref(),
             ) {
                 (SynApp(_, _), _) | (_, SynApp(_, _)) => {
                     panic!("IMPOSSIBLE: Type::SynApp after Type::weak_normalize")
@@ -343,9 +343,13 @@ impl fmt::Display for Type {
             Type::Error => write!(f, "???"),
             Var(var) => write!(f, "{}", var),
             SynApp(syn, args) => {
-                write!(f, "{}<", syn)?;
-                write_list(f, &args, ", ", |f, arg| write!(f, "{}", arg))?;
-                write!(f, ">")
+                write!(f, "{}", syn)?;
+                if args.len() > 0 {
+                    write!(f, "<")?;
+                    write_list(f, &args, ", ", |f, arg| write!(f, "{}", arg))?;
+                    write!(f, ">")?;
+                }
+                Ok(())
             }
             Int => write!(f, "Int"),
             Bool => write!(f, "Bool"),

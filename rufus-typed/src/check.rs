@@ -229,7 +229,7 @@ impl Expr {
     pub fn check(&mut self, span: Span, env: &Env, expected: &RcType) -> Result<(), LError> {
         match self {
             Self::Lam(params, body) => {
-                match &*expected.weak_normalize_env(env) {
+                match expected.weak_normalize_env(env).as_ref() {
                     Type::Fun(param_types, result) if params.len() == param_types.len() => {
                         let env = &mut env.clone();
                         env.intro_params(
@@ -278,7 +278,7 @@ impl Expr {
                 elze.check(env, &expected)?;
                 Ok(())
             }
-            Self::Variant(constr, opt_payload) => match &*expected.weak_normalize_env(env) {
+            Self::Variant(constr, opt_payload) => match expected.weak_normalize_env(env).as_ref() {
                 Type::Variant(cons) => {
                     if let Some(opt_typ) = find_by_key(&cons, constr) {
                         match (opt_payload, opt_typ) {
@@ -383,7 +383,7 @@ impl Expr {
             Self::App(func, args) => {
                 let func_type = func.infer(env)?;
                 let num_args = args.len();
-                match &*func_type.weak_normalize_env(env) {
+                match func_type.weak_normalize_env(env).as_ref() {
                     Type::Fun(params, result) if params.len() == num_args => {
                         for (arg, typ) in args.iter_mut().zip(params.iter()) {
                             arg.check(env, typ)?;
@@ -478,7 +478,7 @@ impl Expr {
             Self::Proj(record, field) => {
                 let record_type = record.infer(env)?;
                 let field = field.locatee;
-                match &*record_type.weak_normalize_env(env) {
+                match record_type.weak_normalize_env(env).as_ref() {
                     Type::Record(fields) => {
                         if let Some(field_typ) = find_by_key(&fields, &field) {
                             Ok(field_typ.clone())
@@ -618,7 +618,7 @@ fn check_match_patterns<'a>(
     branches: &'a mut [Branch],
 ) -> Result<Vec<(Option<(&'a LExprVar, RcType)>, &'a mut LExpr)>, LError> {
     let scrut_type = scrut.infer(env)?;
-    match &*scrut_type.weak_normalize_env(env) {
+    match scrut_type.weak_normalize_env(env).as_ref() {
         Type::Variant(constrs) => {
             if branches.len() > 0 {
                 branches

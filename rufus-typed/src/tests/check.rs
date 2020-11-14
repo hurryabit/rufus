@@ -19,8 +19,9 @@ fn check_success(input: &str) {
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
-    module.check().unwrap();
-    // assert!(module.check().is_ok());
+    if let Err(error) = module.check() {
+        panic!("Expected module to type check but got error\n{}: {}", error.span, error.locatee);
+    }
 }
 
 fn check_error(input: &str) -> String {

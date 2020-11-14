@@ -131,7 +131,7 @@ Type rules for expressions:
   E |- e1 <= t1
   ...
   E |- en <= tn
--------------------------------------------------- RecordCheck
+-------------------------------------------------- RecordCheck (TODO)
   E |- {x1 = e1, ..., xn = en}
     <= {x1: t1, ..., xn: tn}
 
