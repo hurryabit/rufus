@@ -294,7 +294,7 @@ impl Expr {
             }
             Self::Let(binder, opt_type_ann, bindee, body) => {
                 let binder_typ = check_let_bindee(env, binder, opt_type_ann, bindee)?;
-                body.check(&env.intro_expr_var(binder, binder_typ), expected)
+                env.intro_binder(binder, binder_typ, |env| body.check(env, expected))
             }
             Self::If(cond, then, elze) => {
                 cond.check(env, &RcType::new(Type::Bool))?;
@@ -330,12 +330,8 @@ impl Expr {
             },
             Self::Match(scrut, branches) => {
                 let branches = check_match_patterns(env, scrut, branches)?;
-                for (opt_binder, body) in branches {
-                    if let Some((var, typ)) = opt_binder {
-                        body.check(&env.intro_expr_var(var, typ.clone()), expected)?
-                    } else {
-                        body.check(env, expected)?
-                    }
+                for (binder, body) in branches {
+                    env.intro_opt_binder(binder, |env| body.check(env, expected))?;
                 }
                 Ok(())
             }
@@ -500,7 +496,7 @@ impl Expr {
             }
             Self::Let(binder, opt_type_ann, bindee, body) => {
                 let binder_typ = check_let_bindee(env, binder, opt_type_ann, bindee)?;
-                body.infer(&env.intro_expr_var(binder, binder_typ))
+                env.intro_binder(binder, binder_typ, |env| body.infer(env))
             }
             Self::If(cond, then, elze) => {
                 cond.check(env, &RcType::new(Type::Bool))?;
@@ -538,20 +534,12 @@ impl Expr {
             Self::Match(scrut, branches) => {
                 let branches = check_match_patterns(env, scrut, branches)?;
                 let mut iter = branches.into_iter();
-                let (opt_binder, body) = iter
+                let (binder, body) = iter
                     .next()
                     .expect("IMPOSSIBLE: check_match_pattern ensures we have at least one branch");
-                let body_type = if let Some((var, typ)) = opt_binder {
-                    body.infer(&env.intro_expr_var(var, typ.clone()))?
-                } else {
-                    body.infer(env)?
-                };
-                for (opt_binder, body) in iter {
-                    if let Some((var, typ)) = opt_binder {
-                        body.check(&env.intro_expr_var(var, typ.clone()), &body_type)?
-                    } else {
-                        body.check(env, &body_type)?
-                    }
+                let body_type = env.intro_opt_binder(binder, |env| body.infer(env))?;
+                for (binder, body) in iter {
+                    env.intro_opt_binder(binder, |env| body.check(env, &body_type))?;
                 }
                 Ok(body_type)
             }
@@ -561,10 +549,24 @@ impl Expr {
 }
 
 impl TypeEnv {
-    fn intro_expr_var(&self, var: &LExprVar, typ: RcType) -> Self {
+    fn intro_binder<F, R>(&self, var: &LExprVar, typ: RcType, f: F) -> R
+    where
+        F: FnOnce(&Self) -> R,
+    {
         let mut env = self.clone();
         env.expr_vars.insert(var.locatee, typ);
-        env
+        f(&env)
+    }
+
+    fn intro_opt_binder<F, R>(&self, binder: Option<(&LExprVar, RcType)>, f: F) -> R
+    where
+        F: FnOnce(&Self) -> R,
+    {
+        if let Some((var, typ)) = binder {
+            self.intro_binder(var, typ, f)
+        } else {
+            f(self)
+        }
     }
 }
 
