@@ -302,10 +302,14 @@ impl Expr {
                 elze.check(env, &expected)?;
                 Ok(())
             }
-            Self::Variant(con, arg) => match &*expected.weak_normalize_env(env) {
+            Self::Variant(con, opt_payload) => match &*expected.weak_normalize_env(env) {
                 Type::Variant(cons) => {
-                    if let Some(arg_typ) = find_by_key(&cons, &con.locatee) {
-                        arg.check(env, arg_typ)
+                    if let Some(opt_typ) = find_by_key(&cons, &con.locatee) {
+                        match (opt_payload, opt_typ) {
+                            (None, None) => Ok(()),
+                            (Some(payload), Some(typ)) => payload.check(env, typ),
+                            (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, expected, con, span),
+                        }
                     } else {
                         Err(Located::new(
                             Error::BadVariantConstr(expected.clone(), con.locatee),
@@ -557,7 +561,7 @@ impl LBranch {
         &mut self,
         env: &TypeEnv,
         scrut_type: &RcType,
-        cons: &Vec<(ExprCon, RcType)>,
+        cons: &Vec<(ExprCon, Option<RcType>)>,
     ) -> Result<RcType, LError> {
         self.locatee.infer(self.span, env, scrut_type, cons)
     }
@@ -566,7 +570,7 @@ impl LBranch {
         &mut self,
         env: &TypeEnv,
         scrut_type: &RcType,
-        cons: &Vec<(ExprCon, RcType)>,
+        cons: &Vec<(ExprCon, Option<RcType>)>,
         expected: &RcType,
     ) -> Result<(), LError> {
         self.locatee
@@ -580,13 +584,13 @@ impl Branch {
         span: Span,
         env: &TypeEnv,
         scrut_type: &RcType,
-        cons: &Vec<(ExprCon, RcType)>,
+        cons: &Vec<(ExprCon, Option<RcType>)>,
     ) -> Result<RcType, LError> {
-        if let Some(arg_type) = find_by_key(cons, &self.con.locatee) {
-            if let Some(var) = &self.var {
-                self.rhs.infer(&env.intro_expr_var(var, arg_type.clone()))
-            } else {
-                self.rhs.infer(env)
+        if let Some(opt_typ) = find_by_key(cons, &self.con.locatee) {
+            match (&self.var, opt_typ) {
+                (None, None) => self.rhs.infer(env),
+                (Some(var), Some(typ)) => self.rhs.infer(&env.intro_expr_var(var, typ.clone())),
+                (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, scrut_type, &self.con, span),
             }
         } else {
             Err(Located::new(
@@ -601,15 +605,14 @@ impl Branch {
         span: Span,
         env: &TypeEnv,
         scrut_type: &RcType,
-        cons: &Vec<(ExprCon, RcType)>,
+        cons: &Vec<(ExprCon, Option<RcType>)>,
         expected: &RcType,
     ) -> Result<(), LError> {
-        if let Some(arg_type) = find_by_key(cons, &self.con.locatee) {
-            if let Some(var) = &self.var {
-                self.rhs
-                    .check(&env.intro_expr_var(var, arg_type.clone()), expected)
-            } else {
-                self.rhs.check(env, expected)
+        if let Some(opt_typ) = find_by_key(cons, &self.con.locatee) {
+            match (&self.var, opt_typ) {
+                (None, None) => self.rhs.check(env, expected),
+                (Some(var), Some(typ)) => self.rhs.check(&env.intro_expr_var(var, typ.clone()), expected),
+                (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, scrut_type, &self.con, span),
             }
         } else {
             Err(Located::new(

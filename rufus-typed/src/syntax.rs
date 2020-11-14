@@ -50,7 +50,7 @@ pub enum Type {
     Bool,
     Fun(Vec<LType>, Box<LType>),
     Record(Vec<(LExprVar, LType)>),
-    Variant(Vec<(LExprCon, LType)>),
+    Variant(Vec<(LExprCon, Option<LType>)>),
 }
 
 pub type LType = Located<Type>;
@@ -68,7 +68,7 @@ pub enum Expr {
     If(Box<LExpr>, Box<LExpr>, Box<LExpr>),
     Record(Vec<(LExprVar, LExpr)>),
     Proj(Box<LExpr>, LExprVar),
-    Variant(LExprCon, Box<LExpr>),
+    Variant(LExprCon, Option<Box<LExpr>>),
     Match(Box<LExpr>, Vec<LBranch>),
 }
 

@@ -41,12 +41,9 @@ LType: LType = {
     Located<Type>
 }
 
-VariantCaseType: (LExprCon, LType) = {
-    LExprCon InParens<LType> => (<>),
-    <con: LExprCon> => {
-        let span = con.span;
-        (con, Located::new(Type::Record(vec![]), span))
-    },
+VariantCaseType: (LExprCon, Option<LType>) = {
+    <con: LExprCon> <typ: InParens<LType>> => (con, Some(typ)),
+    <con: LExprCon> => (con, None),
 }
 
 pub Expr: Expr = {
@@ -104,12 +101,8 @@ AtomExpr: Expr = {
     <Box<Located<FunInst>>> "(" <List0<LExpr, ",">> ")" => Expr::App(<>),
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<LAtomExpr>> "." <LExprVar> => Expr::Proj(<>),
-    <LExprCon> <Box<InParens<LExpr>>> => Expr::Variant(<>),
-    // TODO(MH): Is this a sensible span?
-    <con: LExprCon> => {
-        let span = con.span;
-        Expr::Variant(con, Box::new(Located::new(Expr::Record(vec![]), span)))
-    },
+    <con: LExprCon> <payload: Box<InParens<LExpr>>> => Expr::Variant(con, Some(payload)),
+    <con: LExprCon> => Expr::Variant(con, None),
     ! => { errors.push(<>); Expr::Error },
 }
 

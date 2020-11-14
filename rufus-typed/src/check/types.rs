@@ -15,7 +15,7 @@ pub enum Type<T = RcType> {
     Bool,
     Fun(Vec<T>, T),
     Record(Vec<(ExprVar, T)>),
-    Variant(Vec<(ExprCon, T)>),
+    Variant(Vec<(ExprCon, Option<T>)>),
 }
 
 #[derive(Clone, Debug)]
@@ -112,7 +112,11 @@ impl RcType {
                         && constrs1
                             .iter()
                             .zip(constrs2.iter())
-                            .all(|((_, typ1), (_, typ2))| typ1.equiv(typ2, type_defs))
+                            .all(|((_, opt_typ1), (_, opt_typ2))| match (opt_typ1, opt_typ2) {
+                                (None, None)  => true,
+                                (None, Some(_)) | (Some(_), None) => false,
+                                (Some(typ1), Some(typ2)) => typ1.equiv(typ2, type_defs),
+                            })
                 }
                 (Var(_), _)
                 | (Int, _)
@@ -162,7 +166,7 @@ impl Type {
             SynType::Variant(constrs) => {
                 let constrs = constrs
                     .iter()
-                    .map(|(name, typ)| (name.locatee, RcType::from_lsyntax(typ)))
+                    .map(|(name, opt_typ)| (name.locatee, opt_typ.as_ref().map(RcType::from_lsyntax)))
                     .collect();
                 Type::Variant(constrs)
             }
@@ -198,7 +202,7 @@ impl Type {
             Type::Variant(constrs) => {
                 let constrs = constrs
                     .iter()
-                    .map(|(name, typ)| (Located::gen(*name), typ.to_lsyntax()))
+                    .map(|(name, opt_typ)| (Located::gen(*name), opt_typ.as_ref().map(|typ| typ.to_lsyntax())))
                     .collect();
                 SynType::Variant(constrs)
             }
@@ -232,8 +236,10 @@ impl<T> Type<T> {
                     }
                 }
                 Variant(constrs) => {
-                    for (_name, typ) in constrs {
-                        yield_!(typ);
+                    for (_name, opt_typ) in constrs {
+                        if let Some(typ) = opt_typ {
+                            yield_!(typ);
+                        }
                     }
                 }
             }
@@ -243,7 +249,7 @@ impl<T> Type<T> {
 
     pub fn map<U, F>(&self, f: F) -> Type<U>
     where
-        F: Fn(&T) -> U,
+        F: Fn(&T) -> U + Copy,
     {
         use Type::*;
         match self {
@@ -270,7 +276,7 @@ impl<T> Type<T> {
             Variant(constrs) => {
                 let constrs = constrs
                     .iter()
-                    .map(|(name, child)| (*name, f(child)))
+                    .map(|(name, opt_child)| (*name, opt_child.as_ref().map(f)))
                     .collect();
                 Variant(constrs)
             }
@@ -351,8 +357,12 @@ impl fmt::Display for Type {
             }
             Variant(constrs) => {
                 f.write_str("[")?;
-                write_list(f, &constrs, " | ", |f, (consts, typ)| {
-                    write!(f, "{}({})", consts, typ)
+                write_list(f, &constrs, " | ", |f, (constr, opt_typ)| {
+                    if let Some(typ) = opt_typ {
+                        write!(f, "{}({})", constr, typ)
+                    } else {
+                        write!(f, "{}", constr)
+                    }
                 })?;
                 f.write_str("]")
             }

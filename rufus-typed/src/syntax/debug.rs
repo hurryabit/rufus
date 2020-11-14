@@ -95,9 +95,11 @@ impl Debug for Type {
                 Ok(())
             }),
             Variant(constrs) => writer.node("VARIANT", |writer| {
-                for (constr, typ) in constrs {
+                for (constr, opt_typ) in constrs {
                     writer.child("constr", constr)?;
-                    writer.child("type", typ)?;
+                    if let Some(typ) = opt_typ {
+                        writer.child("type", typ)?;
+                    }
                 }
                 Ok(())
             }),
@@ -177,9 +179,12 @@ impl Debug for Expr {
                 writer.child("record", record)?;
                 writer.child("field", field)
             }),
-            Variant(constr, payload) => writer.node("VARIANT", |writer| {
+            Variant(constr, opt_payload) => writer.node("VARIANT", |writer| {
                 writer.child("constr", constr)?;
-                writer.child("payload", payload)
+                if let Some(payload) = opt_payload {
+                    writer.child("payload", payload)?;
+                }
+                Ok(())
             }),
             Match(scrut, branches) => writer.node("MATCH", |writer| {
                 writer.child("scrut", scrut)?;

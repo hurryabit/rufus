@@ -1005,3 +1005,158 @@ fn rule_proj_bad_field() {
     Expression of type `{a: Int}` do not contain a field named `b`.
     "###);
 }
+
+#[test]
+fn rule_variant_without_payload_1() {
+    check_success(r#"
+    fn f() -> [CheckMe] {
+        CheckMe
+    }
+    "#);
+}
+
+#[test]
+fn rule_variant_without_payload_2() {
+    check_success(r#"
+    fn f() -> [IgnoreMe | CheckMe] {
+        CheckMe
+    }
+    "#);
+}
+
+#[test]
+fn rule_variant_without_payload_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let x = InferMe;
+        0
+    }
+    "#), @r###"
+      2 |         let x = InferMe;
+                          ~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_variant_without_payload_no_variant_type() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        CheckMe
+    }
+    "#), @r###"
+      2 |         CheckMe
+                  ~~~~~~~
+    Expected an expression of type `Int` but found variant constructor `CheckMe`.
+    "###);
+}
+
+#[test]
+fn rule_variant_without_payload_unknown_constructor() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> [NotCheckMe] {
+        CheckMe
+    }
+    "#), @r###"
+      2 |         CheckMe
+                  ~~~~~~~
+    `CheckMe` is not a possible constructor for variant type `[NotCheckMe]`.
+    "###);
+}
+
+#[test]
+fn rule_variant_without_payload_constructor_with_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> [CheckMe(Int)] {
+        CheckMe
+    }
+    "#), @r###"
+      2 |         CheckMe
+                  ~~~~~~~
+    Constructor `CheckMe` of variant type `[CheckMe(Int)]` needs a payload.
+    "###);
+}
+
+#[test]
+fn rule_variant_with_payload_1() {
+    check_success(r#"
+    fn f() -> [CheckMe((Int) -> Int)] {
+        CheckMe(fn (x) { x })
+    }
+    "#);
+}
+
+#[test]
+fn rule_variant_with_payload_2() {
+    check_success(r#"
+    fn f() -> [IgnoreMe | CheckMe([CheckMeToo])] {
+        CheckMe(CheckMeToo)
+    }
+    "#);
+}
+
+#[test]
+fn rule_variant_with_payload_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let x = InferMe(0);
+        0
+    }
+    "#), @r###"
+      2 |         let x = InferMe(0);
+                          ~~~~~~~~~~
+    Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_variant_with_payload_no_variant_type() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        CheckMe(0)
+    }
+    "#), @r###"
+      2 |         CheckMe(0)
+                  ~~~~~~~~~~
+    Expected an expression of type `Int` but found variant constructor `CheckMe`.
+    "###);
+}
+
+#[test]
+fn rule_variant_with_payload_unknown_constructor() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> [NotCheckMe] {
+        CheckMe(0)
+    }
+    "#), @r###"
+      2 |         CheckMe(0)
+                  ~~~~~~~~~~
+    `CheckMe` is not a possible constructor for variant type `[NotCheckMe]`.
+    "###);
+}
+
+#[test]
+fn rule_variant_with_payload_constructor_without_payload() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> [CheckMe] {
+        CheckMe(0)
+    }
+    "#), @r###"
+      2 |         CheckMe(0)
+                  ~~~~~~~~~~
+    Constructor `CheckMe` of variant type `[CheckMe]` does not take a payload.
+    "###);
+}
+
+#[test]
+fn rule_variant_with_payload_mismatch() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> [CheckMe(Int)] {
+        CheckMe(CheckMeToo)
+    }
+    "#), @r###"
+      2 |         CheckMe(CheckMeToo)
+                          ~~~~~~~~~~
+    Expected an expression of type `Int` but found variant constructor `CheckMeToo`.
+    "###);
+}

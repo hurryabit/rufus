@@ -201,7 +201,6 @@ fn variant0() {
     insta::assert_debug_snapshot!(parse("A"), @r###"
     VARIANT
       constr: A @ 0...1
-      payload: RECORD @ 0...1
     "###);
 }
 
@@ -219,7 +218,6 @@ fn variant_int() {
     insta::assert_debug_snapshot!(parse("Int"), @r###"
     VARIANT
       constr: Int @ 0...3
-      payload: RECORD @ 0...3
     "###);
 }
 
@@ -228,7 +226,6 @@ fn variant_bool() {
     insta::assert_debug_snapshot!(parse("Bool"), @r###"
     VARIANT
       constr: Bool @ 0...4
-      payload: RECORD @ 0...4
     "###);
 }
 

@@ -2,7 +2,7 @@ use super::types::*;
 use super::Arity;
 use crate::syntax;
 use std::fmt;
-use syntax::{ExprCon, ExprVar, Located, Span, TypeVar};
+use syntax::{ExprCon, ExprVar, LExprCon, Located, Span, TypeVar};
 
 #[derive(Debug)]
 pub enum Error<Pos = usize> {
@@ -51,6 +51,14 @@ pub enum Error<Pos = usize> {
         field: ExprVar,
     },
     BadLam(RcType, Arity),
+    VariantExpectedPayload {
+        variant_type: RcType,
+        constr: ExprCon,
+    },
+    VariantUnexpectedPayload {
+        variant_type: RcType,
+        constr: ExprCon,
+    },
     BadVariantConstr(RcType, ExprCon),
     UnexpectedVariantType(RcType, ExprCon),
     BadMatch(RcType),
@@ -60,6 +68,32 @@ pub enum Error<Pos = usize> {
 }
 
 pub type LError<Pos = usize> = Located<Error<Pos>, Pos>;
+
+impl LError {
+    pub fn variant_payload<Pos, T, R>(
+        opt_payload: &Option<T>,
+        opt_payload_type: &Option<RcType>,
+        variant_type: &RcType,
+        constr: &LExprCon,
+        span: Span<Pos>,
+    ) -> Result<R, LError<Pos>> {
+        // TODO(MH): Use `!` instead of `()` once the never type is stable.
+        let error = match (opt_payload, opt_payload_type) {
+            (None, None) | (Some(_), Some(_)) => {
+                panic!("IMPOSSIBLE: Error::variant_payload with None/None or Some/Some")
+            }
+            (None, Some(_)) => Error::VariantExpectedPayload {
+                variant_type: variant_type.clone(),
+                constr: constr.locatee,
+            },
+            (Some(_), None) => Error::VariantUnexpectedPayload {
+                variant_type: variant_type.clone(),
+                constr: constr.locatee,
+            },
+        };
+        Err(Located::new(error, span))
+    }
+}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -158,6 +192,12 @@ impl fmt::Display for Error {
                 "Expected an expression of type `{}` but found a lambda with {} parameter{}.",
                 expected, arity, plural(*arity)
             ),
+            VariantExpectedPayload {
+                variant_type, constr
+            } => write!(f, "Constructor `{}` of variant type `{}` needs a payload.", constr, variant_type),
+            VariantUnexpectedPayload {
+                variant_type, constr
+            } => write!(f, "Constructor `{}` of variant type `{}` does not take a payload.", constr, variant_type),
             BadVariantConstr(expected, con) => write!(
                 f,
                 "`{}` is not a possible constructor for variant type `{}`.",

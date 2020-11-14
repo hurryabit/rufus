@@ -128,9 +128,14 @@ This is the core library for a typed version of the rufus language, containing t
   E |- e.xi => ti
 
 
-  E |- e <= ti
--------------------------------------------------- Variant
-  E |- ci(e) <= [c1(t1) | ... | cn(tn)]
+  .
+-------------------------------------------------- VariantWithoutPayload
+  E |- ci <= [... | ci | ...]
+
+
+  E |- e <= t
+-------------------------------------------------- VariantWithPayload
+  E |- ci(e) <= [... | ci(t) | ...]
 
 
   E |- e => [d1(s1) | ... | dm(sm)]

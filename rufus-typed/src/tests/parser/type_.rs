@@ -121,7 +121,6 @@ fn variant1_unit() {
     insta::assert_debug_snapshot!(parse("[A]"), @r###"
     VARIANT
       constr: A @ 1...2
-      type: RECORD @ 1...2
     "###);
 }
 
@@ -139,9 +138,7 @@ fn variant2_units() {
     insta::assert_debug_snapshot!(parse("[A | B]"), @r###"
     VARIANT
       constr: A @ 1...2
-      type: RECORD @ 1...2
       constr: B @ 5...6
-      type: RECORD @ 5...6
     "###);
 }
 
@@ -150,7 +147,6 @@ fn variant2_unit_payload() {
     insta::assert_debug_snapshot!(parse("[A | B(Int)]"), @r###"
     VARIANT
       constr: A @ 1...2
-      type: RECORD @ 1...2
       constr: B @ 5...6
       type: Int @ 7...10
     "###);
@@ -163,7 +159,6 @@ fn variant2_payload_unit() {
       constr: A @ 1...2
       type: Bool @ 3...7
       constr: B @ 11...12
-      type: RECORD @ 11...12
     "###);
 }
 
@@ -185,7 +180,6 @@ fn variant2_extra_bar() {
     insta::assert_debug_snapshot!(parse("[A | B(Int) |]"), @r###"
     VARIANT
       constr: A @ 1...2
-      type: RECORD @ 1...2
       constr: B @ 5...6
       type: Int @ 7...10
     "###);
