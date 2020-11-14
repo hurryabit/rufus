@@ -323,20 +323,15 @@ impl Expr {
                 )),
             },
             Self::Match(scrut, branches) => {
-                let scrut_typ = scrut.infer(env)?;
-                match &*scrut_typ.weak_normalize_env(env) {
-                    Type::Variant(cons) => {
-                        if !branches.is_empty() {
-                            for branch in branches {
-                                branch.check(env, &scrut_typ, cons, expected)?;
-                            }
-                            Ok(())
-                        } else {
-                            Err(Located::new(Error::EmptyMatch, span))
-                        }
+                let branches = check_match_patterns(env, scrut, branches)?;
+                for (opt_binder, body) in branches {
+                    if let Some((var, typ)) = opt_binder {
+                        body.check(&env.intro_expr_var(var, typ.clone()), expected)?
+                    } else {
+                        body.check(env, expected)?
                     }
-                    _ => Err(Located::new(Error::BadMatch(scrut_typ), scrut.span)),
-                }
+                };
+                Ok(())
             }
             Self::Error
             | Self::Var(_)
@@ -535,70 +530,24 @@ impl Expr {
                 }
             }
             Self::Match(scrut, branches) => {
-                let scrut_typ = scrut.infer(env)?;
-                match &*scrut_typ.weak_normalize_env(env) {
-                    Type::Variant(cons) => {
-                        if let Some((first, rest)) = branches.split_first_mut() {
-                            let rhs_typ = first.infer(env, &scrut_typ, cons)?;
-                            for branch in rest {
-                                branch.check(env, &scrut_typ, cons, &rhs_typ)?;
-                            }
-                            Ok(rhs_typ)
-                        } else {
-                            Err(Located::new(Error::EmptyMatch, span))
-                        }
+                let branches = check_match_patterns(env, scrut, branches)?;
+                let mut iter = branches.into_iter();
+                let (opt_binder, body) = iter.next().expect("IMPOSSIBLE: check_match_pattern ensures we have at least one branch");
+                let body_type = if let Some((var, typ)) = opt_binder {
+                    body.infer(&env.intro_expr_var(var, typ.clone()))?
+                } else {
+                    body.infer(env)?
+                };
+                for (opt_binder, body) in iter {
+                    if let Some((var, typ)) = opt_binder {
+                        body.check(&env.intro_expr_var(var, typ.clone()), &body_type)?
+                    } else {
+                        body.check(env, &body_type)?
                     }
-                    _ => Err(Located::new(Error::BadMatch(scrut_typ), scrut.span)),
-                }
+                };
+                Ok(body_type)
             }
             Self::Variant(_, _) => Err(Located::new(Error::TypeAnnsNeeded, span)),
-        }
-    }
-}
-
-impl Branch {
-    fn infer(
-        &mut self,
-        env: &TypeEnv,
-        scrut_type: &RcType,
-        cons: &Vec<(ExprCon, Option<RcType>)>,
-    ) -> Result<RcType, LError> {
-        let Self { pattern, body: rhs } = self;
-        let constr = pattern.locatee.constr;
-        if let Some(opt_typ) = find_by_key(cons, &constr) {
-            match (&pattern.locatee.binder, opt_typ) {
-                (None, None) => rhs.infer(env),
-                (Some(var), Some(typ)) => rhs.infer(&env.intro_expr_var(var, typ.clone())),
-                (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, scrut_type, constr, pattern.span),
-            }
-        } else {
-            Err(Located::new(
-                Error::BadBranch(scrut_type.clone(), constr),
-                pattern.span,
-            ))
-        }
-    }
-
-    fn check(
-        &mut self,
-        env: &TypeEnv,
-        scrut_type: &RcType,
-        cons: &Vec<(ExprCon, Option<RcType>)>,
-        expected: &RcType,
-    ) -> Result<(), LError> {
-        let Self { pattern, body: rhs } = self;
-        let constr = pattern.locatee.constr;
-        if let Some(opt_typ) = find_by_key(cons, &constr) {
-            match (&pattern.locatee.binder, opt_typ) {
-                (None, None) => rhs.check(env, expected),
-                (Some(var), Some(typ)) => rhs.check(&env.intro_expr_var(var, typ.clone()), expected),
-                (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, scrut_type, constr, pattern.span),
-            }
-        } else {
-            Err(Located::new(
-                Error::BadBranch(scrut_type.clone(), constr),
-                pattern.span,
-            ))
         }
     }
 }
@@ -670,6 +619,38 @@ fn check_let_bindee(
         let typ = bindee.infer(env)?;
         *opt_type_ann = Some(Located::new(typ.to_syntax(), binder.span));
         Ok(typ)
+    }
+}
+
+fn check_match_patterns<'a>(
+    env: &TypeEnv,
+    scrut: &mut LExpr,
+    branches: &'a mut [Branch],
+) -> Result<Vec<(Option<(&'a LExprVar, RcType)>, &'a mut LExpr)>, LError> {
+    let scrut_type = scrut.infer(env)?;
+    match &*scrut_type.weak_normalize_env(env) {
+        Type::Variant(constrs) => {
+            if branches.len() > 0 {
+                branches.iter_mut().map(|Branch { pattern, body }| {
+                    let constr = pattern.locatee.constr;
+                    if let Some(opt_typ) = find_by_key(constrs, &constr) {
+                        match (&pattern.locatee.binder, opt_typ) {
+                            (None, None) => Ok((None, body)),
+                            (Some(var), Some(typ)) => Ok((Some((var, typ.clone())), body)),
+                            (opt_payload, opt_typ) => LError::variant_payload(opt_payload, opt_typ, &scrut_type, constr, pattern.span),
+                        }
+                    } else {
+                        Err(Located::new(
+                            Error::BadBranch(scrut_type.clone(), constr),
+                            pattern.span,
+                        ))
+                    }
+                }).collect::<Result<_, _>>()
+            } else {
+                Err(Located::new(Error::EmptyMatch, scrut.span))
+            }
+        }
+        _ => Err(Located::new(Error::BadMatch(scrut_type), scrut.span)),
     }
 }
 

@@ -1351,6 +1351,41 @@ fn rule_match_infer_branch2_mismatch() {
 }
 
 #[test]
+fn rule_match_infer_unknown_constructor_after_not_inferrable() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A | B]) -> Int {
+        let r = match x {
+            A => InferMe,
+            C => 0,
+        };
+        r
+    }
+    "#), @r###"
+      4 |             C => 0,
+                      ~
+    `C` is not a possible constructor for variant type `[A | B]`.
+    "###);
+}
+
+#[test]
+fn rule_match_infer_unknown_constructor_after_mismatch() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A | B]) -> Int {
+        let r = match x {
+            A => 0,
+            B => CheckMe,
+            C => 0,
+        };
+        r
+    }
+    "#), @r###"
+      5 |             C => 0,
+                      ~
+    `C` is not a possible constructor for variant type `[A | B]`.
+    "###);
+}
+
+#[test]
 fn rule_match_check_without_without_payload() {
     check_success(r#"
     fn f(x: [A | B | C([CheckMe])]) -> [CheckMe] {
@@ -1519,5 +1554,21 @@ fn rule_match_check_branch2_mismatch() {
       4 |             B => CheckMe,
                            ~~~~~~~
     Expected an expression of type `Int` but found variant constructor `CheckMe`.
+    "###);
+}
+
+#[test]
+fn rule_match_check_unknown_constructor_after_mismatch() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f(x: [A | B]) -> Int {
+        match x {
+            A => CheckMe,
+            C => 0,
+        }
+    }
+    "#), @r###"
+      4 |             C => 0,
+                      ~
+    `C` is not a possible constructor for variant type `[A | B]`.
     "###);
 }

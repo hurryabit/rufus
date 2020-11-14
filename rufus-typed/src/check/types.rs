@@ -322,12 +322,12 @@ impl fmt::Display for Type {
         {
             let mut first = true;
             for item in list {
-                f(fmt, item)?;
                 if first {
                     first = false;
                 } else {
                     fmt.write_str(sep)?;
                 }
+                f(fmt, item)?;
             }
             Ok(())
         }
