@@ -9,7 +9,8 @@ pub mod syntax;
 
 lalrpop_mod!(
     #[allow(clippy::all)]
-    pub grammar
+    #[allow(dead_code)]
+    grammar
 );
 
 #[cfg(test)]

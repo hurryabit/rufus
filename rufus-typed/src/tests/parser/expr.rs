@@ -1,42 +1,22 @@
 use crate::*;
-use syntax::*;
-use location::ParserLoc;
-
-use lalrpop_util::ParseError;
+use syntax::Expr;
 
 fn parse(input: &str) -> Expr {
-    let parser = grammar::ExprParser::new();
-    let mut errors = Vec::new();
-    let expr = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
-    expr
+    let (result, diagnostics) = Expr::parse_test(input);
+    assert!(diagnostics.is_empty());
+    result.unwrap()
 }
 
 fn parse_block(input: &str) -> Expr {
-    let parser = grammar::LBlockExprParser::new();
-    let mut errors = Vec::new();
-    let expr = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
-    expr.locatee
+    let (result, diagnostics) = Expr::parse_block_test(input);
+    assert!(diagnostics.is_empty());
+    result.unwrap()
 }
 
-fn parse_err(
-    input: &'static str,
-) -> (
-    Option<Expr>,
-    Vec<ParseError<ParserLoc, grammar::Token<'static>, &'static str>>,
-) {
-    let parser = grammar::ExprParser::new();
-    let mut errors = Vec::new();
-    let result = parser.parse(&mut errors, input);
-    assert!(!errors.is_empty() || result.is_err());
-    match result {
-        Ok(expr) => (Some(expr), errors),
-        Err(error) => {
-            errors.push(error.map_location(ParserLoc::from_usize));
-            (None, errors)
-        }
-    }
+fn parse_err(input: &'static str) -> (Option<Expr>, Vec<diagnostic::Diagnostic>) {
+    let (result, diagnostics) = Expr::parse_test(input);
+    assert!(!diagnostics.is_empty() || result.is_none());
+    (result, diagnostics)
 }
 
 #[test]
@@ -116,24 +96,11 @@ fn app_ty_err() {
               rhs: 1 @ 4...7,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    3,
-                    Token(
-                        17,
-                        ">",
-                    ),
-                    4,
-                ),
-                expected: [
-                    "\")\"",
-                    "\"+\"",
-                    "\",\"",
-                    "\"-\"",
-                    "\";\"",
-                    "\"{\"",
-                    "\"}\"",
-                ],
+            Diagnostic {
+                span: 1:4-1:5,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `>` found at 1:4:1:5\nExpected one of \")\", \"+\", \",\", \"-\", \";\", \"{\" or \"}\"",
             },
         ],
     )
@@ -372,24 +339,11 @@ fn cmp_many_err() {
               rhs: c @ 10...11,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    7,
-                    Token(
-                        15,
-                        "==",
-                    ),
-                    9,
-                ),
-                expected: [
-                    "\")\"",
-                    "\"+\"",
-                    "\",\"",
-                    "\"-\"",
-                    "\";\"",
-                    "\"{\"",
-                    "\"}\"",
-                ],
+            Diagnostic {
+                span: 1:8-1:10,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `==` found at 1:8:1:10\nExpected one of \")\", \"+\", \",\", \"-\", \";\", \"{\" or \"}\"",
             },
         ],
     )
@@ -462,79 +416,29 @@ fn lam1_poly() {
             ERROR,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    2,
-                    Token(
-                        12,
-                        "<",
-                    ),
-                    3,
-                ),
-                expected: [
-                    "\"(\"",
-                ],
+            Diagnostic {
+                span: 1:3-1:4,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `<` found at 1:3:1:4\nExpected one of \"(\"",
             },
-            UnrecognizedToken {
-                token: (
-                    4,
-                    Token(
-                        17,
-                        ">",
-                    ),
-                    5,
-                ),
-                expected: [
-                    "\")\"",
-                    "\"+\"",
-                    "\",\"",
-                    "\"-\"",
-                    "\";\"",
-                    "\"{\"",
-                    "\"}\"",
-                ],
+            Diagnostic {
+                span: 1:5-1:6,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `>` found at 1:5:1:6\nExpected one of \")\", \"+\", \",\", \"-\", \";\", \"{\" or \"}\"",
             },
-            UnrecognizedToken {
-                token: (
-                    7,
-                    Token(
-                        10,
-                        ":",
-                    ),
-                    8,
-                ),
-                expected: [
-                    "\"!=\"",
-                    "\"(\"",
-                    "\")\"",
-                    "\"*\"",
-                    "\"+\"",
-                    "\",\"",
-                    "\"-\"",
-                    "\".\"",
-                    "\"/\"",
-                    "\";\"",
-                    "\"<\"",
-                    "\"<=\"",
-                    "\"=\"",
-                    "\"==\"",
-                    "\">\"",
-                    "\">=\"",
-                    "\"@\"",
-                    "\"{\"",
-                    "\"}\"",
-                ],
+            Diagnostic {
+                span: 1:8-1:9,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `:` found at 1:8:1:9\nExpected one of \"!=\", \"(\", \")\", \"*\", \"+\", \",\", \"-\", \".\", \"/\", \";\", \"<\", \"<=\", \"=\", \"==\", \">\", \">=\", \"@\", \"{\" or \"}\"",
             },
-            UnrecognizedToken {
-                token: (
-                    12,
-                    Token(
-                        22,
-                        "{",
-                    ),
-                    13,
-                ),
-                expected: [],
+            Diagnostic {
+                span: 1:13-1:14,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `{` found at 1:13:1:14",
             },
         ],
     )
@@ -680,18 +584,11 @@ fn match1_expr_nocomma() {
             ERROR,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    17,
-                    Token(
-                        24,
-                        "}",
-                    ),
-                    18,
-                ),
-                expected: [
-                    "\",\"",
-                ],
+            Diagnostic {
+                span: 1:18-1:19,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `}` found at 1:18:1:19\nExpected one of \",\"",
             },
         ],
     )
@@ -711,19 +608,11 @@ fn match1_block_comma() {
                 body: ERROR @ 15...20,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    20,
-                    Token(
-                        5,
-                        ",",
-                    ),
-                    21,
-                ),
-                expected: [
-                    "\"}\"",
-                    "ID_UPPER",
-                ],
+            Diagnostic {
+                span: 1:21-1:22,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `,` found at 1:21:1:22\nExpected one of \"}\" or ID_UPPER",
             },
         ],
     )

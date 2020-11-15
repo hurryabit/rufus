@@ -59,8 +59,12 @@ LExpr: LExpr = {
     Located<Expr>,
 }
 
+pub BlockExpr: Expr = {
+    "{" <Statements> "}"
+}
+
 // NOTE(MH): We want to take the location insider the curlies.
-pub LBlockExpr: LExpr = {
+LBlockExpr: LExpr = {
     "{" <LStatements> "}"
 }
 

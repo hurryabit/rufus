@@ -10,19 +10,17 @@ mod types;
 
 #[allow(dead_code)]
 fn check_output(input: &str) -> Module {
-    let parser = grammar::ModuleParser::new();
-    let mut errors = Vec::new();
-    let mut module = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
+    let (result, diagnostics) = Module::parse_test(input);
+    assert!(diagnostics.is_empty());
+    let mut module = result.unwrap();
     module.check().unwrap();
     module
 }
 
 fn check_output_type(name: &str, input: &str) -> Type {
-    let parser = grammar::ModuleParser::new();
-    let mut errors = Vec::new();
-    let mut module = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
+    let (result, diagnostics) = Module::parse_test(input);
+    assert!(diagnostics.is_empty());
+    let mut module = result.unwrap();
     module.check().unwrap();
     module
         .decls
@@ -37,10 +35,9 @@ fn check_output_type(name: &str, input: &str) -> Type {
 }
 
 fn check_output_func_decl(name: &str, input: &str) -> FuncDecl {
-    let parser = grammar::ModuleParser::new();
-    let mut errors = Vec::new();
-    let mut module = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
+    let (result, diagnostics) = Module::parse_test(input);
+    assert!(diagnostics.is_empty());
+    let mut module = result.unwrap();
     module.check().unwrap();
     module
         .decls
@@ -60,10 +57,9 @@ fn check_output_func_body(name: &str, input: &str) -> Expr {
 
 
 fn check_success(input: &str) {
-    let parser = grammar::ModuleParser::new();
-    let mut errors = Vec::new();
-    let mut module = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
+    let (result, diagnostics) = Module::parse_test(input);
+    assert!(diagnostics.is_empty());
+    let mut module = result.unwrap();
     if let Err(error) = module.check() {
         panic!(
             "Expected module to type check but got error\n{:?}: {}",
@@ -73,12 +69,11 @@ fn check_success(input: &str) {
 }
 
 fn check_error(input: &str) -> String {
-    let parser = grammar::ModuleParser::new();
-    let mut errors = Vec::new();
-    let mut module = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
-    let error = module.check().unwrap_err();
     let humanizer = location::Humanizer::new(input);
+    let (result, diagnostics) = Module::parse(input, &humanizer);
+    assert!(diagnostics.is_empty());
+    let mut module = result.unwrap();
+    let error = module.check().unwrap_err();
     let span = error.span.humanize(&humanizer);
     let error = error.locatee;
     if span.start.line == span.end.line {

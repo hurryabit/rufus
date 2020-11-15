@@ -1,15 +1,18 @@
 use crate::location::*;
 
+#[derive(Debug)]
 pub enum Severity {
     Warning,
     Error,
 }
 
+#[derive(Debug)]
 pub enum Source {
     Parser,
     Checker,
 }
 
+#[derive(Debug)]
 pub struct Diagnostic {
     pub span: Span<HumanLoc>,
     pub severity: Severity,

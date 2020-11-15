@@ -1,16 +1,13 @@
+use crate::syntax::Module;
+
 mod decl;
 mod expr;
 mod type_;
 
-use crate::*;
-use syntax::*;
-
 fn parse(input: &str) -> Module {
-    let parser = grammar::ModuleParser::new();
-    let mut errors = Vec::new();
-    let module = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
-    module
+  let (result, diagnostics) = Module::parse_test(input);
+  assert!(diagnostics.is_empty());
+  result.unwrap()
 }
 
 #[test]

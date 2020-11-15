@@ -1,34 +1,16 @@
 use crate::*;
-use syntax::*;
-use location::ParserLoc;
+use syntax::Type;
 
-use lalrpop_util::ParseError;
-
-fn parse(input: &'static str) -> Type {
-    let parser = grammar::TypeParser::new();
-    let mut errors = Vec::new();
-    let typ = parser.parse(&mut errors, input).unwrap();
-    assert_eq!(errors, vec![]);
-    typ
+fn parse(input: &str) -> Type {
+    let (result, diagnostics) = Type::parse_test(input);
+    assert!(diagnostics.is_empty());
+    result.unwrap()
 }
 
-fn parse_err(
-    input: &'static str,
-) -> (
-    Option<Type>,
-    Vec<ParseError<ParserLoc, grammar::Token<'static>, &'static str>>,
-) {
-    let parser = grammar::TypeParser::new();
-    let mut errors = Vec::new();
-    let result = parser.parse(&mut errors, input);
-    assert!(!errors.is_empty() || result.is_err());
-    match result {
-        Ok(expr) => (Some(expr), errors),
-        Err(error) => {
-            errors.push(error.map_location(ParserLoc::from_usize));
-            (None, errors)
-        }
-    }
+fn parse_err(input: &'static str) -> (Option<Type>, Vec<diagnostic::Diagnostic>) {
+    let (result, diagnostics) = Type::parse_test(input);
+    assert!(!diagnostics.is_empty() || result.is_none());
+    (result, diagnostics)
 }
 
 #[test]
@@ -192,22 +174,11 @@ fn func_type_zero_params_one_comma() {
               result: Int @ 7...10,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    1,
-                    Token(
-                        5,
-                        ",",
-                    ),
-                    2,
-                ),
-                expected: [
-                    "\"(\"",
-                    "\")\"",
-                    "\"[\"",
-                    "\"{\"",
-                    "ID_UPPER",
-                ],
+            Diagnostic {
+                span: 1:2-1:3,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `,` found at 1:2:1:3\nExpected one of \"(\", \")\", \"[\", \"{\" or ID_UPPER",
             },
         ],
     )
@@ -224,21 +195,11 @@ fn type_app_zero_args() {
               type_arg: ERROR @ 2...2,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    2,
-                    Token(
-                        17,
-                        ">",
-                    ),
-                    3,
-                ),
-                expected: [
-                    "\"(\"",
-                    "\"[\"",
-                    "\"{\"",
-                    "ID_UPPER",
-                ],
+            Diagnostic {
+                span: 1:3-1:4,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `>` found at 1:3:1:4\nExpected one of \"(\", \"[\", \"{\" or ID_UPPER",
             },
         ],
     )
@@ -253,19 +214,11 @@ fn record_zero_field_one_comma() {
             ERROR,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    1,
-                    Token(
-                        5,
-                        ",",
-                    ),
-                    2,
-                ),
-                expected: [
-                    "\"}\"",
-                    "ID_LOWER",
-                ],
+            Diagnostic {
+                span: 1:2-1:3,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `,` found at 1:2:1:3\nExpected one of \"}\" or ID_LOWER",
             },
         ],
     )
@@ -280,18 +233,11 @@ fn variant_zero_constructors() {
             ERROR,
         ),
         [
-            UnrecognizedToken {
-                token: (
-                    1,
-                    Token(
-                        21,
-                        "]",
-                    ),
-                    2,
-                ),
-                expected: [
-                    "ID_UPPER",
-                ],
+            Diagnostic {
+                span: 1:2-1:3,
+                severity: Error,
+                source: Parser,
+                message: "Unrecognized token `]` found at 1:2:1:3\nExpected one of ID_UPPER",
             },
         ],
     )
