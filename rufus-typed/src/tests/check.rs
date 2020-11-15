@@ -10,7 +10,7 @@ mod types;
 
 #[allow(dead_code)]
 fn check_output(input: &str) -> Module {
-    let parser = parser::ModuleParser::new();
+    let parser = grammar::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
@@ -19,7 +19,7 @@ fn check_output(input: &str) -> Module {
 }
 
 fn check_output_type(name: &str, input: &str) -> Type {
-    let parser = parser::ModuleParser::new();
+    let parser = grammar::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
@@ -37,7 +37,7 @@ fn check_output_type(name: &str, input: &str) -> Type {
 }
 
 fn check_output_func_decl(name: &str, input: &str) -> FuncDecl {
-    let parser = parser::ModuleParser::new();
+    let parser = grammar::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
@@ -60,7 +60,7 @@ fn check_output_func_body(name: &str, input: &str) -> Expr {
 
 
 fn check_success(input: &str) {
-    let parser = parser::ModuleParser::new();
+    let parser = grammar::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
@@ -73,7 +73,7 @@ fn check_success(input: &str) {
 }
 
 fn check_error(input: &str) -> String {
-    let parser = parser::ModuleParser::new();
+    let parser = grammar::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);

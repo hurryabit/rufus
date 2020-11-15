@@ -15,9 +15,8 @@ use lsp_types::{
 
 use lsp_server::{Connection, Message, Request, RequestId, Response};
 
-use lalrpop_util::ParseError;
-
-use rufus_typed::{parser, util};
+use rufus_typed::util;
+use rufus_typed::syntax::Module;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     // Set up logging. Because `stdio_transport` gets a lock on stdout and stdin, we must have
@@ -125,33 +124,6 @@ fn main_loop(
     Ok(())
 }
 
-fn error_to_diagnostic(
-    trans: &util::PositionTranslator,
-    error: ParseError<usize, parser::Token<'_>, &'static str>,
-) -> Diagnostic {
-    use util::Position;
-    use ParseError::*;
-    let error = error.map_location(|index| trans.position(index));
-    let (start, end) = match error {
-        InvalidToken { location } | UnrecognizedEOF { location, .. } => (location, location),
-        UnrecognizedToken {
-            token: (start, _, end),
-            ..
-        }
-        | ExtraToken {
-            token: (start, _, end),
-        } => (start, end),
-        User { .. } => (Position::ORIGIN, Position::ORIGIN),
-    };
-    Diagnostic {
-        range: Range::new(start.to_lsp(), end.to_lsp()),
-        severity: Some(DiagnosticSeverity::Error),
-        source: Some("rufus".to_string()),
-        message: format!("{}", error),
-        ..Diagnostic::default()
-    }
-}
-
 fn validate_document(
     connection: &Connection,
     uri: Url,
@@ -159,38 +131,16 @@ fn validate_document(
     full_validation: bool,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     info!("Received text for {}", &uri);
-    let parser = parser::ModuleParser::new();
-    let mut errors = Vec::new();
-    let result = parser.parse(&mut errors, &input);
-    let trans = util::PositionTranslator::new(&input);
-    let (opt_module, mut diagnostics) = match result {
-        Ok(module) => {
-            let diagnostics = errors
-                .into_iter()
-                .map(|recovery_error| recovery_error.error)
-                .map(|error| error_to_diagnostic(&trans, error))
-                .collect::<Vec<_>>();
-            (Some(module), diagnostics)
-        }
-        Err(error) => {
-            let error = if errors.is_empty() {
-                error
-            } else {
-                errors.swap_remove(0).error
-            };
-            let diagnostics = vec![error_to_diagnostic(&trans, error)];
-            (None, diagnostics)
-        }
-    };
+    let translator = util::PositionTranslator::new(&input);
+    let (opt_module, mut diagnostics) = Module::parse(&input, &translator);
 
-    info!("Sending {} diagnostics", diagnostics.len());
     if full_validation {
         if let Some(mut module) = opt_module {
             if let Err(error) = module.check() {
                 let span = error.span;
                 let range = Range::new(
-                    trans.position(span.start).to_lsp(),
-                    trans.position(span.end).to_lsp(),
+                    translator.position(span.start).to_lsp(),
+                    translator.position(span.end).to_lsp(),
                 );
                 let diagnostic = Diagnostic {
                     range,
@@ -204,6 +154,8 @@ fn validate_document(
             info!("{:?}", module);
         }
     }
+
+    info!("Sending {} diagnostics", diagnostics.len());
     let params = PublishDiagnosticsParams {
         uri,
         diagnostics,

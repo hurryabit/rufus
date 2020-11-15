@@ -6,7 +6,7 @@ use crate::*;
 use syntax::*;
 
 fn parse(input: &str) -> Module {
-    let parser = parser::ModuleParser::new();
+    let parser = grammar::ModuleParser::new();
     let mut errors = Vec::new();
     let module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);

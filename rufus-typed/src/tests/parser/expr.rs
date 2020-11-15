@@ -4,7 +4,7 @@ use syntax::*;
 use lalrpop_util::ParseError;
 
 fn parse(input: &str) -> Expr {
-    let parser = parser::ExprParser::new();
+    let parser = grammar::ExprParser::new();
     let mut errors = Vec::new();
     let expr = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
@@ -12,7 +12,7 @@ fn parse(input: &str) -> Expr {
 }
 
 fn parse_block(input: &str) -> Expr {
-    let parser = parser::LBlockExprParser::new();
+    let parser = grammar::LBlockExprParser::new();
     let mut errors = Vec::new();
     let expr = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
@@ -23,9 +23,9 @@ fn parse_err(
     input: &'static str,
 ) -> (
     Option<Expr>,
-    Vec<ParseError<usize, parser::Token<'static>, &'static str>>,
+    Vec<ParseError<usize, grammar::Token<'static>, &'static str>>,
 ) {
-    let parser = parser::ExprParser::new();
+    let parser = grammar::ExprParser::new();
     let mut errors = Vec::new();
     let result = parser.parse(&mut errors, input);
     assert!(!errors.is_empty() || result.is_err());

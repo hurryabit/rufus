@@ -4,7 +4,7 @@ use syntax::*;
 use lalrpop_util::ParseError;
 
 fn parse(input: &'static str) -> Type {
-    let parser = parser::TypeParser::new();
+    let parser = grammar::TypeParser::new();
     let mut errors = Vec::new();
     let typ = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
@@ -15,9 +15,9 @@ fn parse_err(
     input: &'static str,
 ) -> (
     Option<Type>,
-    Vec<ParseError<usize, parser::Token<'static>, &'static str>>,
+    Vec<ParseError<usize, grammar::Token<'static>, &'static str>>,
 ) {
-    let parser = parser::TypeParser::new();
+    let parser = grammar::TypeParser::new();
     let mut errors = Vec::new();
     let result = parser.parse(&mut errors, input);
     assert!(!errors.is_empty() || result.is_err());

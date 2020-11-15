@@ -1,15 +1,15 @@
 #[macro_use]
 extern crate lalrpop_util;
 
+pub mod check;
+pub mod parser;
 pub mod syntax;
+pub mod util;
+
 lalrpop_mod!(
     #[allow(clippy::all)]
-    pub parser
+    pub grammar
 );
-
-pub mod check;
-
-pub mod util;
 
 #[cfg(test)]
 mod tests {
