@@ -1,47 +1,42 @@
 use crate::*;
 use syntax::Expr;
 
-fn parse(input: &str) -> Expr {
-    let (result, diagnostics) = Expr::parse_test(input);
-    assert!(diagnostics.is_empty());
-    result.unwrap()
+
+fn parse_output(input: &str) -> Expr {
+    super::parse_output_impl(Expr::parse_test, input)
 }
 
-fn parse_block(input: &str) -> Expr {
-    let (result, diagnostics) = Expr::parse_block_test(input);
-    assert!(diagnostics.is_empty());
-    result.unwrap()
+fn parse_block_output(input: &str) -> Expr {
+  super::parse_output_impl(Expr::parse_block_test, input)
 }
 
-fn parse_err(input: &'static str) -> (Option<Expr>, Vec<diagnostic::Diagnostic>) {
-    let (result, diagnostics) = Expr::parse_test(input);
-    assert!(!diagnostics.is_empty() || result.is_none());
-    (result, diagnostics)
+fn parse_error(input: &'static str) -> (Option<Expr>, Vec<diagnostic::Diagnostic>) {
+  super::parse_error_impl(Expr::parse_test, input)
 }
 
 #[test]
 fn var() {
-    insta::assert_debug_snapshot!(parse("x"), @"x");
+    insta::assert_debug_snapshot!(parse_output("x"), @"x");
 }
 
 #[test]
 fn num() {
-    insta::assert_debug_snapshot!(parse("0"), @"0");
+    insta::assert_debug_snapshot!(parse_output("0"), @"0");
 }
 
 #[test]
 fn bool_true() {
-    insta::assert_debug_snapshot!(parse("true"), @"true");
+    insta::assert_debug_snapshot!(parse_output("true"), @"true");
 }
 
 #[test]
 fn bool_false() {
-    insta::assert_debug_snapshot!(parse("false"), @"false");
+    insta::assert_debug_snapshot!(parse_output("false"), @"false");
 }
 
 #[test]
 fn app0() {
-    insta::assert_debug_snapshot!(parse("f()"), @r###"
+    insta::assert_debug_snapshot!(parse_output("f()"), @r###"
     APP
       fun: f @ 0...1
     "###);
@@ -49,7 +44,7 @@ fn app0() {
 
 #[test]
 fn app1() {
-    insta::assert_debug_snapshot!(parse("f(1)"), @r###"
+    insta::assert_debug_snapshot!(parse_output("f(1)"), @r###"
     APP
       fun: f @ 0...1
       arg: 1 @ 2...3
@@ -58,7 +53,7 @@ fn app1() {
 
 #[test]
 fn app1_trailing() {
-    insta::assert_debug_snapshot!(parse("f(1,)"), @r###"
+    insta::assert_debug_snapshot!(parse_output("f(1,)"), @r###"
     APP
       fun: f @ 0...1
       arg: 1 @ 2...3
@@ -67,7 +62,7 @@ fn app1_trailing() {
 
 #[test]
 fn app2() {
-    insta::assert_debug_snapshot!(parse("f(1, 2)"), @r###"
+    insta::assert_debug_snapshot!(parse_output("f(1, 2)"), @r###"
     APP
       fun: f @ 0...1
       arg: 1 @ 2...3
@@ -76,7 +71,7 @@ fn app2() {
 }
 #[test]
 fn app_ty() {
-    insta::assert_debug_snapshot!(parse("f@<Int>(1)"), @r###"
+    insta::assert_debug_snapshot!(parse_output("f@<Int>(1)"), @r###"
     APP
       fun: FUNCINST @ 0...7
         fun: f @ 0...1
@@ -87,7 +82,7 @@ fn app_ty() {
 
 #[test]
 fn app_ty_err() {
-    insta::assert_debug_snapshot!(parse_err("f<A>(1)"), @r###"
+    insta::assert_debug_snapshot!(parse_error("f<A>(1)"), @r###"
     (
         Some(
             BINOP
@@ -109,11 +104,11 @@ fn app_ty_err() {
 
 #[test]
 fn record0() {
-    insta::assert_debug_snapshot!(parse("{}"), @"RECORD");
+    insta::assert_debug_snapshot!(parse_output("{}"), @"RECORD");
 }
 #[test]
 fn record1() {
-    insta::assert_debug_snapshot!(parse("{x = 1}"), @r###"
+    insta::assert_debug_snapshot!(parse_output("{x = 1}"), @r###"
     RECORD
       field: x @ 1...2
       value: 1 @ 5...6
@@ -122,7 +117,7 @@ fn record1() {
 
 #[test]
 fn record1_trailing() {
-    insta::assert_debug_snapshot!(parse("{x = 1,}"), @r###"
+    insta::assert_debug_snapshot!(parse_output("{x = 1,}"), @r###"
     RECORD
       field: x @ 1...2
       value: 1 @ 5...6
@@ -131,7 +126,7 @@ fn record1_trailing() {
 
 #[test]
 fn record2() {
-    insta::assert_debug_snapshot!(parse("{x = 1, y = 2}"), @r###"
+    insta::assert_debug_snapshot!(parse_output("{x = 1, y = 2}"), @r###"
     RECORD
       field: x @ 1...2
       value: 1 @ 5...6
@@ -142,7 +137,7 @@ fn record2() {
 
 #[test]
 fn proj1() {
-    insta::assert_debug_snapshot!(parse("r.x"), @r###"
+    insta::assert_debug_snapshot!(parse_output("r.x"), @r###"
     PROJ
       record: r @ 0...1
       field: x @ 2...3
@@ -151,7 +146,7 @@ fn proj1() {
 
 #[test]
 fn proj2() {
-    insta::assert_debug_snapshot!(parse("r.x.y"), @r###"
+    insta::assert_debug_snapshot!(parse_output("r.x.y"), @r###"
     PROJ
       record: PROJ @ 0...3
         record: r @ 0...1
@@ -162,7 +157,7 @@ fn proj2() {
 
 #[test]
 fn variant0() {
-    insta::assert_debug_snapshot!(parse("A"), @r###"
+    insta::assert_debug_snapshot!(parse_output("A"), @r###"
     VARIANT
       constr: A
     "###);
@@ -170,7 +165,7 @@ fn variant0() {
 
 #[test]
 fn variant1() {
-    insta::assert_debug_snapshot!(parse("A(0)"), @r###"
+    insta::assert_debug_snapshot!(parse_output("A(0)"), @r###"
     VARIANT
       constr: A
       payload: 0 @ 2...3
@@ -179,7 +174,7 @@ fn variant1() {
 
 #[test]
 fn variant_int() {
-    insta::assert_debug_snapshot!(parse("Int"), @r###"
+    insta::assert_debug_snapshot!(parse_output("Int"), @r###"
     VARIANT
       constr: Int
     "###);
@@ -187,7 +182,7 @@ fn variant_int() {
 
 #[test]
 fn variant_bool() {
-    insta::assert_debug_snapshot!(parse("Bool"), @r###"
+    insta::assert_debug_snapshot!(parse_output("Bool"), @r###"
     VARIANT
       constr: Bool
     "###);
@@ -195,7 +190,7 @@ fn variant_bool() {
 
 #[test]
 fn prod2() {
-    insta::assert_debug_snapshot!(parse("a*b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a*b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: MUL
@@ -205,7 +200,7 @@ fn prod2() {
 
 #[test]
 fn prod3() {
-    insta::assert_debug_snapshot!(parse("a/b*c"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a/b*c"), @r###"
     BINOP
       lhs: BINOP @ 0...3
         lhs: a @ 0...1
@@ -218,7 +213,7 @@ fn prod3() {
 
 #[test]
 fn sum2() {
-    insta::assert_debug_snapshot!(parse("a+b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a+b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: ADD
@@ -228,7 +223,7 @@ fn sum2() {
 
 #[test]
 fn sum3() {
-    insta::assert_debug_snapshot!(parse("a-b+c"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a-b+c"), @r###"
     BINOP
       lhs: BINOP @ 0...3
         lhs: a @ 0...1
@@ -241,7 +236,7 @@ fn sum3() {
 
 #[test]
 fn cmp_eq() {
-    insta::assert_debug_snapshot!(parse("a == b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a == b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: EQUALS
@@ -251,7 +246,7 @@ fn cmp_eq() {
 
 #[test]
 fn cmp_neq() {
-    insta::assert_debug_snapshot!(parse("a != b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a != b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: NOTEQ
@@ -261,7 +256,7 @@ fn cmp_neq() {
 
 #[test]
 fn cmp_lt() {
-    insta::assert_debug_snapshot!(parse("a < b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a < b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: LESS
@@ -271,7 +266,7 @@ fn cmp_lt() {
 
 #[test]
 fn cmp_leq() {
-    insta::assert_debug_snapshot!(parse("a <= b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a <= b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: LESSEQ
@@ -281,7 +276,7 @@ fn cmp_leq() {
 
 #[test]
 fn cmp_gt() {
-    insta::assert_debug_snapshot!(parse("a > b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a > b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: GREATER
@@ -291,7 +286,7 @@ fn cmp_gt() {
 
 #[test]
 fn cmp_geq() {
-    insta::assert_debug_snapshot!(parse("a >= b"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a >= b"), @r###"
     BINOP
       lhs: a @ 0...1
       op: GREATEREQ
@@ -301,7 +296,7 @@ fn cmp_geq() {
 
 #[test]
 fn cmp_mixed() {
-    insta::assert_debug_snapshot!(parse("a + b == c * d"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a + b == c * d"), @r###"
     BINOP
       lhs: BINOP @ 0...5
         lhs: a @ 0...1
@@ -317,7 +312,7 @@ fn cmp_mixed() {
 
 #[test]
 fn cmp_many() {
-    insta::assert_debug_snapshot!(parse("a == (b == c)"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a == (b == c)"), @r###"
     BINOP
       lhs: a @ 0...1
       op: EQUALS
@@ -330,7 +325,7 @@ fn cmp_many() {
 
 #[test]
 fn cmp_many_err() {
-    insta::assert_debug_snapshot!(parse_err("a == b == c"), @r###"
+    insta::assert_debug_snapshot!(parse_error("a == b == c"), @r###"
     (
         Some(
             BINOP
@@ -352,7 +347,7 @@ fn cmp_many_err() {
 
 #[test]
 fn sum_prod() {
-    insta::assert_debug_snapshot!(parse("a+b*c"), @r###"
+    insta::assert_debug_snapshot!(parse_output("a+b*c"), @r###"
     BINOP
       lhs: a @ 0...1
       op: ADD
@@ -365,7 +360,7 @@ fn sum_prod() {
 
 #[test]
 fn lam0() {
-    insta::assert_debug_snapshot!(parse("fn() { 0 }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("fn() { 0 }"), @r###"
     LAM
       body: 0 @ 7...8
     "###);
@@ -373,7 +368,7 @@ fn lam0() {
 
 #[test]
 fn lam1() {
-    insta::assert_debug_snapshot!(parse("fn(x) { x }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("fn(x) { x }"), @r###"
     LAM
       param: x @ 3...4
       body: x @ 8...9
@@ -382,7 +377,7 @@ fn lam1() {
 
 #[test]
 fn lam1_trailing() {
-    insta::assert_debug_snapshot!(parse("fn(x,) { x }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("fn(x,) { x }"), @r###"
     LAM
       param: x @ 3...4
       body: x @ 9...10
@@ -391,7 +386,7 @@ fn lam1_trailing() {
 
 #[test]
 fn lam2() {
-    insta::assert_debug_snapshot!(parse("fn(x, y) { x }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("fn(x, y) { x }"), @r###"
     LAM
       param: x @ 3...4
       param: y @ 6...7
@@ -400,7 +395,7 @@ fn lam2() {
 }
 #[test]
 fn lam1_typed() {
-    insta::assert_debug_snapshot!(parse("fn(x: Int) { x }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("fn(x: Int) { x }"), @r###"
     LAM
       param: x @ 3...4
       type: Int @ 6...9
@@ -410,7 +405,7 @@ fn lam1_typed() {
 
 #[test]
 fn lam1_poly() {
-    insta::assert_debug_snapshot!(parse_err("fn<A>(x: A) { x }"), @r###"
+    insta::assert_debug_snapshot!(parse_error("fn<A>(x: A) { x }"), @r###"
     (
         Some(
             ERROR,
@@ -447,7 +442,7 @@ fn lam1_poly() {
 
 #[test]
 fn if_atom() {
-    insta::assert_debug_snapshot!(parse("if true { 0 } else { 1 }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("if true { 0 } else { 1 }"), @r###"
     IF
       cond: true @ 3...7
       then: 0 @ 10...11
@@ -457,7 +452,7 @@ fn if_atom() {
 
 #[test]
 fn if_cmp() {
-    insta::assert_debug_snapshot!(parse("if a == b { 0 } else { 1 }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("if a == b { 0 } else { 1 }"), @r###"
     IF
       cond: BINOP @ 3...9
         lhs: a @ 3...4
@@ -470,12 +465,12 @@ fn if_cmp() {
 
 #[test]
 fn block_atom() {
-    insta::assert_debug_snapshot!(parse_block("{ a }"), @"a");
+    insta::assert_debug_snapshot!(parse_block_output("{ a }"), @"a");
 }
 
 #[test]
 fn block_record() {
-    insta::assert_debug_snapshot!(parse_block("{ {f = 1} }"), @r###"
+    insta::assert_debug_snapshot!(parse_block_output("{ {f = 1} }"), @r###"
     RECORD
       field: f @ 3...4
       value: 1 @ 7...8
@@ -484,7 +479,7 @@ fn block_record() {
 
 #[test]
 fn let1_atom() {
-    insta::assert_debug_snapshot!(parse_block("{ let x = 1; x }"), @r###"
+    insta::assert_debug_snapshot!(parse_block_output("{ let x = 1; x }"), @r###"
     LET
       binder: x @ 6...7
       bindee: 1 @ 10...11
@@ -494,7 +489,7 @@ fn let1_atom() {
 
 #[test]
 fn let1_complex() {
-    insta::assert_debug_snapshot!(parse_block("{ let x = 1 + 1; x }"), @r###"
+    insta::assert_debug_snapshot!(parse_block_output("{ let x = 1 + 1; x }"), @r###"
     LET
       binder: x @ 6...7
       bindee: BINOP @ 10...15
@@ -507,7 +502,7 @@ fn let1_complex() {
 
 #[test]
 fn let1_typed() {
-    insta::assert_debug_snapshot!(parse_block("{ let x: Int = 1; x }"), @r###"
+    insta::assert_debug_snapshot!(parse_block_output("{ let x: Int = 1; x }"), @r###"
     LET
       binder: x @ 6...7
       type: Int @ 9...12
@@ -518,7 +513,7 @@ fn let1_typed() {
 
 #[test]
 fn let1_block() {
-    insta::assert_debug_snapshot!(parse_block("{ let x = { 1 }; x }"), @r###"
+    insta::assert_debug_snapshot!(parse_block_output("{ let x = { 1 }; x }"), @r###"
     LET
       binder: x @ 6...7
       bindee: 1 @ 12...13
@@ -528,7 +523,7 @@ fn let1_block() {
 
 #[test]
 fn let2() {
-    insta::assert_debug_snapshot!(parse_block("{ let x = 1; let y = x; y }"), @r###"
+    insta::assert_debug_snapshot!(parse_block_output("{ let x = 1; let y = x; y }"), @r###"
     LET
       binder: x @ 6...7
       bindee: 1 @ 10...11
@@ -541,7 +536,7 @@ fn let2() {
 
 #[test]
 fn match1_novar() {
-    insta::assert_debug_snapshot!(parse("match x { A => 1, }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("match x { A => 1, }"), @r###"
     MATCH
       scrut: x @ 6...7
       branch: BRANCH
@@ -553,7 +548,7 @@ fn match1_novar() {
 
 #[test]
 fn match1_var() {
-    insta::assert_debug_snapshot!(parse("match x { A(y) => 1, }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("match x { A(y) => 1, }"), @r###"
     MATCH
       scrut: x @ 6...7
       branch: BRANCH
@@ -566,7 +561,7 @@ fn match1_var() {
 
 #[test]
 fn match1_block() {
-    insta::assert_debug_snapshot!(parse("match x { A => { 1 } }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("match x { A => { 1 } }"), @r###"
     MATCH
       scrut: x @ 6...7
       branch: BRANCH
@@ -578,7 +573,7 @@ fn match1_block() {
 
 #[test]
 fn match1_expr_nocomma() {
-    insta::assert_debug_snapshot!(parse_err("match x { A => 1 }"), @r###"
+    insta::assert_debug_snapshot!(parse_error("match x { A => 1 }"), @r###"
     (
         Some(
             ERROR,
@@ -597,7 +592,7 @@ fn match1_expr_nocomma() {
 
 #[test]
 fn match1_block_comma() {
-    insta::assert_debug_snapshot!(parse_err("match x { A => { 1 }, }"), @r###"
+    insta::assert_debug_snapshot!(parse_error("match x { A => { 1 }, }"), @r###"
     (
         Some(
             MATCH
@@ -621,7 +616,7 @@ fn match1_block_comma() {
 
 #[test]
 fn match2_exprs() {
-    insta::assert_debug_snapshot!(parse("match x { A => 1, B => 2, }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("match x { A => 1, B => 2, }"), @r###"
     MATCH
       scrut: x @ 6...7
       branch: BRANCH
@@ -637,7 +632,7 @@ fn match2_exprs() {
 
 #[test]
 fn match2_expr_block() {
-    insta::assert_debug_snapshot!(parse("match x { A => 1, B => { 2 } }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("match x { A => 1, B => { 2 } }"), @r###"
     MATCH
       scrut: x @ 6...7
       branch: BRANCH
@@ -653,7 +648,7 @@ fn match2_expr_block() {
 
 #[test]
 fn match2_block_expr() {
-    insta::assert_debug_snapshot!(parse("match x { A => { 1 } B => 2, }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("match x { A => { 1 } B => 2, }"), @r###"
     MATCH
       scrut: x @ 6...7
       branch: BRANCH
@@ -669,7 +664,7 @@ fn match2_block_expr() {
 
 #[test]
 fn match2_blocks() {
-    insta::assert_debug_snapshot!(parse("match x { A => { 1 } B => { 2 } }"), @r###"
+    insta::assert_debug_snapshot!(parse_output("match x { A => { 1 } B => { 2 } }"), @r###"
     MATCH
       scrut: x @ 6...7
       branch: BRANCH

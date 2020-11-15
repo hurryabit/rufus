@@ -1,13 +1,31 @@
-use crate::syntax::Module;
+use crate::*;
+use diagnostic::Diagnostic;
+use syntax::Module;
 
 mod decl;
 mod expr;
 mod type_;
 
-fn parse(input: &str) -> Module {
-  let (result, diagnostics) = Module::parse_test(input);
+fn parse_output_impl<T, F>(f: F, input: &str) -> T
+where
+  F: Fn(&str) -> (Option<T>, Vec<Diagnostic>)
+{
+  let (result, diagnostics) = f(input);
   assert!(diagnostics.is_empty());
   result.unwrap()
+}
+
+fn parse_error_impl<T, F>(f: F, input: & str) -> (Option<T>, Vec<Diagnostic>)
+where
+  F: Fn(&str) -> (Option<T>, Vec<Diagnostic>)
+{
+  let (result, diagnostics) = f(input);
+  assert!(!diagnostics.is_empty() || result.is_none());
+  (result, diagnostics)
+}
+
+fn parse(input: &str) -> Module {
+  parse_output_impl(Module::parse_test, input)
 }
 
 #[test]
