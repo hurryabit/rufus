@@ -1,7 +1,8 @@
 use crate::*;
-use syntax::Module;
+use syntax::{Decl, Module, Type, FuncDecl};
 
 mod expressions;
+mod resolution;
 mod signatures;
 mod types;
 
@@ -14,13 +15,52 @@ fn check_output(input: &str) -> Module {
     module
 }
 
+fn check_output_type(name: &str, input: &str) -> Type {
+    let parser = parser::ModuleParser::new();
+    let mut errors = Vec::new();
+    let mut module = parser.parse(&mut errors, input).unwrap();
+    assert_eq!(errors, vec![]);
+    module.check().unwrap();
+    module
+        .decls
+        .into_iter()
+        .find_map(|decl| match decl {
+            Decl::Type(decl) if decl.name.locatee.with_name(|n| n == name) => {
+                Some(decl.body.locatee)
+            }
+            _ => None,
+        })
+        .unwrap()
+}
+
+fn check_output_func_decl(name: &str, input: &str) -> FuncDecl {
+    let parser = parser::ModuleParser::new();
+    let mut errors = Vec::new();
+    let mut module = parser.parse(&mut errors, input).unwrap();
+    assert_eq!(errors, vec![]);
+    module.check().unwrap();
+    module
+        .decls
+        .into_iter()
+        .find_map(|decl| match decl {
+            Decl::Func(decl) if decl.name.locatee.with_name(|n| n == name) => {
+                Some(decl)
+            }
+            _ => None,
+        })
+        .unwrap()
+}
+
 fn check_success(input: &str) {
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
     if let Err(error) = module.check() {
-        panic!("Expected module to type check but got error\n{}: {}", error.span, error.locatee);
+        panic!(
+            "Expected module to type check but got error\n{}: {}",
+            error.span, error.locatee
+        );
     }
 }
 

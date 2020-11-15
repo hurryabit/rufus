@@ -175,6 +175,12 @@ impl fmt::Debug for Decl {
     }
 }
 
+impl fmt::Debug for FuncDecl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        DebugWriter::fmt(self, f)
+    }
+}
+
 impl fmt::Debug for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         DebugWriter::fmt(self, f)
