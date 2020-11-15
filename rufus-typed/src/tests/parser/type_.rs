@@ -1,5 +1,6 @@
 use crate::*;
 use syntax::*;
+use location::ParserLoc;
 
 use lalrpop_util::ParseError;
 
@@ -15,20 +16,16 @@ fn parse_err(
     input: &'static str,
 ) -> (
     Option<Type>,
-    Vec<ParseError<usize, grammar::Token<'static>, &'static str>>,
+    Vec<ParseError<ParserLoc, grammar::Token<'static>, &'static str>>,
 ) {
     let parser = grammar::TypeParser::new();
     let mut errors = Vec::new();
     let result = parser.parse(&mut errors, input);
     assert!(!errors.is_empty() || result.is_err());
-    let mut errors = errors
-        .into_iter()
-        .map(|error_recovery| error_recovery.error)
-        .collect::<Vec<_>>();
     match result {
         Ok(expr) => (Some(expr), errors),
         Err(error) => {
-            errors.push(error);
+            errors.push(error.map_location(ParserLoc::from_usize));
             (None, errors)
         }
     }

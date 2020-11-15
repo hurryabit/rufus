@@ -15,7 +15,7 @@ use lsp_types::{
 
 use lsp_server::{Connection, Message, Request, RequestId, Response};
 
-use rufus_typed::util;
+use rufus_typed::location;
 use rufus_typed::syntax::Module;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
@@ -131,16 +131,16 @@ fn validate_document(
     full_validation: bool,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     info!("Received text for {}", &uri);
-    let translator = util::PositionTranslator::new(&input);
-    let (opt_module, mut diagnostics) = Module::parse(&input, &translator);
+    let humanizer = location::Humanizer::new(&input);
+    let (opt_module, mut diagnostics) = Module::parse(&input, &humanizer);
 
     if full_validation {
         if let Some(mut module) = opt_module {
             if let Err(error) = module.check() {
-                let span = error.span;
+                let span = humanizer.span(error.span);
                 let range = Range::new(
-                    translator.position(span.start).to_lsp(),
-                    translator.position(span.end).to_lsp(),
+                    span.start.to_lsp(),
+                    span.end.to_lsp(),
                 );
                 let diagnostic = Diagnostic {
                     range,

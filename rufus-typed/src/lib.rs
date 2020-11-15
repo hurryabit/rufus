@@ -2,9 +2,9 @@
 extern crate lalrpop_util;
 
 pub mod check;
+pub mod location;
 pub mod parser;
 pub mod syntax;
-pub mod util;
 
 lalrpop_mod!(
     #[allow(clippy::all)]

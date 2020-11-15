@@ -1,8 +1,9 @@
 use std::str::FromStr;
-use lalrpop_util::{lexer, ErrorRecovery, ParseError};
+use lalrpop_util::{lexer, ParseError};
 use crate::syntax::*;
+use crate::location::{Located, ParserLoc, Span};
 
-grammar<'err>(errors: &'err mut Vec<ErrorRecovery<usize, lexer::Token<'input>, &'static str>>);
+grammar<'err>(errors: &'err mut Vec<ParseError<ParserLoc, lexer::Token<'input>, &'static str>>);
 
 pub Module: Module = {
     <decls: Decl*> => Module { decls },
@@ -34,7 +35,7 @@ pub Type: Type = {
     <LTypeVar> "<" <List1<LType, ",">> ">" => Type::SynApp(<>),
     "{" <List0<Param<TypeAnn>, ",">> "}" => Type::Record(<>),
     "[" <List1<VariantCaseType, "|">> "]" => Type::Variant(<>),
-    ! => { errors.push(<>); Type::Error },
+    ! => { errors.push(<>.error.map_location(ParserLoc::from_usize)); Type::Error },
 }
 
 LType: LType = {
@@ -102,7 +103,7 @@ AtomExpr: Expr = {
     "{" <List0<RecordAssign, ",">> "}" => Expr::Record(<>),
     <Box<LAtomExpr>> "." <LExprVar> => Expr::Proj(<>),
     <con: ExprCon> <payload: Box<InParens<LExpr>>?> => Expr::Variant(con, payload),
-    ! => { errors.push(<>); Expr::Error },
+    ! => { errors.push(<>.error.map_location(ParserLoc::from_usize)); Expr::Error },
 }
 
 LAtomExpr: LExpr = {
@@ -222,8 +223,8 @@ InParens<X>: X = {
     "(" <X> ")",
 }
 
-Located<X>: Located<X> = {
-    <start: @L> <locatee: X> <end: @R> => Located::new(locatee, Span { start, end }),
+Located<X>: Located<X, ParserLoc> = {
+    <start: @L> <locatee: X> <end: @R> => Located::new(locatee, Span { start: ParserLoc::from_usize(start), end: ParserLoc::from_usize(end) }),
 }
 
 match {

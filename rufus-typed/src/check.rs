@@ -1,4 +1,5 @@
 use crate::syntax;
+use crate::location;
 pub use error::{Error, LError};
 use std::collections;
 use std::hash::Hash;
@@ -8,6 +9,10 @@ use types::*;
 
 mod error;
 pub mod types;
+
+type Span = location::Span<location::ParserLoc>;
+
+type Located<T> = location::Located<T, location::ParserLoc>;
 
 type Arity = usize;
 

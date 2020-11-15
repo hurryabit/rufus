@@ -1,3 +1,4 @@
+use crate::location;
 use debug::DebugWriter;
 use std::fmt;
 
@@ -7,17 +8,7 @@ mod debug;
 mod ident;
 mod iter;
 
-#[derive(Clone, Copy, Debug)]
-pub struct Span<Pos = usize> {
-    pub start: Pos,
-    pub end: Pos,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct Located<T, Pos = usize> {
-    pub locatee: T,
-    pub span: Span<Pos>,
-}
+type Located<T> = location::Located<T, location::ParserLoc>;
 
 pub struct Module {
     pub decls: Vec<Decl>,
@@ -118,48 +109,6 @@ impl Default for Type {
 impl Default for Expr {
     fn default() -> Self {
         Self::Error
-    }
-}
-
-impl<Pos> Span<Pos> {
-    pub fn map<Pos2, F: Fn(Pos) -> Pos2>(self, f: F) -> Span<Pos2> {
-        Span {
-            start: f(self.start),
-            end: f(self.end),
-        }
-    }
-}
-
-impl<Pos: fmt::Display> fmt::Display for Span<Pos> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}-{}", self.start, self.end)
-    }
-}
-
-impl<T, Pos> Located<T, Pos> {
-    pub fn new(locatee: T, span: Span<Pos>) -> Self {
-        Self { locatee, span }
-    }
-}
-
-impl<T> Located<T, usize> {
-    pub fn gen(locatee: T) -> Self {
-        Self::new(locatee, Span { start: 0, end: 0 })
-    }
-}
-
-impl<T, Pos> Located<T, Pos> {
-    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Located<U, Pos> {
-        Located::new(f(self.locatee), self.span)
-    }
-}
-
-impl<T, Pos: Copy> Located<T, Pos> {
-    pub fn as_ref(&self) -> Located<&T, Pos> {
-        Located {
-            locatee: &self.locatee,
-            span: self.span,
-        }
     }
 }
 

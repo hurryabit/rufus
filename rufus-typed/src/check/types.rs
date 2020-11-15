@@ -1,8 +1,11 @@
 use std::fmt;
 use std::rc::Rc;
 
+use crate::location;
 use crate::syntax;
-use syntax::{ExprCon, ExprVar, Located, TypeVar};
+use syntax::{ExprCon, ExprVar, TypeVar};
+
+type Located<T> = location::Located<T, location::ParserLoc>;
 
 type SynType = syntax::Type;
 

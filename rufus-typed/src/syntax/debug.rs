@@ -1,5 +1,8 @@
+use crate::location;
 use super::*;
 use std::fmt;
+
+type Span = location::Span<location::ParserLoc>;
 
 impl Debug for Module {
     fn write(&self, writer: &mut DebugWriter) -> fmt::Result {
@@ -282,7 +285,7 @@ impl<'a> DebugWriter<'a> {
 
     pub fn leaf(&mut self, label: &str) -> fmt::Result {
         if let Some(span) = self.next_span.take() {
-            write!(self.writer, "{} @ {}...{}", label, span.start, span.end)
+            write!(self.writer, "{} @ {:?}...{:?}", label, span.start, span.end)
         } else {
             self.writer.write_str(label)
         }

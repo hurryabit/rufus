@@ -66,7 +66,7 @@ fn check_success(input: &str) {
     assert_eq!(errors, vec![]);
     if let Err(error) = module.check() {
         panic!(
-            "Expected module to type check but got error\n{}: {}",
+            "Expected module to type check but got error\n{:?}: {}",
             error.span, error.locatee
         );
     }
@@ -78,17 +78,17 @@ fn check_error(input: &str) -> String {
     let mut module = parser.parse(&mut errors, input).unwrap();
     assert_eq!(errors, vec![]);
     let error = module.check().unwrap_err();
-    let trans = util::PositionTranslator::new(input);
-    let span = trans.span(error.span);
+    let humanizer = location::Humanizer::new(input);
+    let span = humanizer.span(error.span);
     let error = error.locatee;
     if span.start.line == span.end.line {
-        let line = input.lines().nth(span.start.line).unwrap();
+        let line = input.lines().nth(span.start.line as usize).unwrap();
         format!(
             "{:3} | {}\n{}{}\n{}",
             span.start.line,
             line,
-            " ".repeat(span.start.column + 6),
-            "~".repeat(span.end.column - span.start.column),
+            " ".repeat((span.start.column + 6) as usize),
+            "~".repeat((span.end.column - span.start.column) as usize),
             error
         )
     } else {

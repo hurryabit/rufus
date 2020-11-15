@@ -1,20 +1,19 @@
 use crate::grammar;
 use crate::syntax::Module;
-use crate::util;
+use crate::location;
 use lalrpop_util::ParseError;
 use lsp_types::{Diagnostic, DiagnosticSeverity, Range};
-use util::PositionTranslator;
+use location::{Humanizer, HumanLoc, ParserLoc};
 
 impl Module {
-    pub fn parse(input: &str, translator: &PositionTranslator) -> (Option<Self>, Vec<Diagnostic>) {
+    pub fn parse(input: &str, humanizer: &Humanizer) -> (Option<Self>, Vec<Diagnostic>) {
         let parser = grammar::ModuleParser::new();
         let mut errors = Vec::new();
         match parser.parse(&mut errors, &input) {
             Ok(module) => {
                 let diagnostics = errors
                     .into_iter()
-                    .map(|recovery_error| recovery_error.error)
-                    .map(|error| parse_error_to_diagnostic(error, translator))
+                    .map(|error| parse_error_to_diagnostic(error, humanizer))
                     .collect::<Vec<_>>();
                 (Some(module), diagnostics)
             }
@@ -22,8 +21,8 @@ impl Module {
                 let error = errors
                     .into_iter()
                     .next()
-                    .map_or(fatal_error, |recovery_error| recovery_error.error);
-                let diagnostics = vec![parse_error_to_diagnostic(error, translator)];
+                    .unwrap_or_else(|| fatal_error.map_location(ParserLoc::from_usize));
+                let diagnostics = vec![parse_error_to_diagnostic(error, humanizer)];
                 (None, diagnostics)
             }
         }
@@ -31,12 +30,11 @@ impl Module {
 }
 
 pub fn parse_error_to_diagnostic(
-    error: ParseError<usize, grammar::Token<'_>, &'static str>,
-    translator: &PositionTranslator,
+    error: ParseError<ParserLoc, grammar::Token<'_>, &'static str>,
+    humanizer: &Humanizer,
 ) -> Diagnostic {
-    use util::Position;
     use ParseError::*;
-    let error = error.map_location(|index| translator.position(index));
+    let error = error.map_location(|l| humanizer.loc(l));
     let (start, end) = match error {
         InvalidToken { location } | UnrecognizedEOF { location, .. } => (location, location),
         UnrecognizedToken {
@@ -46,7 +44,7 @@ pub fn parse_error_to_diagnostic(
         | ExtraToken {
             token: (start, _, end),
         } => (start, end),
-        User { .. } => (Position::ORIGIN, Position::ORIGIN),
+        User { .. } => (HumanLoc::default(), HumanLoc::default()),
     };
     Diagnostic {
         range: Range::new(start.to_lsp(), end.to_lsp()),
