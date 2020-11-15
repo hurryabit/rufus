@@ -63,7 +63,7 @@ pub enum Expr {
     Lam(Vec<(LExprVar, Option<LType>)>, Box<LExpr>),
     App(Box<LExpr>, Vec<LExpr>),
     BinOp(Box<LExpr>, OpCode, Box<LExpr>),
-    FunInst(LExprVar, Vec<LType>), // Instantiate function at monomorphic type.
+    FuncInst(LExprVar, Vec<LType>), // Instantiate function at monomorphic type.
     Let(LExprVar, Option<LType>, Box<LExpr>, Box<LExpr>),
     If(Box<LExpr>, Box<LExpr>, Box<LExpr>),
     Record(Vec<(LExprVar, LExpr)>),

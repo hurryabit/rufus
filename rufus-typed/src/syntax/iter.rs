@@ -101,7 +101,7 @@ impl Expr {
                     yield_!(lhs);
                     yield_!(rhs);
                 }
-                FunInst(fun, _types) => {
+                FuncInst(fun, _types) => {
                     let _: &LExprVar = fun; // We want this to fail if we change the type of `fun`.
                 }
                 Let(_binder, _type, bindee, body) => {

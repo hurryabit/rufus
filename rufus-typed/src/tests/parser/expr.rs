@@ -101,7 +101,7 @@ fn app2() {
 fn app_ty() {
     insta::assert_debug_snapshot!(parse("f@<Int>(1)"), @r###"
     APP
-      fun: FUNINST @ 0...7
+      fun: FUNCINST @ 0...7
         fun: f @ 0...1
         type_arg: Int @ 3...6
       arg: 1 @ 8...9

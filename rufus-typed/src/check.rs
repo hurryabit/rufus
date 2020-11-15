@@ -327,7 +327,7 @@ impl Expr {
             | Self::Bool(_)
             | Self::App(_, _)
             | Self::BinOp(_, _, _)
-            | Self::FunInst(_, _)
+            | Self::FuncInst(_, _)
             | Self::Record(_)
             | Self::Proj(_, _) => {
                 let found = self.infer(span, env)?;
@@ -355,7 +355,7 @@ impl Expr {
                 } else if let Some(TypeScheme { params, body }) = env.func_sigs.get(var) {
                     let arity = params.len();
                     if arity == 0 {
-                        *self = Self::FunInst(Located::new(*var, span), vec![]);
+                        *self = Self::FuncInst(Located::new(*var, span), vec![]);
                         Ok(body.clone())
                     } else {
                         Err(Located::new(
@@ -403,7 +403,7 @@ impl Expr {
                     _ => {
                         let func = match func.locatee {
                             Expr::Var(var) => Some(var),
-                            Expr::FunInst(func, _) => Some(func.locatee),
+                            Expr::FuncInst(func, _) => Some(func.locatee),
                             _ => None,
                         };
                         Err(Located::new(
@@ -435,7 +435,7 @@ impl Expr {
                     Ok(RcType::new(Type::Bool))
                 }
             },
-            Self::FunInst(var, types) => {
+            Self::FuncInst(var, types) => {
                 let num_types = types.len();
                 for typ in types.iter_mut() {
                     typ.check(env)?;

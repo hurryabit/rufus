@@ -148,7 +148,7 @@ impl Debug for Expr {
                 writer.child("op", op)?;
                 writer.child("rhs", rhs)
             }),
-            FunInst(fun, types) => writer.node("FUNINST", |writer| {
+            FuncInst(fun, types) => writer.node("FUNCINST", |writer| {
                 writer.child("fun", fun)?;
                 for typ in types {
                     writer.child("type_arg", typ)?;
