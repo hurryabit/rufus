@@ -3,7 +3,7 @@ use syntax::{Decl, Module, Type, FuncDecl};
 
 mod expressions;
 mod resolution;
-mod signatures;
+mod decls;
 mod types;
 
 #[allow(dead_code)]

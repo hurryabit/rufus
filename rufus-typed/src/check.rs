@@ -34,6 +34,16 @@ impl Module {
                 name.span,
             ));
         }
+        if let Some((span, name)) = find_duplicate(self.func_decls().map(|decl| decl.name.as_ref()))
+        {
+            return Err(Located::new(
+                Error::DuplicateFuncDecl {
+                    var: *name.locatee,
+                    original: span,
+                },
+                name.span,
+            ));
+        }
         let mut env = Env::new();
         env.type_defs = Rc::new(self.type_defs());
         for type_decl in self.type_decls_mut() {

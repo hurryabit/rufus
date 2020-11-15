@@ -41,6 +41,10 @@ pub enum Error<Pos = usize> {
         var: ExprVar,
         original: Span<Pos>,
     },
+    DuplicateFuncDecl {
+        var: ExprVar,
+        original: Span<Pos>,
+    },
     BadApp {
         func: Option<ExprVar>,
         func_type: RcType,
@@ -167,6 +171,9 @@ impl fmt::Display for Error {
                 write!(f, "Duplicate definition of type `{}`.", var)
             }
             DuplicateParam { var, original: _ } => write!(f, "Duplicate paramter `{}`.", var),
+            DuplicateFuncDecl { var, original: _ } => {
+                write!(f, "Duplicate definition of function `{}`.", var)
+            }
             BadApp {
                 func: Some(func),
                 func_type,
