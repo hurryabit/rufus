@@ -6,9 +6,8 @@ use lsp_types::{
         DidChangeTextDocument, DidOpenTextDocument, DidSaveTextDocument, Notification,
         PublishDiagnostics,
     },
-    request::GotoDefinition,
-    Diagnostic, DiagnosticSeverity, GotoDefinitionResponse, InitializeParams,
-    PublishDiagnosticsParams, Range, SaveOptions, ServerCapabilities, TextDocumentItem,
+    request::GotoDefinition, GotoDefinitionResponse, InitializeParams,
+    PublishDiagnosticsParams, SaveOptions, ServerCapabilities, TextDocumentItem,
     TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
     TextDocumentSyncSaveOptions, Url,
 };
@@ -132,30 +131,21 @@ fn validate_document(
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     info!("Received text for {}", &uri);
     let humanizer = location::Humanizer::new(&input);
-    let (opt_module, diagnostics) = Module::parse(&input, &humanizer);
-    let mut diagnostics: Vec<_> = diagnostics
-        .into_iter()
-        .map(rufus_typed::diagnostic::Diagnostic::to_lsp)
-        .collect();
+    let (opt_module, mut diagnostics) = Module::parse(&input, &humanizer);
 
     if full_validation {
         if let Some(mut module) = opt_module {
-            if let Err(error) = module.check() {
-                let span = error.span.humanize(&humanizer);
-                let range = Range::new(span.start.to_lsp(), span.end.to_lsp());
-                let diagnostic = Diagnostic {
-                    range,
-                    severity: Some(DiagnosticSeverity::Error),
-                    source: Some("rufus".to_string()),
-                    message: format!("{}", error.locatee),
-                    ..Diagnostic::default()
-                };
+            if let Err(diagnostic) = module.check(&humanizer) {
                 diagnostics.push(diagnostic);
             }
             info!("{:?}", module);
         }
     }
 
+    let diagnostics: Vec<_> = diagnostics
+        .into_iter()
+        .map(rufus_typed::diagnostic::Diagnostic::to_lsp)
+        .collect();
     info!("Sending {} diagnostics", diagnostics.len());
     let params = PublishDiagnosticsParams {
         uri,

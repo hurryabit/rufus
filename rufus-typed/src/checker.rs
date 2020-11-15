@@ -1,6 +1,7 @@
-use crate::syntax;
-use crate::location;
-pub use error::{Error, LError};
+use crate::*;
+use diagnostic::*;
+use error::{Error, LError};
+use location::Humanizer;
 use std::collections;
 use std::hash::Hash;
 use std::rc::Rc;
@@ -8,7 +9,7 @@ use syntax::*;
 use types::*;
 
 mod error;
-pub mod types;
+mod types;
 
 type Span = location::Span<location::ParserLoc>;
 
@@ -19,7 +20,7 @@ type Arity = usize;
 type Type = types::Type;
 
 #[derive(Clone)]
-pub struct Env {
+struct Env {
     builtin_types: Rc<collections::HashMap<TypeVar, Box<dyn Fn() -> syntax::Type>>>,
     type_defs: Rc<collections::HashMap<TypeVar, TypeScheme>>,
     func_sigs: Rc<collections::HashMap<ExprVar, TypeScheme>>,
@@ -28,7 +29,16 @@ pub struct Env {
 }
 
 impl Module {
-    pub fn check(&mut self) -> Result<(), LError> {
+    pub fn check(&mut self, humanizer: &Humanizer) -> Result<(), Diagnostic> {
+        self.check_impl().map_err(|error| Diagnostic {
+            span: error.span.humanize(humanizer),
+            severity: Severity::Error,
+            source: Source::Checker,
+            message: format!("{}", error.locatee),
+        })
+    }
+
+    fn check_impl(&mut self) -> Result<(), LError> {
         if let Some((span, name)) = find_duplicate(self.type_decls().map(|decl| decl.name.as_ref()))
         {
             return Err(Located::new(
@@ -82,7 +92,7 @@ impl Module {
 }
 
 impl TypeDecl {
-    pub fn check(&mut self, env: &Env) -> Result<(), LError> {
+    fn check(&mut self, env: &Env) -> Result<(), LError> {
         let Self {
             name: _,
             params,
@@ -96,7 +106,7 @@ impl TypeDecl {
 }
 
 impl FuncDecl {
-    pub fn check_signature(&mut self, env: &Env) -> Result<TypeScheme, LError> {
+    fn check_signature(&mut self, env: &Env) -> Result<TypeScheme, LError> {
         let Self {
             name: _,
             type_params,
@@ -123,7 +133,7 @@ impl FuncDecl {
         })
     }
 
-    pub fn check(&mut self, env: &Env) -> Result<(), LError> {
+    fn check(&mut self, env: &Env) -> Result<(), LError> {
         let Self {
             name: _,
             type_params,
@@ -225,13 +235,13 @@ impl syntax::Type {
 }
 
 impl RcType {
-    pub fn weak_normalize_env(&self, env: &Env) -> Self {
+    fn weak_normalize_env(&self, env: &Env) -> Self {
         self.weak_normalize(&env.type_defs)
     }
 }
 
 impl LExpr {
-    pub fn check(&mut self, env: &Env, expected: &RcType) -> Result<(), LError> {
+    fn check(&mut self, env: &Env, expected: &RcType) -> Result<(), LError> {
         self.locatee.check(self.span, env, expected)
     }
 
@@ -241,7 +251,7 @@ impl LExpr {
 }
 
 impl Expr {
-    pub fn check(&mut self, span: Span, env: &Env, expected: &RcType) -> Result<(), LError> {
+    fn check(&mut self, span: Span, env: &Env, expected: &RcType) -> Result<(), LError> {
         match self {
             Self::Lam(params, body) => {
                 match expected.weak_normalize_env(env).as_ref() {

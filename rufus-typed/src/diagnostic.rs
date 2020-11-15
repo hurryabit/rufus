@@ -35,8 +35,7 @@ impl Diagnostic {
 }
 
 impl HumanLoc {
-    // TODO(MH): Make private again.
-    pub fn to_lsp(self) -> lsp_types::Position {
+    fn to_lsp(self) -> lsp_types::Position {
         let Self { line, column } = self;
         lsp_types::Position::new(line as u64, column as u64)
     }
