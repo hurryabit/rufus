@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate lalrpop_util;
 
-pub mod check;
+pub mod checker;
 pub mod diagnostic;
 pub mod location;
 pub mod parser;
@@ -15,6 +15,6 @@ lalrpop_mod!(
 
 #[cfg(test)]
 mod tests {
-    mod check;
+    mod checker;
     mod parser;
 }
