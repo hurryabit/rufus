@@ -8,23 +8,22 @@ mod shadowing;
 mod type_resolution;
 mod types;
 
-#[allow(dead_code)]
 fn check_output(input: &str) -> Module {
     let humanizer = location::Humanizer::new(input);
     let (result, diagnostics) = Module::parse(input, &humanizer);
     assert!(diagnostics.is_empty());
     let mut module = result.unwrap();
-    module.check(&humanizer).unwrap();
+    if let Err(diagnostic) = module.check(&humanizer) {
+        panic!(
+            "Expected module to type check but got error\n{:?}: {}",
+            diagnostic.span, diagnostic.message
+        );
+    }
     module
 }
 
 fn check_output_type(name: &str, input: &str) -> Type {
-    let humanizer = location::Humanizer::new(input);
-    let (result, diagnostics) = Module::parse(input, &humanizer);
-    assert!(diagnostics.is_empty());
-    let mut module = result.unwrap();
-    module.check(&humanizer).unwrap();
-    module
+    check_output(input)
         .decls
         .into_iter()
         .find_map(|decl| match decl {
@@ -37,12 +36,7 @@ fn check_output_type(name: &str, input: &str) -> Type {
 }
 
 fn check_output_func_decl(name: &str, input: &str) -> FuncDecl {
-    let humanizer = location::Humanizer::new(input);
-    let (result, diagnostics) = Module::parse(input, &humanizer);
-    assert!(diagnostics.is_empty());
-    let mut module = result.unwrap();
-    module.check(&humanizer).unwrap();
-    module
+    check_output(input)
         .decls
         .into_iter()
         .find_map(|decl| match decl {
@@ -57,16 +51,7 @@ fn check_output_func_body(name: &str, input: &str) -> Expr {
 }
 
 fn check_success(input: &str) {
-    let humanizer = location::Humanizer::new(input);
-    let (result, diagnostics) = Module::parse(input, &humanizer);
-    assert!(diagnostics.is_empty());
-    let mut module = result.unwrap();
-    if let Err(diagnostic) = module.check(&humanizer) {
-        panic!(
-            "Expected module to type check but got error\n{:?}: {}",
-            diagnostic.span, diagnostic.message
-        );
-    }
+    check_output(input);
 }
 
 fn check_error(input: &str) -> String {
