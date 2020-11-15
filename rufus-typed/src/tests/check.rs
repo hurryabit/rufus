@@ -4,6 +4,7 @@ use syntax::{Decl, Expr, Module, Type, FuncDecl};
 mod expressions;
 mod decls;
 mod func_resolution;
+mod shadowing;
 mod type_resolution;
 mod types;
 
