@@ -31,7 +31,7 @@ The typing rules and the implementation of the type checker are bidirectional, a
   A1, ..., Am |- sn
   A1, ..., Am |- t
   A1, ..., Am, x1: s1, ..., xn: sn |- e <= t
--------------------------------------------------- TypeDecl
+-------------------------------------------------- FuncDecl
   fn f<A1, ..., Am>(x1: s1, ..., xn: sn) -> t { e }
 ```
 
@@ -45,10 +45,11 @@ The typing rules and the implementation of the type checker are bidirectional, a
 
 
   n >= 0
+  T not in E
+  type T<A1, ..., An> = ...
   E |- t1
   ...
   E |- tn
-  type T<A1, ..., An> = ...
 -------------------------------------------------- TypeSynApp
   E |- T<t1, ..., tn>
 
@@ -151,10 +152,11 @@ The typing rules and the implementation of the type checker are bidirectional, a
 
   m >= 0
   n >= 0
+  f not in E
+  fn f<A1, ..., Am>(x1: s1, ..., xn: sn) -> t { ... }
   E |- u1
   ...
   E |- um
-  fn f<A1, ..., Am>(x1: s1, ..., xn: sn) -> t { ... }
 -------------------------------------------------- FuncInst
   E |- f@<u1, ..., um>
     => ((s1, ..., sn) -> t)[u1/A1, ..., um/Am]
