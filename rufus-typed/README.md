@@ -74,7 +74,7 @@ The typing rules and the implementation of the type checker are bidirectional, a
 
 
   n >= 0
-  a1, ..., an mutually distinct
+  a1, ..., an mutually distinct (TODO)
   E |- t1
   ...
   E |- tn
@@ -82,11 +82,11 @@ The typing rules and the implementation of the type checker are bidirectional, a
   E |- {a1: t1, ..., an: tn}
 
 
-  n >= 1
-  c1, ..., cn mutually distinct
-  p1 = c1  /\  p1 = c1(t1)  /\  E |- t1
+  n >= 1 (TODO)
+  c1, ..., cn mutually distinct (TODO)
+  p1 = c1  \/  p1 = c1(t1)  /\  E |- t1
   ...
-  pn = cn  /\  pn = cn(tn)  /\  E |- tn
+  pn = cn  \/  pn = cn(tn)  /\  E |- tn
 -------------------------------------------------- TypeVariant
   E |- [p1 | ... | p1]
 ```

@@ -22,60 +22,6 @@ Some notes:
 use super::*;
 
 #[test]
-fn unknown_type_var_in_let() {
-    insta::assert_snapshot!(check_error(r#"
-    fn f() -> Int {
-        let x: A = 0;
-        x
-    }
-    "#), @r###"
-      2 |         let x: A = 0;
-                         ~
-    Undeclared type variable `A`.
-    "###);
-}
-
-#[test]
-fn unknown_type_var_in_inferrable_lambda() {
-    insta::assert_snapshot!(check_error(r#"
-    fn f() -> (Int) -> Int {
-        fn (x: A) { 0 }
-    }
-    "#), @r###"
-      2 |         fn (x: A) { 0 }
-                         ~
-    Undeclared type variable `A`.
-    "###);
-}
-
-#[test]
-fn unknown_type_var_in_checkable_lambda() {
-    insta::assert_snapshot!(check_error(r#"
-    fn f() -> (Int, Int) -> Int {
-        fn (x: A, y) { 0 }
-    }
-    "#), @r###"
-      2 |         fn (x: A, y) { 0 }
-                         ~
-    Undeclared type variable `A`.
-    "###);
-}
-
-#[test]
-fn unknown_type_var_in_func_inst() {
-    insta::assert_snapshot!(check_error(r#"
-    fn g<A>(x: A) -> A { x }
-    fn f() -> Int {
-        g@<A>()
-    }
-    "#), @r###"
-      3 |         g@<A>()
-                     ~
-    Undeclared type variable `A`.
-    "###);
-}
-
-#[test]
 fn rule_check_infer() {
     check_success(r#"
     fn f() -> Int { 0 }
@@ -249,6 +195,16 @@ fn rule_lam_infer_1() {
 }
 
 #[test]
+fn rule_lam_infer_2() {
+    check_success(r#"
+    fn f<A>() -> (A, A) -> Bool {
+        let f = fn (x: A, y: A) { x == y };
+        f
+    }
+    "#);
+}
+
+#[test]
 fn rule_lam_infer_duplicate_param() {
     insta::assert_snapshot!(check_error(r#"
     fn f() -> (Int) -> Bool {
@@ -259,6 +215,39 @@ fn rule_lam_infer_duplicate_param() {
       2 |         let f = fn (x: Int, x: Int) { x };
                                       ~
     Duplicate paramter `x`.
+    "###);
+}
+
+#[test]
+fn rule_lam_infer_unknown_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let f = fn (x: Unknown) {
+            0
+        };
+        0
+    }
+    "#), @r###"
+      2 |         let f = fn (x: Unknown) {
+                                 ~~~~~~~
+    Undeclared type variable `Unknown`.
+    "###);
+}
+
+#[test]
+fn rule_lam_infer_illformed_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    type Illformed<A> = A
+    fn f() -> Int {
+        let f = fn (x: Int, y: Illformed) {
+            0
+        };
+        0
+    }
+    "#), @r###"
+      3 |         let f = fn (x: Int, y: Illformed) {
+                                         ~~~~~~~~~
+    Expected a type but found the generic type `Illformed`.
     "###);
 }
 
@@ -293,6 +282,15 @@ fn rule_lam_check_1() {
     check_success(r#"
     fn f() -> (Int) -> Int {
         fn (x) { x }
+    }
+    "#);
+}
+
+#[test]
+fn rule_lam_check_2() {
+    check_success(r#"
+    fn f<A>() -> (A, A) -> A {
+        fn (x: A, y) { x }
     }
     "#);
 }
@@ -412,11 +410,49 @@ fn rule_lam_check_mismatch_result() {
 }
 
 #[test]
+fn rule_lam_check_unknown_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> (Int) -> Int {
+        fn (x: Unknown) { 0 }
+    }
+    "#), @r###"
+      2 |         fn (x: Unknown) { 0 }
+                         ~~~~~~~
+    Undeclared type variable `Unknown`.
+    "###);
+}
+
+#[test]
+fn rule_lam_check_illformed_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    type Illformed<A> = A
+    fn f() -> (Int, Int) -> Int {
+        fn (x, y: Illformed) { 0 }
+    }
+    "#), @r###"
+      3 |         fn (x, y: Illformed) { 0 }
+                            ~~~~~~~~~
+    Expected a type but found the generic type `Illformed`.
+    "###);
+}
+
+#[test]
 fn rule_func_inst_1() {
     check_success(r#"
     fn g<A>(x: A) -> A { x }
     fn f() -> Int {
         let x = g@<Int>(0);
+        x
+    }
+    "#);
+}
+
+#[test]
+fn rule_func_inst_2() {
+    check_success(r#"
+    fn g<A>(x: A, y: A) -> Bool { x == y }
+    fn f<B>(b: B) -> Bool {
+        let x = g@<B>(b, b);
         x
     }
     "#);
@@ -585,6 +621,35 @@ fn rule_func_inst_mismatch_result() {
       3 |         g@<Bool>(CheckMe)
                            ~~~~~~~
     Expected an expression of type `Bool` but found variant constructor `CheckMe`.
+    "###);
+}
+
+#[test]
+fn rule_func_inst_unknown_type_arg() {
+    insta::assert_snapshot!(check_error(r#"
+    fn g<A>(x: A) -> A { x }
+    fn f() -> Int {
+        g@<Unknown>(0)
+    }
+    "#), @r###"
+      3 |         g@<Unknown>(0)
+                     ~~~~~~~
+    Undeclared type variable `Unknown`.
+    "###);
+}
+
+#[test]
+fn rule_func_inst_illformed_type_arg() {
+    insta::assert_snapshot!(check_error(r#"
+    type Illformed<A> = A
+    fn g<A>(x: A) -> A { x }
+    fn f() -> Int {
+        g@<Illformed>(0)
+    }
+    "#), @r###"
+      4 |         g@<Illformed>(0)
+                     ~~~~~~~~~
+    Expected a type but found the generic type `Illformed`.
     "###);
 }
 
@@ -884,6 +949,19 @@ fn rule_let_check_infer() {
 }
 
 #[test]
+fn rule_let_check_infer_poly() {
+    check_success(r#"
+    fn f<A>(a: A) -> Int {
+        let x = {
+            let y: A = a;
+            0
+        };
+        x
+    }
+    "#);
+}
+
+#[test]
 fn rule_let_check_infer_mismatch_bindee() {
     insta::assert_snapshot!(check_error(r#"
     fn f() -> Int {
@@ -914,6 +992,41 @@ fn rule_let_check_infer_body_not_inferrable() {
       4 |             InferMe
                       ~~~~~~~
     Cannot infer the type of the expression. Further type annotations are required.
+    "###);
+}
+
+#[test]
+fn rule_let_check_infer_unknown_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let x = {
+            let y: Unknown = 0;
+            0
+        };
+        0
+    }
+    "#), @r###"
+      3 |             let y: Unknown = 0;
+                             ~~~~~~~
+    Undeclared type variable `Unknown`.
+    "###);
+}
+
+#[test]
+fn rule_let_check_infer_illformed_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    type Illformed<A> = A
+    fn f() -> Int {
+        let x = {
+            let y: Illformed = 0;
+            0
+        };
+        0
+    }
+    "#), @r###"
+      4 |             let y: Illformed = 0;
+                             ~~~~~~~~~
+    Expected a type but found the generic type `Illformed`.
     "###);
 }
 
@@ -990,6 +1103,35 @@ fn rule_let_check_check_mismatch_body() {
       3 |         CheckMe1
                   ~~~~~~~~
     Expected an expression of type `Int` but found variant constructor `CheckMe1`.
+    "###);
+}
+
+#[test]
+fn rule_let_check_check_unknown_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    fn f() -> Int {
+        let y: Unknown = 0;
+        0
+    }
+    "#), @r###"
+      2 |         let y: Unknown = 0;
+                         ~~~~~~~
+    Undeclared type variable `Unknown`.
+    "###);
+}
+
+#[test]
+fn rule_let_check_check_illformed_type_ann() {
+    insta::assert_snapshot!(check_error(r#"
+    type Illformed<A> = A
+    fn f() -> Int {
+        let y: Illformed = 0;
+        0
+    }
+    "#), @r###"
+      3 |         let y: Illformed = 0;
+                         ~~~~~~~~~
+    Expected a type but found the generic type `Illformed`.
     "###);
 }
 

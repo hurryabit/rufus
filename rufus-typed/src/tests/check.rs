@@ -6,6 +6,7 @@ mod resolution;
 mod signatures;
 mod types;
 
+#[allow(dead_code)]
 fn check_output(input: &str) -> Module {
     let parser = parser::ModuleParser::new();
     let mut errors = Vec::new();
