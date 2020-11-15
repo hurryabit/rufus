@@ -265,7 +265,7 @@ pub struct DebugWriter<'a> {
 }
 
 impl<'a> DebugWriter<'a> {
-    const INDENT_SIZE: usize = 2;
+    const INDENT_SIZE: usize = 4;
 
     pub fn new(writer: &'a mut dyn fmt::Write) -> Self {
         Self {
