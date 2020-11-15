@@ -1,10 +1,10 @@
 /*
-Tests for name resolution.
+Tests for type variable vs type definition resolution.
 
 We roughly test a matrix with one coordidinate being the position in which
 should be resolved and the other coordindate being the type we want to resolve
 in this position. We need to distinguish between monomorphic and polymorphic
-types. We only test well-formed types.
+types. We only test well-formed types here.
 
 There are the following positions in type declarations:
 * [type_top] Top-level: type X = ResolveMe

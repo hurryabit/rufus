@@ -1,9 +1,10 @@
 use crate::*;
-use syntax::{Decl, Module, Type, FuncDecl};
+use syntax::{Decl, Expr, Module, Type, FuncDecl};
 
 mod expressions;
-mod resolution;
 mod decls;
+mod func_resolution;
+mod type_resolution;
 mod types;
 
 #[allow(dead_code)]
@@ -51,6 +52,11 @@ fn check_output_func_decl(name: &str, input: &str) -> FuncDecl {
         })
         .unwrap()
 }
+
+fn check_output_func_body(name: &str, input: &str) -> Expr {
+    check_output_func_decl(name, input).body.locatee
+}
+
 
 fn check_success(input: &str) {
     let parser = parser::ModuleParser::new();
