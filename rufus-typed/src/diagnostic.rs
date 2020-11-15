@@ -67,3 +67,22 @@ impl Source {
         str.to_string()
     }
 }
+
+impl Diagnostic {
+    pub fn layout(&self, input: &str) -> String {
+        let Self { span, message, .. } = self;
+        if span.start.line == span.end.line {
+            let line = input.lines().nth(span.start.line as usize).unwrap();
+            format!(
+                "{:3} | {}\n{}{}\n{}",
+                span.start.line + 1,  // NOTE(MH): We're 0-base internal, and 1-based for users.
+                line,
+                " ".repeat((span.start.column + 6) as usize),
+                "~".repeat((span.end.column - span.start.column) as usize),
+                message
+            )
+        } else {
+            format!("{}: {}", span, message)
+        }
+    }
+}

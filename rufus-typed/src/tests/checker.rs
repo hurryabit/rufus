@@ -60,18 +60,5 @@ fn check_error(input: &str) -> String {
     assert!(diagnostics.is_empty());
     let mut module = result.unwrap();
     let diagnostic = module.check(&humanizer).unwrap_err();
-    let span = diagnostic.span;
-    if span.start.line == span.end.line {
-        let line = input.lines().nth(span.start.line as usize).unwrap();
-        format!(
-            "{:3} | {}\n{}{}\n{}",
-            span.start.line,
-            line,
-            " ".repeat((span.start.column + 6) as usize),
-            "~".repeat((span.end.column - span.start.column) as usize),
-            diagnostic.message
-        )
-    } else {
-        format!("{}: {}", span, diagnostic.message)
-    }
+    diagnostic.layout(input)
 }
