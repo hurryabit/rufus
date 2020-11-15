@@ -3,6 +3,8 @@ use std::fmt;
 mod mapper;
 pub use mapper::Humanizer;
 
+// NOTE(MH): This type *must* not implement `Display` since parser locations
+// are not meant to be shown to humans.
 #[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
 pub struct ParserLoc(u32);
 
@@ -28,18 +30,33 @@ impl ParserLoc {
     pub(crate) fn from_usize(loc: usize) -> Self {
         Self(loc as u32)
     }
+
+    pub fn humanize(self, humanizer: &Humanizer) -> HumanLoc {
+        humanizer.run(self)
+    }
 }
 
 impl HumanLoc {
-    pub const fn new(line: u32, column: u32) -> Self {
+    pub fn new(line: u32, column: u32) -> Self {
         Self { line, column }
-    }
-
-    pub fn to_lsp(&self) -> lsp_types::Position {
-        lsp_types::Position::new(self.line as u64, self.column as u64)
     }
 }
 
+impl<Loc> Span<Loc> {
+    pub fn new(start: Loc, end: Loc) -> Self {
+        Self { start, end }
+    }
+}
+
+impl Span<ParserLoc> {
+    pub fn humanize(self, humanizer: &Humanizer) -> Span<HumanLoc> {
+        let Self { start, end } = self;
+        Span {
+            start: start.humanize(humanizer),
+            end: end.humanize(humanizer),
+        }
+    }
+}
 
 impl<T, Loc> Located<T, Loc> {
     pub fn new(locatee: T, span: Span<Loc>) -> Self {

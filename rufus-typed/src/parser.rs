@@ -2,8 +2,8 @@ use crate::grammar;
 use crate::syntax::Module;
 use crate::location;
 use lalrpop_util::ParseError;
-use lsp_types::{Diagnostic, DiagnosticSeverity, Range};
-use location::{Humanizer, HumanLoc, ParserLoc};
+use location::{Humanizer, ParserLoc, Span};
+use crate::diagnostic::*;
 
 impl Module {
     pub fn parse(input: &str, humanizer: &Humanizer) -> (Option<Self>, Vec<Diagnostic>) {
@@ -34,23 +34,22 @@ pub fn parse_error_to_diagnostic(
     humanizer: &Humanizer,
 ) -> Diagnostic {
     use ParseError::*;
-    let error = error.map_location(|l| humanizer.loc(l));
-    let (start, end) = match error {
-        InvalidToken { location } | UnrecognizedEOF { location, .. } => (location, location),
+    let error = error.map_location(|loc| loc.humanize(humanizer));
+    let span = match error {
+        InvalidToken { location } | UnrecognizedEOF { location, .. } => Span::new(location, location),
         UnrecognizedToken {
             token: (start, _, end),
             ..
         }
         | ExtraToken {
             token: (start, _, end),
-        } => (start, end),
-        User { .. } => (HumanLoc::default(), HumanLoc::default()),
+        } => Span::new(start, end),
+        User { .. } => Span::default(),
     };
     Diagnostic {
-        range: Range::new(start.to_lsp(), end.to_lsp()),
-        severity: Some(DiagnosticSeverity::Error),
-        source: Some("rufus".to_string()),
+        span,
+        severity: Severity::Error,
+        source: Source::Parser,
         message: format!("{}", error),
-        ..Diagnostic::default()
     }
 }

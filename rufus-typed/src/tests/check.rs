@@ -79,7 +79,7 @@ fn check_error(input: &str) -> String {
     assert_eq!(errors, vec![]);
     let error = module.check().unwrap_err();
     let humanizer = location::Humanizer::new(input);
-    let span = humanizer.span(error.span);
+    let span = error.span.humanize(&humanizer);
     let error = error.locatee;
     if span.start.line == span.end.line {
         let line = input.lines().nth(span.start.line as usize).unwrap();

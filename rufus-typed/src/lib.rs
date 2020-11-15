@@ -2,6 +2,7 @@
 extern crate lalrpop_util;
 
 pub mod check;
+pub mod diagnostic;
 pub mod location;
 pub mod parser;
 pub mod syntax;

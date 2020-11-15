@@ -18,19 +18,15 @@ impl Humanizer {
         Self { line_starts }
     }
 
-    pub fn loc(&self, parser_loc: ParserLoc) -> HumanLoc {
+    pub fn run(&self, loc: ParserLoc) -> HumanLoc {
         let line = self
             .line_starts
-            .binary_search(&parser_loc)
+            .binary_search(&loc)
             .unwrap_or_else(|x| x - 1);
         HumanLoc {
             line: line as u32,
-            column: parser_loc.0 - self.line_starts[line].0
+            column: loc.0 - self.line_starts[line].0,
         }
-    }
-
-    pub fn span(&self, span: Span<ParserLoc>) -> Span<HumanLoc> {
-        span.map(|l| self.loc(l))
     }
 }
 
@@ -52,7 +48,10 @@ mod tests {
         ];
         for (input, expected_line_starts) in cases {
             let humanizer = Humanizer::new(input);
-            let expected_line_starts = expected_line_starts.into_iter().map(ParserLoc).collect::<Vec<_>>();
+            let expected_line_starts = expected_line_starts
+                .into_iter()
+                .map(ParserLoc)
+                .collect::<Vec<_>>();
             assert_eq!(humanizer.line_starts, expected_line_starts);
         }
     }
@@ -76,7 +75,10 @@ mod tests {
             (100, 5, 89),
         ];
         for (parser_loc, line, column) in cases {
-            assert_eq!(humanizer.loc(ParserLoc(parser_loc)), HumanLoc { line, column });
+            assert_eq!(
+                ParserLoc::from_usize(parser_loc).humanize(&humanizer),
+                HumanLoc { line, column }
+            );
         }
     }
 }

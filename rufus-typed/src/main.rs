@@ -132,16 +132,17 @@ fn validate_document(
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     info!("Received text for {}", &uri);
     let humanizer = location::Humanizer::new(&input);
-    let (opt_module, mut diagnostics) = Module::parse(&input, &humanizer);
+    let (opt_module, diagnostics) = Module::parse(&input, &humanizer);
+    let mut diagnostics: Vec<_> = diagnostics
+        .into_iter()
+        .map(rufus_typed::diagnostic::Diagnostic::to_lsp)
+        .collect();
 
     if full_validation {
         if let Some(mut module) = opt_module {
             if let Err(error) = module.check() {
-                let span = humanizer.span(error.span);
-                let range = Range::new(
-                    span.start.to_lsp(),
-                    span.end.to_lsp(),
-                );
+                let span = error.span.humanize(&humanizer);
+                let range = Range::new(span.start.to_lsp(), span.end.to_lsp());
                 let diagnostic = Diagnostic {
                     range,
                     severity: Some(DiagnosticSeverity::Error),
