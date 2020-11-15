@@ -1,7 +1,7 @@
 use std::fmt;
 
-mod mapper;
-pub use mapper::Humanizer;
+mod humanizer;
+pub use humanizer::Humanizer;
 
 // NOTE(MH): This type *must* not implement `Display` since parser locations
 // are not meant to be shown to humans.
