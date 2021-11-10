@@ -1,5 +1,4 @@
 import React from 'react';
-import 'bulma';
 import './App.css';
 
 const EDITOR_ROWS: number = 15;
@@ -146,7 +145,7 @@ class App extends React.Component<Props, State> {
         </section>
         <footer className="footer">
           <div className="content has-text-centered">
-              © 2019 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
+              © 2019–2021 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
           </div>
         </footer>
       </React.Fragment>
