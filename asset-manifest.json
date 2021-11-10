@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/rufus/static/css/main.cf690df4.chunk.css",
-    "main.js": "/rufus/static/js/main.5648b27a.chunk.js",
-    "main.js.map": "/rufus/static/js/main.5648b27a.chunk.js.map",
-    "runtime-main.js": "/rufus/static/js/runtime-main.b20f5177.js",
-    "runtime-main.js.map": "/rufus/static/js/runtime-main.b20f5177.js.map",
-    "static/js/2.51f35f7f.chunk.js": "/rufus/static/js/2.51f35f7f.chunk.js",
-    "static/js/2.51f35f7f.chunk.js.map": "/rufus/static/js/2.51f35f7f.chunk.js.map",
-    "static/js/3.0baab4f0.chunk.js": "/rufus/static/js/3.0baab4f0.chunk.js",
+    "main.css": "/rufus/static/css/main.dfca195d.chunk.css",
+    "main.js": "/rufus/static/js/main.5ef241d5.chunk.js",
+    "main.js.map": "/rufus/static/js/main.5ef241d5.chunk.js.map",
+    "runtime-main.js": "/rufus/static/js/runtime-main.382bc157.js",
+    "runtime-main.js.map": "/rufus/static/js/runtime-main.382bc157.js.map",
+    "static/js/2.6f932076.chunk.js": "/rufus/static/js/2.6f932076.chunk.js",
+    "static/js/2.6f932076.chunk.js.map": "/rufus/static/js/2.6f932076.chunk.js.map",
+    "static/js/3.a63b831c.chunk.js": "/rufus/static/js/3.a63b831c.chunk.js",
     "2827bfbaef80c01ce862.module.wasm": "/rufus/2827bfbaef80c01ce862.module.wasm",
-    "static/js/3.0baab4f0.chunk.js.map": "/rufus/static/js/3.0baab4f0.chunk.js.map",
+    "static/js/3.a63b831c.chunk.js.map": "/rufus/static/js/3.a63b831c.chunk.js.map",
     "index.html": "/rufus/index.html",
-    "precache-manifest.5548d2484c4ebd6da68fed313934c852.js": "/rufus/precache-manifest.5548d2484c4ebd6da68fed313934c852.js",
+    "precache-manifest.015525c39e12cff20fc1e0662fdde3bb.js": "/rufus/precache-manifest.015525c39e12cff20fc1e0662fdde3bb.js",
     "service-worker.js": "/rufus/service-worker.js",
-    "static/css/main.cf690df4.chunk.css.map": "/rufus/static/css/main.cf690df4.chunk.css.map",
-    "static/js/2.51f35f7f.chunk.js.LICENSE.txt": "/rufus/static/js/2.51f35f7f.chunk.js.LICENSE.txt"
+    "static/css/main.dfca195d.chunk.css.map": "/rufus/static/css/main.dfca195d.chunk.css.map",
+    "static/js/2.6f932076.chunk.js.LICENSE.txt": "/rufus/static/js/2.6f932076.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.b20f5177.js",
-    "static/js/2.51f35f7f.chunk.js",
-    "static/css/main.cf690df4.chunk.css",
-    "static/js/main.5648b27a.chunk.js"
+    "static/js/runtime-main.382bc157.js",
+    "static/js/2.6f932076.chunk.js",
+    "static/css/main.dfca195d.chunk.css",
+    "static/js/main.5ef241d5.chunk.js"
   ]
 }
