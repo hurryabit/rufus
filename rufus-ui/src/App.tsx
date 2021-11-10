@@ -1,20 +1,23 @@
 import React from 'react';
 import './App.css';
 
+const EXAMPLES_DIR: string = '/rufus/examples';
+
 const EDITOR_ROWS: number = 15;
 
-const DEFAULT_PROGRAM: string =
-`let twice = fun f x -> f (f x) in
-let inc = fun x -> x + 1 in
-twice inc 0`;
-
 type Props = {};
+
+type Example = {
+  name: string;
+  file: string;
+}
 
 type State = {
   wasm: typeof import('rufus-wasm') | null;
   program: string;
   output: string;
   result: string;
+  examples: Example[];
 }
 
 class App extends React.Component<Props, State> {
@@ -22,13 +25,39 @@ class App extends React.Component<Props, State> {
     super(props);
     this.state = {
       wasm: null,
-      program: DEFAULT_PROGRAM,
+      program: '',
       output: '',
       result: '',
+      examples: [],
     };
   }
   componentDidMount() {
+    this.loadExamples();
     this.loadWasm();
+  }
+
+  loadExamples = async () => {
+    try {
+      const response = await fetch(`${EXAMPLES_DIR}/index.json`);
+      const examples: Example[] = await response.json();
+      this.setState({ examples });
+      if (examples.length > 0) {
+        this.loadExample(examples[0].file);
+      }
+    } catch (err) {
+      console.error(`Unexptected error in loadExamples. [Message: ${err.message}]`);
+    }
+  }
+
+  loadExample = async (example_file: string) => {
+    try {
+      const response = await fetch(`${EXAMPLES_DIR}/${example_file}`);
+      const program = await response.text();
+      this.setState({ program });
+    } catch (err) {
+      console.error(`Unexpected error in handleExampleSelect. [Message: ${err.message}]`);
+      alert('Cannot load example. See console for details.');
+    }
   }
 
   loadWasm = async () => {
@@ -38,6 +67,10 @@ class App extends React.Component<Props, State> {
     } catch (err) {
       console.error(`Unexpected error in loadWasm. [Message: ${err.message}]`);
     }
+  }
+
+  handleExampleSelect = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    await this.loadExample(event.target.value);
   }
 
   handleProgramChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -89,45 +122,33 @@ class App extends React.Component<Props, State> {
         </section>
         <section className="section">
           <div className="container">
+            <div className="field">
+              <label className="label">Program</label>
+              <div className="control">
+                <textarea
+                  className="textarea is-family-code"
+                  spellCheck={false}
+                  rows={EDITOR_ROWS}
+                  value={state.program}
+                  onChange={this.handleProgramChange}
+                  onKeyDown={this.handleProgramKeyDown}
+                />
+              </div>
+            </div>
             <div className="columns">
-              <div className="column is-two-thirds">
+              <div className="column is-2">
                 <div className="field">
-                  <label className="label">Program</label>
-                  <div className="control">
-                    <textarea
-                      className="textarea is-family-code"
-                      spellCheck={false}
-                      rows={EDITOR_ROWS}
-                      value={state.program}
-                      onChange={this.handleProgramChange}
-                      onKeyDown={this.handleProgramKeyDown}
-                    />
-                  </div>
-                </div>
-                <div className="field">
-                  <label className="label">&nbsp;</label>
-                  <div className="control">
-                    <button
-                      className="button is-fullwidth is-info"
-                      onClick={this.handleRunClick}
-                    >
-                      Run
-                    </button>
+                  <label className="label">Example</label>
+                  <div className="control select is-fullwidth">
+                    <select onChange={this.handleExampleSelect}>
+                      {
+                        state.examples.map(({name, file}) => (<option value={file}>{name}</option>))
+                      }
+                    </select>
                   </div>
                 </div>
               </div>
-              <div className="column is-one-third">
-                <div className="field">
-                  <label className="label">Output</label>
-                  <div className="control">
-                    <textarea
-                      className="textarea is-family-code"
-                      readOnly
-                      rows={EDITOR_ROWS}
-                      value={state.output}
-                    />
-                  </div>
-                </div>
+              <div className="column is-8">
                 <div className="field">
                   <label className="label">Result</label>
                   <div className="control">
@@ -140,12 +161,25 @@ class App extends React.Component<Props, State> {
                   </div>
                 </div>
               </div>
+              <div className="column is-2">
+                <div className="field">
+                  <label className="label">&nbsp;</label>
+                  <div className="control">
+                    <button
+                      className="button is-fullwidth is-info"
+                      onClick={this.handleRunClick}
+                    >
+                      Run
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
         <footer className="footer">
           <div className="content has-text-centered">
-              © 2019–2021 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
+            © 2019–2021 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
           </div>
         </footer>
       </React.Fragment>
