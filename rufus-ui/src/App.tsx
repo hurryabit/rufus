@@ -11,7 +11,7 @@ twice inc 0`;
 type Props = {};
 
 type State = {
-  wasm: typeof import('rufus') | null;
+  wasm: typeof import('rufus-wasm') | null;
   program: string;
   output: string;
   result: string;
@@ -33,7 +33,7 @@ class App extends React.Component<Props, State> {
 
   loadWasm = async () => {
     try {
-      const wasm = await import('rufus');
+      const wasm = await import('rufus-wasm');
       this.setState({ wasm });
     } catch (err) {
       console.error(`Unexpected error in loadWasm. [Message: ${err.message}]`);
