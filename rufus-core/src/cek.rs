@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 use std::rc::Rc;
 
 use crate::syntax::*;
@@ -375,5 +376,34 @@ mod op_code {
         let x = args[0].as_i64()?;
         let y = args[1].as_i64()?;
         Ok(Value::Bool(f(&x, &y)))
+    }
+}
+
+impl<'a> fmt::Display for Value<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use Value::*;
+        match self {
+            Num(n) => write!(f, "{}", n),
+            Bool(b) => write!(f, "{}", b),
+            PAP(_) => write!(f, "<PAP>"),
+            Record(record) => {
+                if record.is_empty() {
+                    write!(f, "{{}}")
+                } else {
+                    write!(f, "{{ ")?;
+                    let mut first = true;
+                    for (field, value) in record {
+                        if first {
+                            first = false;
+                        } else {
+                            write!(f, "; ")?;
+                        }
+                        write!(f, "{} = {}", field, value)?;
+                    }
+                    write!(f, " }}")
+                }
+            }
+            Fix(_) => write!(f, "<FIX>"),
+        }
     }
 }
