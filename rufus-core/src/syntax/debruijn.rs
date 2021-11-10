@@ -18,6 +18,7 @@ impl Indexer {
     }
 
     pub fn intro_many<T>(&mut self, xs: &[String], f: impl FnOnce(&mut Self) -> T) -> T {
+        #[allow(clippy::needless_collect)]
         let old_indices: Vec<(&String, Option<usize>)> = xs
             .iter()
             .map(|x| {
