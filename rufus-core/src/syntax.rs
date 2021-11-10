@@ -44,7 +44,7 @@ impl Expr {
         use Expr::*;
         match self {
             Var(x, i @ None) => {
-                if let Some(j) = indexer.get(&x) {
+                if let Some(j) = indexer.get(x) {
                     *i = Some(j);
                 } else {
                     return Err(format!("unbound variable: {}", x));
@@ -53,11 +53,11 @@ impl Expr {
             Var(_, Some(_)) => panic!("indexer running on indexed expression"),
             Lam(xs, e) => {
                 // TODO(MH): Make this more efficient by using iterators.
-                indexer.intro_many(&xs, |indexer| e.index_aux(indexer))?;
+                indexer.intro_many(xs, |indexer| e.index_aux(indexer))?;
             }
             Let(x, e1, e2) => {
                 e1.index_aux(indexer)?;
-                indexer.intro(&x, |indexer| e2.index_aux(indexer))?;
+                indexer.intro(x, |indexer| e2.index_aux(indexer))?;
             }
             _ => {
                 for e in self.children_mut() {

@@ -308,7 +308,7 @@ impl<'a> Machine<'a> {
 }
 
 impl OpCode {
-    pub fn eval<'a>(self, args: Vec<Rc<Value<'a>>>) -> Result<Value<'a>, String> {
+    pub fn eval(self, args: Vec<Rc<Value>>) -> Result<Value, String> {
         use op_code::*;
         use std::ops::{Add, Div, Mul, Sub};
         use OpCode::*;
@@ -332,20 +332,20 @@ impl OpCode {
 mod op_code {
     use super::*;
 
-    pub fn eval_arith<'a, F: FnOnce(i64, i64) -> i64>(
+    pub fn eval_arith<F: FnOnce(i64, i64) -> i64>(
         f: F,
-        args: Vec<Rc<Value<'a>>>,
-    ) -> Result<Value<'a>, String> {
+        args: Vec<Rc<Value>>,
+    ) -> Result<Value, String> {
         let x = args[0].as_i64()?;
         let y = args[1].as_i64()?;
         Ok(Value::Num(f(x, y)))
     }
 
-    pub fn eval_equals<'a>(args: Vec<Rc<Value<'a>>>) -> bool {
+    pub fn eval_equals(args: Vec<Rc<Value>>) -> bool {
         eval_equals2(&args[0], &args[1])
     }
 
-    pub fn eval_equals2<'a>(x: &Rc<Value<'a>>, y: &Rc<Value<'a>>) -> bool {
+    pub fn eval_equals2(x: &Rc<Value>, y: &Rc<Value>) -> bool {
         use Value::*;
         match (&**x, &**y) {
             (Num(x), Num(y)) => x == y,
@@ -368,10 +368,10 @@ mod op_code {
         }
     }
 
-    pub fn eval_comp<'a, F: FnOnce(&i64, &i64) -> bool>(
+    pub fn eval_comp<F: FnOnce(&i64, &i64) -> bool>(
         f: F,
-        args: Vec<Rc<Value<'a>>>,
-    ) -> Result<Value<'a>, String> {
+        args: Vec<Rc<Value>>,
+    ) -> Result<Value, String> {
         let x = args[0].as_i64()?;
         let y = args[1].as_i64()?;
         Ok(Value::Bool(f(&x, &y)))
