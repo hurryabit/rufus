@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Default",
+        "file": "twice.ml"
+    },
+    {
+        "name": "Fibonacci",
+        "file": "fib.ml"
+    },
+    {
+        "name": "Lists",
+        "file": "list.ml"
+    }
+]
