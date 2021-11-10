@@ -14,6 +14,7 @@
     "react": "^16.13.1",
     "react-dom": "^16.11.1",
     "react-scripts": "3.4.1",
+    "rufus-wasm": "0.1.0",
     "typescript": "3.9.5"
   },
   "scripts": {
@@ -42,7 +43,6 @@
   "devDependencies": {
     "gh-pages": "^2.2.0",
     "react-app-rewired": "^2.1.6",
-    "rufus": "file:../rufus-wasm/pkg",
     "wasm-loader": "^1.3.0"
   }
 }
