@@ -1,9 +1,13 @@
 import React from 'react';
 import './App.css';
+import AceEditor from 'react-ace';
+
+import "ace-builds/src-noconflict/mode-ocaml";
+import "ace-builds/src-noconflict/theme-chrome";
 
 const EXAMPLES_DIR: string = '/rufus/examples';
 
-const EDITOR_ROWS: number = 15;
+const EDITOR_ROWS: number = 20;
 
 type Props = {};
 
@@ -73,18 +77,11 @@ class App extends React.Component<Props, State> {
     await this.loadExample(event.target.value);
   }
 
-  handleProgramChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    this.setState({ program: event.currentTarget.value })
+  handleProgramChange = (program: string) => {
+    this.setState({ program })
   }
 
-  handleProgramKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && event.metaKey) {
-      this.handleRunClick(event);
-    }
-  }
-
-  handleRunClick = (event: React.SyntheticEvent) => {
-    event.preventDefault();
+  runCommand = () => {
     const wasm = this.state.wasm;
     if (!wasm) {
       alert("WASM not loaded!");
@@ -101,6 +98,11 @@ class App extends React.Component<Props, State> {
         alert(value);
         break;
     }
+  }
+
+  handleRunClick = (event: React.SyntheticEvent) => {
+    event.preventDefault();
+    this.runCommand();
   }
 
   render() {
@@ -125,13 +127,26 @@ class App extends React.Component<Props, State> {
             <div className="field">
               <label className="label">Program</label>
               <div className="control">
-                <textarea
-                  className="textarea is-family-code"
-                  spellCheck={false}
-                  rows={EDITOR_ROWS}
+                <AceEditor
+                  mode="ocaml"
+                  theme="chrome"
+                  fontSize={16}
+                  focus={true}
+                  showPrintMargin={false}
+                  width="100%"
+                  minLines={EDITOR_ROWS}
+                  maxLines={EDITOR_ROWS}
                   value={state.program}
                   onChange={this.handleProgramChange}
-                  onKeyDown={this.handleProgramKeyDown}
+                  commands={[{
+                    name: 'Run program',
+                    bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
+                    exec: this.runCommand,
+                  }]}
+                  setOptions={{
+                    useSoftTabs: true,
+                    newLineMode: "unix" as unknown as boolean,
+                  }}
                 />
               </div>
             </div>
@@ -142,7 +157,7 @@ class App extends React.Component<Props, State> {
                   <div className="control select is-fullwidth">
                     <select onChange={this.handleExampleSelect}>
                       {
-                        state.examples.map(({name, file}) => (<option value={file}>{name}</option>))
+                        state.examples.map(({ name, file }) => (<option key={file} value={file}>{name}</option>))
                       }
                     </select>
                   </div>
