@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use rufus_core::{cek, parser};
+use rufus_core::{cek, humanizer, parser};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
@@ -24,10 +24,15 @@ impl ExecResult {
 }
 
 fn exec_result(program: &str) -> Result<String, String> {
+    let humanizer = humanizer::Humanizer::new(program);
     let parser = parser::ExprParser::new();
     let expr = parser
         .parse(program)
-        .map_err(|err| err.to_string())?
+        .map_err(|err| {
+            let mut msg = err.map_location(|loc| humanizer.run(loc)).to_string();
+            humanizer::sanitize_source_span(&mut msg);
+            msg
+        })?
         .index()?;
     let machine = cek::Machine::new(&expr);
     let value = machine.run()?;
