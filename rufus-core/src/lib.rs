@@ -1,6 +1,7 @@
 use lalrpop_util::lalrpop_mod;
 
 pub mod cek;
+pub mod humanizer;
 pub mod syntax;
 
 lalrpop_mod!(
