@@ -1,25 +1,25 @@
 {
   "files": {
     "main.css": "/rufus/static/css/main.dfca195d.chunk.css",
-    "main.js": "/rufus/static/js/main.2a6944e8.chunk.js",
-    "main.js.map": "/rufus/static/js/main.2a6944e8.chunk.js.map",
-    "runtime-main.js": "/rufus/static/js/runtime-main.7c311fc9.js",
-    "runtime-main.js.map": "/rufus/static/js/runtime-main.7c311fc9.js.map",
-    "static/js/2.fce16fe2.chunk.js": "/rufus/static/js/2.fce16fe2.chunk.js",
-    "static/js/2.fce16fe2.chunk.js.map": "/rufus/static/js/2.fce16fe2.chunk.js.map",
-    "static/js/3.2bd34251.chunk.js": "/rufus/static/js/3.2bd34251.chunk.js",
-    "638f6037f697970263b8.module.wasm": "/rufus/638f6037f697970263b8.module.wasm",
-    "static/js/3.2bd34251.chunk.js.map": "/rufus/static/js/3.2bd34251.chunk.js.map",
+    "main.js": "/rufus/static/js/main.07aae5a1.chunk.js",
+    "main.js.map": "/rufus/static/js/main.07aae5a1.chunk.js.map",
+    "runtime-main.js": "/rufus/static/js/runtime-main.aa34faff.js",
+    "runtime-main.js.map": "/rufus/static/js/runtime-main.aa34faff.js.map",
+    "static/js/2.834cb9da.chunk.js": "/rufus/static/js/2.834cb9da.chunk.js",
+    "static/js/2.834cb9da.chunk.js.map": "/rufus/static/js/2.834cb9da.chunk.js.map",
+    "static/js/3.d2de5924.chunk.js": "/rufus/static/js/3.d2de5924.chunk.js",
+    "96d1bb0dc3e224157e6d.module.wasm": "/rufus/96d1bb0dc3e224157e6d.module.wasm",
+    "static/js/3.d2de5924.chunk.js.map": "/rufus/static/js/3.d2de5924.chunk.js.map",
     "index.html": "/rufus/index.html",
-    "precache-manifest.eb95e9107675034d3e36fc3ddcb49468.js": "/rufus/precache-manifest.eb95e9107675034d3e36fc3ddcb49468.js",
+    "precache-manifest.ab5bf0b42309b124a9cc26f40ef2c881.js": "/rufus/precache-manifest.ab5bf0b42309b124a9cc26f40ef2c881.js",
     "service-worker.js": "/rufus/service-worker.js",
     "static/css/main.dfca195d.chunk.css.map": "/rufus/static/css/main.dfca195d.chunk.css.map",
-    "static/js/2.fce16fe2.chunk.js.LICENSE.txt": "/rufus/static/js/2.fce16fe2.chunk.js.LICENSE.txt"
+    "static/js/2.834cb9da.chunk.js.LICENSE.txt": "/rufus/static/js/2.834cb9da.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.7c311fc9.js",
-    "static/js/2.fce16fe2.chunk.js",
+    "static/js/runtime-main.aa34faff.js",
+    "static/js/2.834cb9da.chunk.js",
     "static/css/main.dfca195d.chunk.css",
-    "static/js/main.2a6944e8.chunk.js"
+    "static/js/main.07aae5a1.chunk.js"
   ]
 }
