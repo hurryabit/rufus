@@ -1,8 +1,8 @@
-#[macro_use]
-extern crate lalrpop_util;
+use lalrpop_util::lalrpop_mod;
 
 pub mod cek;
 pub mod syntax;
+
 lalrpop_mod!(
     #[allow(clippy::all)]
     pub parser

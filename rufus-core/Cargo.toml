@@ -2,7 +2,7 @@
 name = "rufus-core"
 version = "0.1.0"
 authors = ["Martin Huschenbett <martin.huschenbett@posteo.me>"]
-edition = "2018"
+edition = "2021"
 publish = false
 description = "An experiment about a CEK machine implemented in Rust, compiled to Web Assembly and made alive via Typescript + React."
 homepage = "https://hurryabit.github.io/rufus"

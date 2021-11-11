@@ -1,7 +1,3 @@
-extern crate lalrpop_util;
-extern crate rufus_core;
-extern crate rustyline;
-
 use rufus_core::{cek, parser, syntax};
 use rustyline::error::ReadlineError;
 use rustyline::Editor;

@@ -1,10 +1,6 @@
-extern crate lalrpop_util;
-extern crate rufus_core;
-
 use wasm_bindgen::prelude::*;
 
-use rufus_core::{cek, parser, syntax};
-use syntax::Expr;
+use rufus_core::{cek, parser};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy)]
@@ -27,17 +23,20 @@ impl ExecResult {
     }
 }
 
+fn exec_result(program: &str) -> Result<String, String> {
+    let parser = parser::ExprParser::new();
+    let expr = parser
+        .parse(program)
+        .map_err(|err| err.to_string())?
+        .index()?;
+    let machine = cek::Machine::new(&expr);
+    let value = machine.run()?;
+    Ok(value.to_string())
+}
+
 #[wasm_bindgen]
 pub fn exec(program: &str) -> ExecResult {
-    let parser = parser::ExprParser::new();
-    match parser
-        .parse(program)
-        .map_err(|err| lalrpop_util::ParseError::to_string(&err))
-        .and_then(Expr::index)
-        .and_then(|expr| {
-            let machine = cek::Machine::new(&expr);
-            machine.run().map(|value| format!("{}", value))
-        }) {
+    match exec_result(program) {
         Ok(value) => ExecResult {
             status: ExecResultStatus::Ok,
             value,
