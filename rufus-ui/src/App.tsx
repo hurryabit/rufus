@@ -3,7 +3,7 @@ import './App.css';
 import AceEditor from 'react-ace';
 
 import "ace-builds/src-noconflict/mode-ocaml";
-import "ace-builds/src-noconflict/theme-chrome";
+import "ace-builds/src-noconflict/theme-xcode";
 
 const EXAMPLES_DIR: string = '/rufus/examples';
 
@@ -128,9 +128,10 @@ class App extends React.Component<Props, State> {
               <label className="label">Program</label>
               <div className="control">
                 <AceEditor
+                  name="editor"
                   mode="ocaml"
-                  theme="chrome"
-                  fontSize={16}
+                  theme="xcode"
+                  fontSize="1rem"
                   focus={true}
                   showPrintMargin={false}
                   width="100%"
