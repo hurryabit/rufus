@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use lalrpop_util::ParseError;
 
 use crate::syntax::*;
 
@@ -53,13 +54,15 @@ RecordAssign: (Name, Expr) = {
 }
 
 Name: Name = {
-    r"[a-z]\w*" => <>.to_string(),
+    ID_LOWER => <>.to_string(),
 }
 
 Num: i64 = {
-    r"[0-9]+" => i64::from_str(<>).unwrap(),
-}
-
+    NUMBER =>? i64::from_str(<>)
+        .map_err(|_| ParseError::User {
+            error: "number literal is too big"
+        })
+};
 Bool: bool = {
     "false" => false,
     "true" => true,
@@ -99,4 +102,22 @@ List0<T, Sep>: Vec<T> = {
 
 BinOp<X, Op, Y>: Expr = {
     <x:X> <op:Op> <y:Y> => Expr::App(Box::new(Expr::PrimOp(op)), vec![x, y]),
+}
+
+match {
+    "fun",
+    "let",
+    "rec",
+    "in",
+    "fix",
+    "if",
+    "then",
+    "else",
+    "true",
+    "false",
+    r"[a-z]\w*" => ID_LOWER,
+    r"[0-9]+" => NUMBER,
+    r"\s*" => { }, // The default whitespace skipping is disabled an, `ignore pattern` is specified
+    r"\(\*([^\*]*\*+[^\*\)])*([^\*]*\*+|[^\*])*\*\)" => { },  // Skip `(* comments *)`
+    _
 }
