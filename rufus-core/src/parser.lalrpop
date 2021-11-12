@@ -5,6 +5,10 @@ use crate::syntax::*;
 
 grammar;
 
+extern {
+    type Error = String;
+}
+
 pub Expr: Expr = {
     SumExpr,
     "fun" <Name+> "->" <Box<Expr>> => Expr::Lam(<>),
@@ -58,9 +62,9 @@ Name: Name = {
 }
 
 Num: i64 = {
-    NUMBER =>? i64::from_str(<>)
+    <n:NUMBER> =>? i64::from_str(n)
         .map_err(|_| ParseError::User {
-            error: "number literal is too big"
+            error: format!("Number literal {} is out of range", n),
         })
 };
 Bool: bool = {
