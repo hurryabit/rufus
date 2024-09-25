@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "/rufus/static/css/main.103fd0f4.css",
-    "main.js": "/rufus/static/js/main.48cd43b8.js",
-    "static/media/rufus_wasm_bg.wasm": "/rufus/static/media/rufus_wasm_bg.7ff4caeac9fad8978a31.wasm",
+    "main.css": "/rufus/static/css/main.bf7aa4ba.css",
+    "main.js": "/rufus/static/js/main.d069f305.js",
+    "static/media/rufus_wasm_bg.wasm": "/rufus/static/media/rufus_wasm_bg.d1de09e7704b8859807c.wasm",
     "index.html": "/rufus/index.html",
-    "main.103fd0f4.css.map": "/rufus/static/css/main.103fd0f4.css.map",
-    "main.48cd43b8.js.map": "/rufus/static/js/main.48cd43b8.js.map"
+    "main.bf7aa4ba.css.map": "/rufus/static/css/main.bf7aa4ba.css.map",
+    "main.d069f305.js.map": "/rufus/static/js/main.d069f305.js.map"
   },
   "entrypoints": [
-    "static/css/main.103fd0f4.css",
-    "static/js/main.48cd43b8.js"
+    "static/css/main.bf7aa4ba.css",
+    "static/js/main.d069f305.js"
   ]
 }
