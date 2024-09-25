@@ -5,6 +5,8 @@ import AceEditor from 'react-ace';
 import "ace-builds/src-noconflict/mode-ocaml";
 import "ace-builds/src-noconflict/theme-xcode";
 
+import wasmInit, { ExecResultStatus, exec as wasmExec } from 'rufus-wasm';
+
 const EXAMPLES_DIR: string = '/rufus/examples';
 
 const EDITOR_ROWS: number = 20;
@@ -17,7 +19,7 @@ type Example = {
 }
 
 type State = {
-  wasm: typeof import('rufus-wasm') | null;
+  wasmLoaded: boolean;
   program: string;
   output: string;
   result: string;
@@ -28,7 +30,7 @@ class App extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      wasm: null,
+      wasmLoaded: false,
       program: '',
       output: '',
       result: '',
@@ -49,7 +51,7 @@ class App extends React.Component<Props, State> {
         this.loadExample(examples[0].file);
       }
     } catch (err) {
-      console.error(`Unexptected error in loadExamples. [Message: ${err.message}]`);
+      console.error(`Unexptected error in loadExamples. [Message: ${err}]`);
     }
   }
 
@@ -59,17 +61,17 @@ class App extends React.Component<Props, State> {
       const program = await response.text();
       this.setState({ program });
     } catch (err) {
-      console.error(`Unexpected error in handleExampleSelect. [Message: ${err.message}]`);
+      console.error(`Unexpected error in handleExampleSelect. [Message: ${err}]`);
       alert('Cannot load example. See console for details.');
     }
   }
 
   loadWasm = async () => {
     try {
-      const wasm = await import('rufus-wasm');
-      this.setState({ wasm });
+      await wasmInit();
+      this.setState({ wasmLoaded: true })
     } catch (err) {
-      console.error(`Unexpected error in loadWasm. [Message: ${err.message}]`);
+      console.error(`Unexpected error in loadWasm. [Message: ${err}]`);
     }
   }
 
@@ -82,19 +84,18 @@ class App extends React.Component<Props, State> {
   }
 
   runCommand = () => {
-    const wasm = this.state.wasm;
-    if (!wasm) {
+    if (!this.state.wasmLoaded) {
       alert("WASM not loaded!");
       return;
     }
-    const result = wasm.exec(this.state.program);
+    const result = wasmExec(this.state.program);
     const status = result.status;
     const value = result.get_value();
     switch (status) {
-      case wasm.ExecResultStatus.Ok:
+      case ExecResultStatus.Ok:
         this.setState({ result: value });
         break;
-      case wasm.ExecResultStatus.Err:
+      case ExecResultStatus.Err:
         alert(value);
         break;
     }
@@ -146,7 +147,7 @@ class App extends React.Component<Props, State> {
                   }]}
                   setOptions={{
                     useSoftTabs: true,
-                    newLineMode: "unix" as unknown as boolean,
+                    newLineMode: "unix",
                   }}
                 />
               </div>
@@ -195,7 +196,7 @@ class App extends React.Component<Props, State> {
         </section>
         <footer className="footer">
           <div className="content has-text-centered">
-            © 2019–2021 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
+            © 2019–2024 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
           </div>
         </footer>
       </React.Fragment>
