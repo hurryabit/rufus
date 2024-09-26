@@ -5,8 +5,6 @@ import AceEditor from 'react-ace';
 import "ace-builds/src-noconflict/mode-ocaml";
 import "ace-builds/src-noconflict/theme-xcode";
 
-import wasmInit, { ExecResultStatus, exec as wasmExec } from 'rufus-wasm';
-
 const EXAMPLES_DIR: string = '/rufus/examples';
 
 const EDITOR_ROWS: number = 20;
@@ -19,7 +17,7 @@ type Example = {
 }
 
 type State = {
-  wasmLoaded: boolean;
+  wasm: typeof import('rufus-wasm') | null;
   program: string;
   output: string;
   result: string;
@@ -30,7 +28,7 @@ class App extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      wasmLoaded: false,
+      wasm: null,
       program: '',
       output: '',
       result: '',
@@ -68,8 +66,8 @@ class App extends React.Component<Props, State> {
 
   loadWasm = async () => {
     try {
-      await wasmInit();
-      this.setState({ wasmLoaded: true })
+      const wasm = await import('rufus-wasm');
+      this.setState({ wasm })
     } catch (err) {
       console.error(`Unexpected error in loadWasm. [Message: ${err}]`);
     }
@@ -84,18 +82,19 @@ class App extends React.Component<Props, State> {
   }
 
   runCommand = () => {
-    if (!this.state.wasmLoaded) {
+    const wasm = this.state.wasm;
+    if (!wasm) {
       alert("WASM not loaded!");
       return;
     }
-    const result = wasmExec(this.state.program);
+    const result = wasm.exec(this.state.program);
     const status = result.status;
     const value = result.get_value();
     switch (status) {
-      case ExecResultStatus.Ok:
+      case wasm.ExecResultStatus.Ok:
         this.setState({ result: value });
         break;
-      case ExecResultStatus.Err:
+      case wasm.ExecResultStatus.Err:
         alert(value);
         break;
     }

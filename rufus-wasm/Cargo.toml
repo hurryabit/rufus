@@ -16,3 +16,6 @@ crate-type = ["cdylib", "rlib"]
 lalrpop-util = "0.21.0"
 rufus-core = { path = "../rufus-core" }
 wasm-bindgen = "=0.2.92"
+
+[profile.release]
+opt-level = "s"
