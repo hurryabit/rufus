@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import AceEditor from 'react-ace';
 
@@ -8,8 +8,6 @@ import "ace-builds/src-noconflict/theme-xcode";
 const EXAMPLES_DIR: string = '/rufus/examples';
 
 const EDITOR_ROWS: number = 20;
-
-type Props = {};
 
 type Example = {
   name: string;
@@ -24,75 +22,79 @@ type State = {
   examples: Example[];
 }
 
-class App extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      wasm: null,
-      program: '',
-      output: '',
-      result: '',
-      examples: [],
-    };
-  }
-  componentDidMount() {
-    this.loadExamples();
-    this.loadWasm();
-  }
+export default function App() {
+  const [state, setState] = useState<State>({
+    wasm: null,
+    program: '',
+    output: '',
+    result: '',
+    examples: [],
+  });
+  // NOTE(MH): This is a workaround for https://github.com/securingsincity/react-ace/issues/684.
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
-  loadExamples = async () => {
-    try {
-      const response = await fetch(`${EXAMPLES_DIR}/index.json`);
-      const examples: Example[] = await response.json();
-      this.setState({ examples });
-      if (examples.length > 0) {
-        this.loadExample(examples[0].file);
-      }
-    } catch (err) {
-      console.error(`Unexptected error in loadExamples. [Message: ${err}]`);
-    }
-  }
-
-  loadExample = async (example_file: string) => {
+  async function loadExample(example_file: string) {
     try {
       const response = await fetch(`${EXAMPLES_DIR}/${example_file}`);
       const program = await response.text();
-      this.setState({ program });
+      setState(function (state) { return { ...state, program: program }; });
     } catch (err) {
-      console.error(`Unexpected error in handleExampleSelect. [Message: ${err}]`);
+      console.error(`Unexpected error in loadExample. [Message: ${err}]`);
       alert('Cannot load example. See console for details.');
     }
   }
 
-  loadWasm = async () => {
-    try {
-      const wasm = await import('rufus-wasm');
-      this.setState({ wasm })
-    } catch (err) {
-      console.error(`Unexpected error in loadWasm. [Message: ${err}]`);
+  useEffect(function () {
+    async function loadExamples() {
+      try {
+        const response = await fetch(`${EXAMPLES_DIR}/index.json`);
+        const examples: Example[] = await response.json();
+        setState(function (state) { return { ...state, examples }; });
+        if (examples.length > 0) {
+          loadExample(examples[0].file);
+        }
+      } catch (err) {
+        console.error(`Unexptected error in loadExamples. [Message: ${err}]`);
+      }
     }
+
+    async function loadWasm() {
+      try {
+        const wasm = await import('rufus-wasm');
+        setState(function (state) { return { ...state, wasm }; })
+      } catch (err) {
+        console.error(`Unexpected error in loadWasm. [Message: ${err}]`);
+      }
+    }
+
+    loadExamples();
+    loadWasm();
+  }, []);
+
+
+  function handleExampleSelect(event: React.ChangeEvent<HTMLSelectElement>) {
+    loadExample(event.target.value);
   }
 
-  handleExampleSelect = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    await this.loadExample(event.target.value);
+  function handleProgramChange(program: string) {
+    setState(function (state) { return { ...state, program }; })
   }
 
-  handleProgramChange = (program: string) => {
-    this.setState({ program })
-  }
-
-  runCommand = () => {
-    const wasm = this.state.wasm;
+  function runCommand() {
+    // NOTE(MH): This is the other half of the workaround mentioned above.
+    const state = stateRef.current;
+    const wasm = state.wasm;
     if (!wasm) {
       alert("WASM not loaded!");
       return;
     }
-    const result = wasm.exec(this.state.program);
+    const result = wasm.exec(state.program);
     const status = result.status;
     const value = result.get_value();
     switch (status) {
       case wasm.ExecResultStatus.Ok:
-        this.setState({ result: value });
+        setState(function (state) { return { ...state, result: value }; });
         break;
       case wasm.ExecResultStatus.Err:
         alert(value);
@@ -100,107 +102,103 @@ class App extends React.Component<Props, State> {
     }
   }
 
-  handleRunClick = (event: React.SyntheticEvent) => {
+  function handleRunClick(event: React.SyntheticEvent) {
     event.preventDefault();
-    this.runCommand();
+    runCommand();
   }
 
-  render() {
-    const state = this.state;
-    return (
-      <React.Fragment>
-        <section className="hero is-info">
-          <div className="hero-body">
-            <div className="container">
-              <h1 className="title">
-                rufus
-              </h1>
-              <h2 className="subtitle">
-                An experiment about a CEK machine implemented in Rust,
-                compiled to Web Assembly and made alive via Typescript + React.
-              </h2>
-            </div>
-          </div>
-        </section>
-        <section className="section">
+
+  return (
+    <>
+      <section className="hero is-info">
+        <div className="hero-body">
           <div className="container">
-            <div className="field">
-              <label className="label">Program</label>
-              <div className="control">
-                <AceEditor
-                  name="editor"
-                  mode="ocaml"
-                  theme="xcode"
-                  fontSize="1rem"
-                  focus={true}
-                  showPrintMargin={false}
-                  width="100%"
-                  minLines={EDITOR_ROWS}
-                  maxLines={EDITOR_ROWS}
-                  value={state.program}
-                  onChange={this.handleProgramChange}
-                  commands={[{
-                    name: 'Run program',
-                    bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
-                    exec: this.runCommand,
-                  }]}
-                  setOptions={{
-                    useSoftTabs: true,
-                    newLineMode: "unix",
-                  }}
-                />
+            <h1 className="title">
+              rufus
+            </h1>
+            <h2 className="subtitle">
+              An experiment about a CEK machine implemented in Rust,
+              compiled to Web Assembly and made alive via Typescript + React.
+            </h2>
+          </div>
+        </div>
+      </section>
+      <section className="section">
+        <div className="container">
+          <div className="field">
+            <label className="label">Program</label>
+            <div className="control">
+              <AceEditor
+                name="editor"
+                mode="ocaml"
+                theme="xcode"
+                fontSize="1rem"
+                focus={true}
+                showPrintMargin={false}
+                width="100%"
+                minLines={EDITOR_ROWS}
+                maxLines={EDITOR_ROWS}
+                value={state.program}
+                onChange={handleProgramChange}
+                commands={[{
+                  name: 'Run program',
+                  bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
+                  exec: runCommand,
+                }]}
+                setOptions={{
+                  useSoftTabs: true,
+                  newLineMode: "unix",
+                }}
+              />
+            </div>
+          </div>
+          <div className="columns">
+            <div className="column is-2">
+              <div className="field">
+                <label className="label">Example</label>
+                <div className="control select is-fullwidth">
+                  <select onChange={handleExampleSelect}>
+                    {
+                      state.examples.map(({ name, file }) => (<option key={file} value={file}>{name}</option>))
+                    }
+                  </select>
+                </div>
               </div>
             </div>
-            <div className="columns">
-              <div className="column is-2">
-                <div className="field">
-                  <label className="label">Example</label>
-                  <div className="control select is-fullwidth">
-                    <select onChange={this.handleExampleSelect}>
-                      {
-                        state.examples.map(({ name, file }) => (<option key={file} value={file}>{name}</option>))
-                      }
-                    </select>
-                  </div>
+            <div className="column is-8">
+              <div className="field">
+                <label className="label">Result</label>
+                <div className="control">
+                  <input
+                    className="input is-family-code"
+                    type="text"
+                    readOnly
+                    value={state.result}
+                  />
                 </div>
               </div>
-              <div className="column is-8">
-                <div className="field">
-                  <label className="label">Result</label>
-                  <div className="control">
-                    <input
-                      className="input is-family-code"
-                      type="text"
-                      readOnly
-                      value={state.result}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="column is-2">
-                <div className="field">
-                  <label className="label">&nbsp;</label>
-                  <div className="control">
-                    <button
-                      className="button is-fullwidth is-info"
-                      onClick={this.handleRunClick}
-                    >
-                      Run
-                    </button>
-                  </div>
+            </div>
+            <div className="column is-2">
+              <div className="field">
+                <label className="label">&nbsp;</label>
+                <div className="control">
+                  <button
+                    className="button is-fullwidth is-info"
+                    onClick={handleRunClick}
+                  >
+                    Run
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-        <footer className="footer">
-          <div className="content has-text-centered">
-            © 2019–2024 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
-          </div>
-        </footer>
-      </React.Fragment>
-    );
-  }
+        </div>
+      </section>
+      <footer className="footer">
+        <div className="content has-text-centered">
+          © 2019–2024 <a href="https://github.com/hurryabit/rufus" target="blank">Martin Huschenbett</a>
+        </div>
+      </footer>
+    </>
+  );
 }
-
-export default App;
