@@ -9,11 +9,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Build
+    - uses: jetli/wasm-pack-action@v0.4.0
+    - name: Build Rust
       run: cargo build --locked
-    - name: Format
+    - name: Format Rust
       run: cargo fmt -- --check
     - name: Clippy
       run: cargo clippy -- --deny warnings
-    - name: Test
+    - name: Test Rust
       run: cargo test --locked
+    - name: WASM
+      working-directory: rufus-wasm
+      run: wasm-pack build
+    - name: UI Install
+      working-directory: rufus-ui
+      run: pnpm install --frozen-lockfile
+    - name: UI Build
+      working-directory: rufus-ui
+      run: pnpm build
+    - name: UI Lint
+      working-directory: rufus-ui
+      run: pnpm lint
