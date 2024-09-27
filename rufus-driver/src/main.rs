@@ -3,27 +3,6 @@ use rustyline::DefaultEditor;
 
 const HISTORY_FILE: &str = ".rufus_history";
 
-fn print_syntax(root: rufus_syntax::SyntaxNode) {
-    fn go(node: rufus_syntax::SyntaxNode, indent: &mut String) {
-        println!("{}{:?}", indent, node);
-        indent.push_str("  ");
-        for child in node.children_with_tokens() {
-            match child {
-                rufus_syntax::SyntaxElement::Node(node) => go(node, indent),
-                rufus_syntax::SyntaxElement::Token(token) => {
-                    if !token.kind().is_trivia() {
-                        println!("{}#{:?}", indent, token);
-                    }
-                }
-            }
-        }
-        indent.truncate(indent.len() - 2);
-    }
-
-    println!("// Nodes prefixed with `#` are tokens.");
-    go(root, &mut String::new());
-}
-
 fn main() {
     println!("Hello!");
     // `()` can be used when no completer is required
@@ -42,7 +21,8 @@ fn main() {
                 for error in result.errors {
                     println!("ERROR: {:?}", error);
                 }
-                print_syntax(result.syntax);
+                println!("// Nodes prefixed with `#` are tokens.");
+                print!("{}", rufus_syntax::dump_syntax(result.syntax, false));
             }
             Err(ReadlineError::Interrupted) => break,
             Err(ReadlineError::Eof) => {

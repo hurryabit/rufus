@@ -23,10 +23,12 @@
 // just their immediate children. SUM_EXPR and PROD_EXPR use a common node
 // type BINOP_EXPR. Similarly, SUM_OP and PROD_OP are fused into BINOP.
 
-
 use std::fmt::Debug;
 
 use logos::Logos;
+
+#[cfg(test)]
+mod tests;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, logos::Logos)]
@@ -121,7 +123,7 @@ pub enum SyntaxKind {
 
 use SyntaxKind::*;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SyntaxKindSet(u64);
 
 impl SyntaxKindSet {
@@ -190,13 +192,13 @@ const FOLLOW_EXPR: SyntaxKindSet = SyntaxKindSet::union([
     BIN_OPS,
     FIRST_ATOM_EXPR, // Because function application is juxtaposition.
 ]);
-const FOLLOW_PARAM_LIST: SyntaxKindSet = SyntaxKindSet::from([ARROW]);
-const FOLLOW_PARAM: SyntaxKindSet =
-    SyntaxKindSet::union([FOLLOW_PARAM_LIST, SyntaxKindSet::from([ID_LOWER])]);
+// const FOLLOW_PARAM_LIST: SyntaxKindSet = SyntaxKindSet::from([ARROW]);
+// const FOLLOW_PARAM: SyntaxKindSet =
+//     SyntaxKindSet::union([FOLLOW_PARAM_LIST, SyntaxKindSet::from([ID_LOWER])]);
 
 impl SyntaxKind {
     pub fn is_trivia(self) -> bool {
-        return TRIVIA.contains(self);
+        TRIVIA.contains(self)
     }
 
     fn as_set(self) -> SyntaxKindSet {
@@ -224,7 +226,7 @@ impl rowan::Language for RufusLang {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ParseError {
     pub span: std::ops::Range<u32>,
     pub found: SyntaxKind,
@@ -259,7 +261,30 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(mut self) -> ParseResult {
+        self.root();
+        let green_node = self.builder.finish();
+        ParseResult {
+            syntax: rowan::SyntaxNode::new_root(green_node),
+            errors: self.errors,
+        }
+    }
+
+    pub fn root(&mut self) {
         self.builder.start_node(ROOT.into());
+        let mut token = self.peek();
+        if !FIRST_EXPR.contains(token) {
+            self.error(token, FIRST_EXPR, "ROOT");
+            self.builder.start_node(ERROR.into());
+            while token != EOF && !FIRST_EXPR.contains(token) {
+                self.consume(token);
+                token = self.peek();
+            }
+            self.builder.finish_node();
+        }
+        if token == EOF {
+            self.builder.finish_node();
+            return;
+        }
         self.expr();
         let mut token = self.peek();
         if token != EOF {
@@ -272,11 +297,6 @@ impl<'a> Parser<'a> {
             self.builder.finish_node();
         }
         self.builder.finish_node();
-        let green_node = self.builder.finish();
-        ParseResult {
-            syntax: rowan::SyntaxNode::new_root(green_node),
-            errors: self.errors,
-        }
     }
 
     /// Peek the `SyntaxKind` of the next non-trivia token.
@@ -289,7 +309,7 @@ impl<'a> Parser<'a> {
                 None => break EOF,
                 Some(Err(_)) => break UNKNOWN,
                 Some(Ok(token)) => {
-                    if TRIVIA.contains(token) {
+                    if token.is_trivia() {
                         self.builder
                             .token(token.into(), &self.input[self.lexer.span()]);
                     } else {
@@ -300,6 +320,10 @@ impl<'a> Parser<'a> {
         };
         self.peeked = Some(token);
         token
+    }
+
+    fn assert_first(&mut self, first: SyntaxKindSet) {
+        assert!(first.contains(self.peek()));
     }
 
     /// Consume the next token.
@@ -313,6 +337,9 @@ impl<'a> Parser<'a> {
             Some(token) => {
                 if !expected.contains(token) {
                     panic!("consumed {:?}, but expected {:?}", token, expected)
+                }
+                if token == EOF {
+                    panic!("consume end-of-file");
                 }
                 self.builder
                     .token(token.into(), &self.input[self.lexer.span()]);
@@ -331,8 +358,38 @@ impl<'a> Parser<'a> {
         });
     }
 
+    // `first` is the FIRST set of the next symbol in the rule we're parsing.
+    // `follow` is the FOLLOW set of the non-terminal whose rule we're parsing.
+    // Returns whether we can continue parsing the rule.
+    fn expect(
+        &mut self,
+        expected: SyntaxKind,
+        first: SyntaxKindSet,
+        follow: SyntaxKindSet,
+        rule: &'static str,
+    ) -> bool {
+        let mut token = self.peek();
+        if token == expected {
+            self.consume(expected);
+            return true;
+        }
+        self.error(token, expected.as_set(), rule);
+        self.builder.start_node(ERROR.into());
+        while token != expected && !first.contains(token) && !follow.contains(token) {
+            self.consume(token);
+            token = self.peek();
+        }
+        self.builder.finish_node();
+        if token == expected {
+            self.consume(expected);
+            return true;
+        }
+        first.contains(token)
+    }
+
     // EXPR -> FUN_EXPR | LET_EXPR | IF_EXPR | SUM_EXPR
     fn expr(&mut self) {
+        self.assert_first(FIRST_EXPR);
         match self.peek() {
             FUN => self.fun_expr(),
             LET => self.let_expr(),
@@ -346,21 +403,10 @@ impl<'a> Parser<'a> {
         self.builder.start_node(FUN_EXPR.into());
         self.consume(FUN);
         self.param_list();
-        let mut token = self.peek();
-        if token != ARROW {
-            self.error(token, ARROW.as_set(), "fun_expr");
-            self.builder.start_node(ERROR.into());
-            while !FOLLOW_EXPR.contains(token) && token != ARROW {
-                self.consume(token);
-                token = self.peek();
-            }
+        if !self.expect(ARROW, FIRST_EXPR, FOLLOW_EXPR, "FUN_EXPR") {
             self.builder.finish_node();
-            if token != ARROW {
-                self.builder.finish_node();
-                return;
-            }
+            return;
         }
-        self.consume(ARROW);
         self.expr();
         self.builder.finish_node();
     }
@@ -369,25 +415,10 @@ impl<'a> Parser<'a> {
     // PARAM -> ID_LOWER
     fn param_list(&mut self) {
         self.builder.start_node(PARAM_LIST.into());
-        loop {
-            match self.peek() {
-                ID_LOWER => {
-                    self.builder.start_node(PARAM.into());
-                    self.consume(ID_LOWER);
-                    self.builder.finish_node();
-                }
-                ARROW => break,
-                mut token => {
-                    assert!(!FOLLOW_PARAM.contains(token));
-                    self.error(token, FOLLOW_PARAM, "param_list");
-                    self.builder.start_node(ERROR.into());
-                    while !FOLLOW_PARAM.contains(token) {
-                        self.consume(token);
-                        token = self.peek();
-                    }
-                    self.builder.finish_node();
-                }
-            }
+        while self.peek() == ID_LOWER {
+            self.builder.start_node(PARAM.into());
+            self.consume(ID_LOWER);
+            self.builder.finish_node();
         }
         self.builder.finish_node();
     }
@@ -418,7 +449,7 @@ impl<'a> Parser<'a> {
                 self.consume(ASSIGN);
             } else if !FIRST_EXPR.contains(token) {
                 self.builder.finish_node();
-                return
+                return;
             }
         } else {
             self.consume(ASSIGN);
@@ -439,7 +470,7 @@ impl<'a> Parser<'a> {
                 self.consume(IN);
             } else if !FIRST_EXPR.contains(token) {
                 self.builder.finish_node();
-                return
+                return;
             }
         } else {
             self.consume(IN);
@@ -463,7 +494,7 @@ impl<'a> Parser<'a> {
             self.builder.finish_node();
             if token != ID_LOWER {
                 self.builder.finish_node();
-                return
+                return;
             }
         }
         self.consume(ID_LOWER);
@@ -583,3 +614,26 @@ impl std::fmt::Debug for SyntaxKindSet {
 
 pub type SyntaxNode = rowan::SyntaxNode<RufusLang>;
 pub type SyntaxElement = rowan::SyntaxElement<RufusLang>;
+
+pub fn dump_syntax(root: SyntaxNode, include_ws: bool) -> String {
+    fn go(node: SyntaxNode, buffer: &mut String, indent: &mut String, include_ws: bool) {
+        buffer.push_str(&format!("{}{:?}\n", indent, node));
+        indent.push_str("  ");
+        for child in node.children_with_tokens() {
+            match child {
+                SyntaxElement::Node(node) => go(node, buffer, indent, include_ws),
+                SyntaxElement::Token(token) => {
+                    if include_ws || !token.kind().is_trivia() {
+                        buffer.push_str(&format!("{}#{:?}\n", indent, token));
+                    }
+                }
+            }
+        }
+        indent.truncate(indent.len() - 2);
+    }
+
+    let mut buffer = String::new();
+    go(root, &mut buffer, &mut String::new(), include_ws);
+    // panic!("BUFFER: {}", buffer);
+    buffer
+}
