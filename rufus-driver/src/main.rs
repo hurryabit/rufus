@@ -22,7 +22,7 @@ fn main() {
                     println!("ERROR: {:?}", error);
                 }
                 println!("// Nodes prefixed with `#` are tokens.");
-                print!("{}", rufus_syntax::dump_syntax(result.syntax, false));
+                print!("{}", rufus_syntax::dump_syntax(result.syntax, true));
             }
             Err(ReadlineError::Interrupted) => break,
             Err(ReadlineError::Eof) => {

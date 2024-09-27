@@ -152,10 +152,6 @@ impl SyntaxKindSet {
         Self(bits)
     }
 
-    pub fn contains(self, kind: SyntaxKind) -> bool {
-        self.0 & (1 << (kind as u64)) != 0
-    }
-
     pub fn to_vec(self) -> Vec<SyntaxKind> {
         let mut kinds = Vec::new();
         let mut i = 0;
@@ -172,6 +168,30 @@ impl SyntaxKindSet {
 impl std::fmt::Debug for SyntaxKindSet {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fmt.debug_set().entries(self.to_vec()).finish()
+    }
+}
+
+pub(crate) trait SyntaxExpecation: Copy + std::fmt::Debug {
+    fn contains(&self, kind: SyntaxKind) -> bool;
+    fn to_set(&self) -> SyntaxKindSet;
+}
+
+impl SyntaxExpecation for SyntaxKind {
+    fn contains(&self, kind: SyntaxKind) -> bool {
+        *self == kind
+    }
+    fn to_set(&self) -> SyntaxKindSet {
+        SyntaxKindSet::singleton(*self)
+    }
+}
+
+impl SyntaxExpecation for SyntaxKindSet {
+    fn contains(&self, kind: SyntaxKind) -> bool {
+        self.0 & (1 << (kind as u64)) != 0
+    }
+
+    fn to_set(&self) -> SyntaxKindSet {
+        *self
     }
 }
 

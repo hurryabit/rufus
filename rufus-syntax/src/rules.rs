@@ -23,7 +23,7 @@
 // just their immediate children. SUM_EXPR and PROD_EXPR use a common node
 // type BINOP_EXPR. Similarly, SUM_OP and PROD_OP are fused into BINOP.
 
-use crate::kind::{SyntaxKind::*, SyntaxKindSet};
+use crate::kind::{SyntaxExpecation, SyntaxKind::*, SyntaxKindSet};
 use crate::parser::Parser;
 
 // Token classes.
@@ -39,50 +39,27 @@ const FIRST_ATOM_EXPR: SyntaxKindSet =
 const FIRST_EXPR: SyntaxKindSet =
     SyntaxKindSet::union([SyntaxKindSet::from([FUN, LET, IF]), FIRST_ATOM_EXPR]);
 
-// Follow sets.
-const FOLLOW_EXPR: SyntaxKindSet = SyntaxKindSet::union([
-    SyntaxKindSet::from([RPAREN, DOT, IN, THEN, ELSE, EOF]),
-    BIN_OPS,
-    FIRST_ATOM_EXPR, // Because function application is juxtaposition.
-]);
-// const FOLLOW_PARAM_LIST: SyntaxKindSet = SyntaxKindSet::from([ARROW]);
-// const FOLLOW_PARAM: SyntaxKindSet =
-//     SyntaxKindSet::union([FOLLOW_PARAM_LIST, SyntaxKindSet::from([ID_LOWER])]);
-
 pub fn root(parser: &mut Parser) {
-    parser.builder.start_node(ROOT.into());
-    let mut token = parser.peek();
-    if !FIRST_EXPR.contains(token) {
-        parser.error(token, FIRST_EXPR, "ROOT");
-        parser.builder.start_node(ERROR.into());
-        while token != EOF && !FIRST_EXPR.contains(token) {
-            parser.consume(token);
-            token = parser.peek();
-        }
-        parser.builder.finish_node();
-    }
-    if token == EOF {
-        parser.builder.finish_node();
-        return;
-    }
+    let mut parser = parser.with_node(ROOT);
+    let mut parser = parser.with_follow(EOF.as_set());
     parser.expr();
     let mut token = parser.peek();
     if token != EOF {
         parser.error(token, EOF.as_set(), "root");
-        parser.builder.start_node(ERROR.into());
+        let mut parser = parser.with_node(ERROR);
         while token != EOF {
             parser.consume(token);
             token = parser.peek();
         }
-        parser.builder.finish_node();
     }
-    parser.builder.finish_node();
 }
 
 impl<'a> Parser<'a> {
     fn expr(&mut self) {
         let parser = self;
-        parser.assert_first(FIRST_EXPR);
+        if !parser.find(FIRST_EXPR, "EXPR") {
+            return;
+        }
         match parser.peek() {
             FUN => parser.fun_expr(),
             LET => parser.let_expr(),
@@ -94,11 +71,9 @@ impl<'a> Parser<'a> {
     fn fun_expr(&mut self) {
         let mut parser = self.with_node(FUN_EXPR);
         parser.consume(FUN);
-        parser.param_list();
-        if !parser.find_before(ARROW, FIRST_EXPR, FOLLOW_EXPR, "FUN_EXPR") {
-            return;
-        }
-        parser.expr();
+        parser.with_follow(ARROW).param_list();
+        parser.with_follow(FIRST_EXPR).find_and_consume(ARROW, "FUN_EXPR");
+        parser.expr()
     }
 
     fn param_list(&mut self) {
@@ -113,18 +88,19 @@ impl<'a> Parser<'a> {
         let mut parser = self.with_node(LET_EXPR);
         parser.consume(LET);
         {
-            let mut parser = parser.with_node(LET_MOD);
-            if parser.peek() == REC {
-                parser.consume(REC);
+            let mut parser = parser.with_follow(IN);
+            {
+                let mut parser = parser.with_node(LET_MOD);
+                if parser.peek() == REC {
+                    parser.consume(REC);
+                }
             }
-        }
-        parser.let_var();
-        if parser.find_before(ASSIGN, FIRST_EXPR, FOLLOW_EXPR, "LET_EXPR") {
+            parser.with_follow(ASSIGN).let_var();
+            parser.with_follow(FIRST_EXPR).find_and_consume(ASSIGN, "LET_EXPR");
             parser.expr();
         }
-        if parser.find_before(IN, FIRST_EXPR, FOLLOW_EXPR, "LET_EXPR") {
-            parser.expr();
-        }
+        parser.with_follow(FIRST_EXPR).find_and_consume(IN, "LET_EXPR");
+        parser.expr();
     }
 
     fn let_var(&mut self) {
@@ -148,51 +124,31 @@ impl<'a> Parser<'a> {
     }
 
     fn sum_expr(&mut self) {
-        let parser = self;
-        let checkpoint = parser.builder.checkpoint();
+        let mut parser = self.with_follow(ADD_OPS);
+        let checkpoint = parser.checkpoint();
         parser.prod_expr();
-        let mut token = parser.peek();
-        while ADD_OPS.contains(token) {
-            parser.builder.start_node_at(checkpoint, BINOP_EXPR.into());
-            parser.builder.start_node(BINOP.into());
-            parser.consume(token);
-            parser.builder.finish_node();
+        while ADD_OPS.contains(parser.peek()) {
+            let mut parser = parser.with_node_at(checkpoint, BINOP_EXPR);
+            parser.with_node(BINOP).consume(ADD_OPS);
             parser.prod_expr();
-            parser.builder.finish_node();
-            token = parser.peek();
         }
     }
 
     fn prod_expr(&mut self) {
-        let parser = self;
-        let checkpoint = parser.builder.checkpoint();
+        let mut parser = self.with_follow(MUL_OPS);
+        let checkpoint = parser.checkpoint();
         parser.atom_expr();
-        let mut token = parser.peek();
-        while MUL_OPS.contains(token) {
-            parser.builder.start_node_at(checkpoint, BINOP_EXPR.into());
-            parser.builder.start_node(BINOP.into());
-            parser.consume(token);
-            parser.builder.finish_node();
+        while MUL_OPS.contains(parser.peek()) {
+            let mut parser = parser.with_node_at(checkpoint, BINOP_EXPR);
+            parser.with_node(BINOP).consume(MUL_OPS);
             parser.atom_expr();
-            parser.builder.finish_node();
-            token = parser.peek();
         }
     }
 
     fn atom_expr(&mut self) {
         let parser = self;
-        let mut token = parser.peek();
-        if !FIRST_ATOM_EXPR.contains(token) {
-            parser.error(token, FIRST_ATOM_EXPR, "atom_expr");
-            parser.builder.start_node(ERROR.into());
-            while !FIRST_ATOM_EXPR.contains(token) && !FOLLOW_EXPR.contains(token) {
-                parser.consume(token);
-                token = parser.peek()
-            }
-            parser.builder.finish_node();
-            if !FIRST_ATOM_EXPR.contains(token) {
-                return;
-            }
+        if !parser.find(FIRST_ATOM_EXPR, "ATOM_EXPR") {
+            return;
         }
         match parser.peek() {
             ID_LOWER => parser.var_expr(),
@@ -207,29 +163,13 @@ impl<'a> Parser<'a> {
     }
 
     fn lit_expr(&mut self) {
-        self.with_node(LIT_EXPR).consume_in(LITERAL);
+        self.with_node(LIT_EXPR).consume(LITERAL);
     }
 
     fn paren_expr(&mut self) {
-        let parser = self;
-        parser.builder.start_node(PAREN_EXPR.into());
+        let mut parser = self.with_node(PAREN_EXPR);
         parser.consume(LPAREN);
-        parser.expr();
-        let mut token = parser.peek();
-        if token != RPAREN {
-            parser.error(token, RPAREN.as_set(), "paren_expr");
-            parser.builder.start_node(ERROR.into());
-            while token != RPAREN && !FOLLOW_EXPR.contains(token) {
-                parser.consume(token);
-                token = parser.peek();
-            }
-            parser.builder.finish_node();
-            if token != RPAREN {
-                parser.builder.finish_node();
-                return;
-            }
-        }
-        parser.consume(RPAREN);
-        parser.builder.finish_node();
+        parser.with_follow(RPAREN).expr();
+        parser.find_and_consume(RPAREN, "PAREN_EXPR");
     }
 }

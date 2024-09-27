@@ -1,6 +1,6 @@
 use logos::Logos;
 
-use crate::kind::{RufusLang, SyntaxKind, SyntaxKindSet};
+use crate::kind::{RufusLang, SyntaxExpecation, SyntaxKind, SyntaxKindSet};
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ParseError {
@@ -12,11 +12,12 @@ pub struct ParseError {
 
 /// Stateful parser for the Rufus language.
 pub struct Parser<'a> {
-    pub input: &'a str,
-    pub lexer: logos::Lexer<'a, SyntaxKind>,
-    pub peeked: Option<SyntaxKind>,
-    pub builder: rowan::GreenNodeBuilder<'a>,
-    pub errors: Vec<ParseError>,
+    input: &'a str,
+    lexer: logos::Lexer<'a, SyntaxKind>,
+    peeked: Option<SyntaxKind>,
+    follow_stack: Vec<SyntaxKindSet>,
+    builder: rowan::GreenNodeBuilder<'a>,
+    errors: Vec<ParseError>,
 }
 
 pub struct ParseResult {
@@ -31,9 +32,29 @@ impl<'a> Parser<'a> {
             input,
             lexer: SyntaxKind::lexer(input),
             peeked: None,
+            follow_stack: Vec::new(),
             builder: rowan::GreenNodeBuilder::new(),
             errors: Vec::new(),
         }
+    }
+
+    pub(crate) fn follow(&self) -> SyntaxKindSet {
+        self.follow_stack.last().copied().unwrap_or_default()
+    }
+
+    pub(crate) fn checkpoint(&mut self) -> rowan::Checkpoint {
+        self.peek(); // Put whitespace before the checkpoint.
+        self.builder.checkpoint()
+    }
+
+    pub(crate) fn error(&mut self, found: SyntaxKind, expected: impl SyntaxExpecation, rule: &'static str) {
+        let span = self.lexer.span();
+        self.errors.push(ParseError {
+            span: span.start as u32..span.end as u32,
+            found,
+            expected: expected.to_set(),
+            rule,
+        });
     }
 
     pub fn parse(mut self, rule: fn(&mut Parser)) -> ParseResult {
@@ -68,16 +89,7 @@ impl<'a> Parser<'a> {
         token
     }
 
-    pub(crate) fn assert_first(&mut self, first: SyntaxKindSet) {
-        assert!(first.contains(self.peek()));
-    }
-
-    /// Consume the next token.
-    pub(crate) fn consume(&mut self, expected: SyntaxKind) {
-        self.consume_in(expected.as_set());
-    }
-
-    pub(crate) fn consume_in(&mut self, expected: SyntaxKindSet) {
+    pub(crate) fn consume(&mut self, expected: impl SyntaxExpecation) {
         match self.peeked {
             None => panic!("consume without peek"),
             Some(token) => {
@@ -94,54 +106,38 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub(crate) fn error(&mut self, found: SyntaxKind, expected: SyntaxKindSet, rule: &'static str) {
-        let span = self.lexer.span();
-        self.errors.push(ParseError {
-            span: span.start as u32..span.end as u32,
-            found,
-            expected,
-            rule,
-        });
-    }
-
-    // `first` is the FIRST set of the next symbol in the rule we're parsing.
-    // `follow` is the FOLLOW set of the non-terminal whose rule we're parsing.
-    // Returns whether we can continue parsing the rule.
-    pub(crate) fn find_before(
-        &mut self,
-        expected: SyntaxKind,
-        first: SyntaxKindSet,
-        follow: SyntaxKindSet,
-        rule: &'static str,
-    ) -> bool {
-        let mut token = self.peek();
-        if token == expected {
-            self.consume(expected);
+    pub(crate) fn find(&mut self, expected: impl SyntaxExpecation, rule: &'static str) -> bool {
+        let parser = self;
+        let mut token = parser.peek();
+        if expected.contains(token) {
             return true;
         }
-        self.error(token, expected.as_set(), rule);
-        self.builder.start_node(SyntaxKind::ERROR.into());
-        while token != expected && !first.contains(token) && !follow.contains(token) {
-            self.consume(token);
-            token = self.peek();
+        parser.error(token, expected, rule);
+        let mut parser = parser.with_node(SyntaxKind::ERROR);
+        let follow = parser.follow();
+        while !expected.contains(token) && !follow.contains(token) {
+            parser.consume(token);
+            token = parser.peek();
         }
-        self.builder.finish_node();
-        if token == expected {
+        expected.contains(token)
+    }
+
+    pub(crate) fn find_and_consume(&mut self, expected: impl SyntaxExpecation, rule: &'static str) {
+        if self.find(expected, rule) {
             self.consume(expected);
-            return true;
         }
-        first.contains(token)
     }
 
-    pub fn build_node<T, F: FnOnce(&mut Parser) -> T>(&mut self, kind: SyntaxKind, f: F) -> T {
-        self.builder.start_node(kind.into());
-        let res = f(self);
-        self.builder.finish_node();
-        res
-    }
-
-    pub fn with_node<'b>(&'b mut self, kind: SyntaxKind) -> NodeScope<'a, 'b> {
+    pub(crate) fn with_node<'b>(&'b mut self, kind: SyntaxKind) -> NodeScope<'a, 'b> {
         NodeScope::new(self, kind)
+    }
+
+    pub(crate) fn with_node_at<'b>(&'b mut self, checkpoint: rowan::Checkpoint, kind: SyntaxKind) -> NodeScope<'a, 'b> {
+        NodeScope::new_at_checkpoint(self, checkpoint, kind)
+    }
+
+    pub(crate) fn with_follow<'b>(&'b mut self, kinds: impl SyntaxExpecation) -> FollowScope<'a, 'b> {
+        FollowScope::new(self, kinds)
     }
 }
 
@@ -152,6 +148,11 @@ pub struct NodeScope<'a, 'b> {
 impl<'a, 'b> NodeScope<'a, 'b> {
     fn new(parser: &'b mut Parser<'a>, kind: SyntaxKind) -> Self {
         parser.builder.start_node(kind.into());
+        Self { parser }
+    }
+
+    fn new_at_checkpoint(parser: &'b mut Parser<'a>, checkpoint: rowan::Checkpoint, kind: SyntaxKind) -> Self {
+        parser.builder.start_node_at(checkpoint, kind.into());
         Self { parser }
     }
 }
@@ -173,5 +174,40 @@ impl<'a, 'b> std::ops::DerefMut for NodeScope<'a, 'b> {
 impl<'a, 'b> Drop for NodeScope<'a, 'b> {
     fn drop(&mut self) {
         self.parser.builder.finish_node();
+    }
+}
+
+pub struct FollowScope<'a, 'b> {
+    parser: &'b mut Parser<'a>,
+}
+
+impl<'a, 'b> FollowScope<'a, 'b> {
+    fn new(parser: &'b mut Parser<'a>, kinds: impl SyntaxExpecation) -> Self {
+        let top = parser.follow();
+        parser
+            .follow_stack
+            .push(SyntaxKindSet::union([top, kinds.to_set()]));
+        Self { parser }
+    }
+}
+
+impl<'a, 'b> std::ops::Deref for FollowScope<'a, 'b> {
+    type Target = Parser<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        self.parser
+    }
+}
+
+impl<'a, 'b> std::ops::DerefMut for FollowScope<'a, 'b> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.parser
+    }
+}
+
+impl<'a, 'b> Drop for FollowScope<'a, 'b> {
+    fn drop(&mut self) {
+        let top = self.parser.follow_stack.pop();
+        assert!(top.is_some());
     }
 }
