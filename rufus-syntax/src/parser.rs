@@ -107,7 +107,7 @@ impl<'a> Parser<'a> {
     // `first` is the FIRST set of the next symbol in the rule we're parsing.
     // `follow` is the FOLLOW set of the non-terminal whose rule we're parsing.
     // Returns whether we can continue parsing the rule.
-    pub(crate) fn expect(
+    pub(crate) fn find_before(
         &mut self,
         expected: SyntaxKind,
         first: SyntaxKindSet,
@@ -131,5 +131,47 @@ impl<'a> Parser<'a> {
             return true;
         }
         first.contains(token)
+    }
+
+    pub fn build_node<T, F: FnOnce(&mut Parser) -> T>(&mut self, kind: SyntaxKind, f: F) -> T {
+        self.builder.start_node(kind.into());
+        let res = f(self);
+        self.builder.finish_node();
+        res
+    }
+
+    pub fn with_node<'b>(&'b mut self, kind: SyntaxKind) -> NodeScope<'a, 'b> {
+        NodeScope::new(self, kind)
+    }
+}
+
+pub struct NodeScope<'a, 'b> {
+    parser: &'b mut Parser<'a>,
+}
+
+impl<'a, 'b> NodeScope<'a, 'b> {
+    fn new(parser: &'b mut Parser<'a>, kind: SyntaxKind) -> Self {
+        parser.builder.start_node(kind.into());
+        Self { parser }
+    }
+}
+
+impl<'a, 'b> std::ops::Deref for NodeScope<'a, 'b> {
+    type Target = Parser<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        self.parser
+    }
+}
+
+impl<'a, 'b> std::ops::DerefMut for NodeScope<'a, 'b> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.parser
+    }
+}
+
+impl<'a, 'b> Drop for NodeScope<'a, 'b> {
+    fn drop(&mut self) {
+        self.parser.builder.finish_node();
     }
 }

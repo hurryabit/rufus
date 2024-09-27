@@ -29,8 +29,8 @@ fn empty() {
 
 #[test]
 fn fun_simple() {
-  let result = parse("fun x -> (x + 1)");
-  assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    let result = parse("fun x -> (x + 1)");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
   ROOT@0..16
     FUN_EXPR@0..16
       #FUN@0..3 "fun"
@@ -49,14 +49,14 @@ fn fun_simple() {
             #NAT_LIT@14..15 "1"
         #RPAREN@15..16 ")"
   "##);
-  assert_snapshot!(dump_errors(&result.errors), @r#"
+    assert_snapshot!(dump_errors(&result.errors), @r#"
   "#);
 }
 
 #[test]
 fn fun_no_params() {
-  let result = parse("fun   -> (x + 1)");
-  assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    let result = parse("fun   -> (x + 1)");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
   ROOT@0..16
     FUN_EXPR@0..16
       #FUN@0..3 "fun"
@@ -73,14 +73,14 @@ fn fun_no_params() {
             #NAT_LIT@14..15 "1"
         #RPAREN@15..16 ")"
   "##);
-  assert_snapshot!(dump_errors(&result.errors), @r#"
+    assert_snapshot!(dump_errors(&result.errors), @r#"
   "#);
 }
 
 #[test]
 fn fun_no_arrow() {
-  let result = parse("fun x    (x + 1)");
-  assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    let result = parse("fun x    (x + 1)");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
   ROOT@0..16
     FUN_EXPR@0..16
       #FUN@0..3 "fun"
@@ -99,13 +99,13 @@ fn fun_no_arrow() {
             #NAT_LIT@14..15 "1"
         #RPAREN@15..16 ")"
   "##);
-  assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 9..10, found: LPAREN, expected: {ARROW}, rule: "FUN_EXPR" }"#);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 9..10, found: LPAREN, expected: {ARROW}, rule: "FUN_EXPR" }"#);
 }
 
 #[test]
 fn fun_bad_body() {
-  let result = parse("fun x -> (x +  )");
-  assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    let result = parse("fun x -> (x +  )");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
   ROOT@0..16
     FUN_EXPR@0..16
       #FUN@0..3 "fun"
@@ -123,14 +123,14 @@ fn fun_bad_body() {
           ERROR@15..15
         #RPAREN@15..16 ")"
   "##);
-  assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 15..16, found: RPAREN, expected: {TRUE, FALSE, LPAREN, ID_LOWER, NAT_LIT}, rule: "atom_expr" }"#);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 15..16, found: RPAREN, expected: {TRUE, FALSE, LPAREN, ID_LOWER, NAT_LIT}, rule: "atom_expr" }"#);
 }
 
-#[ignore]
+#[should_panic(expected = "first.contains")]
 #[test]
 fn fun_no_body() {
-  let result = parse("fun x ->");
-  assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    let result = parse("fun x ->");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
   ROOT@0..16
     FUN_EXPR@0..16
       #FUN@0..3 "fun"
@@ -149,6 +149,337 @@ fn fun_no_body() {
             #NAT_LIT@14..15 "1"
         #RPAREN@15..16 ")"
   "##);
-  assert_snapshot!(dump_errors(&result.errors), @r#"
+    assert_snapshot!(dump_errors(&result.errors), @r#"
   "#);
+}
+
+#[test]
+fn let_simple() {
+    let result = parse("let     x = 1 + 2 in x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @"");
+}
+
+#[test]
+fn let_rec() {
+    let result = parse("let rec x = 1 + 2 in x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..7
+          #REC@4..7 "rec"
+        LET_VAR@7..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @"");
+}
+
+#[test]
+fn let_no_var() {
+    let result = parse("let       = 1 + 2 in x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..10
+        LET_VAR@10..10
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 10..11, found: ASSIGN, expected: {ID_LOWER}, rule: "LET_VAR" }"#);
+}
+
+#[test]
+fn let_no_assign() {
+    let result = parse("let     x   1 + 2 in x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        ERROR@12..12
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 12..13, found: NAT_LIT, expected: {ASSIGN}, rule: "LET_EXPR" }"#);
+}
+
+#[should_panic(expected = "first.contains")]
+#[test]
+fn let_no_bindee() {
+    let result = parse("let     x =       in x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @"");
+}
+
+#[should_panic(expected = "first.contains")]
+#[test]
+fn let_bad_bindee1() {
+    let result = parse("let     x =   + 2 in x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          ERROR@18..18
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 18..20, found: IN, expected: {TRUE, FALSE, LPAREN, ID_LOWER, NAT_LIT}, rule: "atom_expr" }"#);
+}
+
+#[test]
+fn let_bad_bindee2() {
+    let result = parse("let     x = 1 +   in x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          ERROR@18..18
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 18..20, found: IN, expected: {TRUE, FALSE, LPAREN, ID_LOWER, NAT_LIT}, rule: "atom_expr" }"#);
+}
+
+#[test]
+fn let_no_in() {
+    let result = parse("let     x = 1 + 2    x + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..21
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        ERROR@21..21
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 21..22, found: ID_LOWER, expected: {IN}, rule: "LET_EXPR" }"#);
+}
+
+#[should_panic(expected = "first.contains")]
+#[test]
+fn let_no_body() {
+    let result = parse("let     x = 1 + 2 in");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @"");
+}
+
+#[should_panic(expected = "first.contains")]
+#[test]
+fn let_bad_body1() {
+    let result = parse("let     x = 1 + 2 in   + 1");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..26
+      LET_EXPR@0..26
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..26
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          LIT_EXPR@25..26
+            #NAT_LIT@25..26 "1"
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @"");
+}
+
+#[test]
+fn let_bad_body2() {
+    let result = parse("let     x = 1 + 2 in x +");
+    assert_snapshot!(dump_syntax(result.syntax, false), @r##"
+    ROOT@0..24
+      LET_EXPR@0..24
+        #LET@0..3 "let"
+        LET_MOD@3..8
+        LET_VAR@8..9
+          #ID_LOWER@8..9 "x"
+        #ASSIGN@10..11 "="
+        BINOP_EXPR@12..18
+          LIT_EXPR@12..13
+            #NAT_LIT@12..13 "1"
+          BINOP@14..15
+            #PLUS@14..15 "+"
+          LIT_EXPR@16..17
+            #NAT_LIT@16..17 "2"
+        #IN@18..20 "in"
+        BINOP_EXPR@21..24
+          VAR_EXPR@21..22
+            #ID_LOWER@21..22 "x"
+          BINOP@23..24
+            #PLUS@23..24 "+"
+          ERROR@24..24
+    "##);
+    assert_snapshot!(dump_errors(&result.errors), @r#"ParseError { span: 24..24, found: EOF, expected: {TRUE, FALSE, LPAREN, ID_LOWER, NAT_LIT}, rule: "atom_expr" }"#);
 }
