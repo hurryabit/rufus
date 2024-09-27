@@ -1,5 +1,5 @@
 [package]
-name = "rufus-wasm"
+name = "rufus-syntax"
 version = "0.1.0"
 authors = ["Martin Huschenbett <martin.huschenbett@posteo.me>"]
 edition = "2021"
@@ -9,14 +9,7 @@ homepage = "https://hurryabit.github.io/rufus"
 repository = "https://github.com/hurryabit/rufus.git"
 license = "Apache 2.0"
 
-[lib]
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
-lalrpop-util = "0.21.0"
-rufus-core = { path = "../rufus-core" }
-rufus-syntax = { path = "../rufus-syntax" }
-wasm-bindgen = "=0.2.92"
-
-[profile.release]
-opt-level = "s"
+logos = "0.14.2"
+rowan = "0.15.16"
+rustyline = "14.0.0"

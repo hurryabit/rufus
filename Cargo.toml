@@ -3,5 +3,6 @@ resolver = "2"
 members = [
     "rufus-core",
     "rufus-repl",
+    "rufus-syntax",
     "rufus-wasm",
 ]
