@@ -1,3 +1,29 @@
+// This module contains a parser for the following context-free grammar with
+// start symbol ROOT (rules are indented for the sake of visual grouing only):
+//
+// ROOT -> EXPR
+// EXPR -> FUN_EXPR | LET_EXPR | IF_EXPR | SUM_EXPR
+// FUN_EXPR -> "fun" PARAM_LIST "->" EXPR
+//   PARAM_LIST -> PARAM*
+//   PARAM -> ID_LOWER
+// LET_EXPR -> "let" LET_MOD LET_VAR "=" EXPR "in" EXPR
+//   LET_MOD -> "rec"?
+//   LET_VAR -> ID_LOWER
+// IF_EXPR -> "if" EXPR "then" EXPR "else" EXPR
+// SUM_EXPR -> PROD_EXPR | SUM_EXPR SUM_OP PROD_EXPR
+//   SUM_OP -> "+" | "-"
+// PROD_EXPR -> ATOM_EXPR | PROD_EXPR PROD_OP ATOM_EXPR
+//   PROD_OP -> "*" | "/"
+// ATOM_EXPR -> VAR_EXPR | LIT_EXPR | PAREN_EXPR
+// VAR_EXPR -> ID_LOWER
+// LIT_EXPR -> NUM_LIT | TRUE | FALSE
+// PAREN_EXPR -> "(" EXPR ")"
+//
+// The resulting CST does not contain nodes for EXPR and ATOM_EXPR but rather
+// just their immediate children. SUM_EXPR and PROD_EXPR use a common node
+// type BINOP_EXPR. Similarly, SUM_OP and PROD_OP are fused into BINOP.
+
+
 use std::fmt::Debug;
 
 use logos::Logos;
