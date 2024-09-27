@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "rufus-core",
+    "rufus-driver",
     "rufus-repl",
     "rufus-syntax",
     "rufus-wasm",

@@ -1,5 +1,5 @@
 [package]
-name = "rufus-syntax"
+name = "rufus-driver"
 version = "0.1.0"
 authors = ["Martin Huschenbett <martin.huschenbett@posteo.me>"]
 edition = "2021"
@@ -10,5 +10,5 @@ repository = "https://github.com/hurryabit/rufus.git"
 license = "Apache 2.0"
 
 [dependencies]
-logos = "0.14.2"
-rowan = "0.15.16"
+rufus-syntax = { path = "../rufus-syntax" }
+rustyline = "14.0.0"

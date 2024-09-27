@@ -638,6 +638,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rufus-driver"
+version = "0.1.0"
+dependencies = [
+ "rufus-syntax",
+ "rustyline",
+]
+
+[[package]]
 name = "rufus-repl"
 version = "0.1.0"
 dependencies = [
@@ -652,7 +660,6 @@ version = "0.1.0"
 dependencies = [
  "logos",
  "rowan",
- "rustyline",
 ]
 
 [[package]]
