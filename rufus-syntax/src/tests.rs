@@ -4,7 +4,7 @@ use insta::assert_snapshot;
 
 fn parse(input: &str) -> ParseResult {
     let parser = Parser::new(input);
-    return parser.parse();
+    return parser.parse(rules::root);
 }
 
 fn dump_errors(errors: &Vec<ParseError>) -> String {

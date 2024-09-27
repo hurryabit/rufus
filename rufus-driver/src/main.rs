@@ -17,7 +17,7 @@ fn main() {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
                 let parser = rufus_syntax::Parser::new(&line);
-                let result = parser.parse();
+                let result = parser.parse(rufus_syntax::rules::root);
                 for error in result.errors {
                     println!("ERROR: {:?}", error);
                 }
