@@ -39,3 +39,13 @@
 #output .ace_cursor {
   opacity: 0 !important;
 }
+
+.marker {
+  position: absolute;
+  border-radius: 0;
+  border-bottom: dashed 2px black;
+}
+
+.error {
+  border-color: red;
+}
