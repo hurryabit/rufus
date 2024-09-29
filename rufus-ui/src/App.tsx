@@ -125,30 +125,66 @@ export default function App() {
       </section>
       <section className="section">
         <div className="container">
+          <div className="columns">
+            <div className="column is-6">
+              <div className="field">
+                <label className="label">Program</label>
+                <div className="control">
+                  <AceEditor
+                    name="editor"
+                    mode="ocaml"
+                    theme="xcode"
+                    fontSize="1rem"
+                    focus={true}
+                    showPrintMargin={false}
+                    width="100%"
+                    minLines={EDITOR_ROWS}
+                    maxLines={EDITOR_ROWS}
+                    value={state.program}
+                    onChange={handleProgramChange}
+                    commands={[{
+                      name: 'Run program',
+                      bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
+                      exec: runCommand,
+                    }]}
+                    setOptions={{
+                      useSoftTabs: true,
+                      newLineMode: "unix",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="column is-6">
+              <div className="field">
+                <label className="label">Output</label>
+                <div className="control">
+                  <AceEditor
+                    name="output"
+                    readOnly
+                    mode="ocaml"
+                    theme="xcode"
+                    fontSize="1rem"
+                    showPrintMargin={false}
+                    width="100%"
+                    minLines={EDITOR_ROWS}
+                    maxLines={EDITOR_ROWS}
+                    setOptions={{
+                      highlightActiveLine: false,
+                      highlightGutterLine: false,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="field">
-            <label className="label">Program</label>
+            <label className="label">Problems</label>
             <div className="control">
-              <AceEditor
-                name="editor"
-                mode="ocaml"
-                theme="xcode"
-                fontSize="1rem"
-                focus={true}
-                showPrintMargin={false}
-                width="100%"
-                minLines={EDITOR_ROWS}
-                maxLines={EDITOR_ROWS}
-                value={state.program}
-                onChange={handleProgramChange}
-                commands={[{
-                  name: 'Run program',
-                  bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
-                  exec: runCommand,
-                }]}
-                setOptions={{
-                  useSoftTabs: true,
-                  newLineMode: "unix",
-                }}
+              <textarea
+                className="textarea has-fixed-size is-family-code"
+                readOnly
+                rows={4}
               />
             </div>
           </div>

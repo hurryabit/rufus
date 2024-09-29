@@ -35,3 +35,7 @@
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
 }
+
+#output .ace_cursor {
+  opacity: 0 !important;
+}
