@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import AceEditor from 'react-ace';
 
+import type { Problem } from 'rufus-wasm';
+import ProblemsPane from './ProblemsPane';
+
 import "ace-builds/src-noconflict/mode-ocaml";
 import "ace-builds/src-noconflict/mode-plain_text";
 import "ace-builds/src-noconflict/theme-xcode";
@@ -19,7 +22,7 @@ type State = {
   wasm: typeof import('rufus-wasm') | null;
   program: string;
   output: string;
-  problems: string;
+  problems: Problem[];
   result: string;
   examples: Example[];
 }
@@ -29,7 +32,7 @@ export default function App() {
     wasm: null,
     program: '',
     output: '',
-    problems: '',
+    problems: [],
     result: '',
     examples: [],
   });
@@ -177,12 +180,7 @@ export default function App() {
           <div className="field">
             <label className="label">Problems</label>
             <div className="control">
-              <textarea
-                className="textarea has-fixed-size is-family-code"
-                readOnly
-                rows={4}
-                value={state.problems}
-              />
+              <ProblemsPane problems={state.problems} />
             </div>
           </div>
           <div className="columns">
