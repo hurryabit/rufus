@@ -6,7 +6,7 @@ type Props = {
 
 export default function ProblemsPane({ problems }: Props) {
     const text = problems.map(function ({ start, severity, message, source }) {
-        return `${severity} [Ln ${start.line}, Col ${start.column}]: ${message} -- ${source}`;
+        return `${severity} [Ln ${start.line + 1}, Col ${start.column + 1}]: ${message} -- ${source}`;
     }).join("\n");
 
     return <textarea

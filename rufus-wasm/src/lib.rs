@@ -31,8 +31,8 @@ impl Location {
     fn from_index(index: u32, humanizer: &Humanizer) -> Self {
         let loc = humanizer.run(index as usize);
         Self {
-            line: loc.line + 1,
-            column: loc.column + 1,
+            line: loc.line,
+            column: loc.column,
         }
     }
 }

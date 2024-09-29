@@ -110,9 +110,9 @@ export default function App() {
   const markers = [];
   for (const problem of state.problems) {
     const annotation = {
-      row: problem.start.line - 1,
-      col: problem.start.column - 1,
-      text: `${problem.severity} [Col ${problem.start.column}]: ${problem.message} -- ${problem.source}`,
+      row: problem.start.line,
+      col: problem.start.column ,
+      text: `${problem.severity} [Col ${problem.start.column + 1}]: ${problem.message} -- ${problem.source}`,
       type: problem.severity.toLowerCase(),
     };
     annotations.push(annotation);
@@ -123,10 +123,10 @@ export default function App() {
         break;
     }
     const marker = {
-      startRow: problem.start.line - 1,
-      startCol: problem.start.column - 1,
-      endRow: problem.end.line - 1,
-      endCol: problem.end.column - 1,
+      startRow: problem.start.line,
+      startCol: problem.start.column,
+      endRow: problem.end.line,
+      endCol: problem.end.column,
       className,
       type: "text" as const,
     };
