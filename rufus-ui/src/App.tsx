@@ -110,7 +110,7 @@ export default function App() {
 
   return (
     <>
-      <section className="hero is-info">
+      <section className="hero is-link">
         <div className="hero-body">
           <div className="container">
             <h1 className="title">
@@ -183,7 +183,7 @@ export default function App() {
                 <label className="label">&nbsp;</label>
                 <div className="control">
                   <button
-                    className="button is-fullwidth is-info"
+                    className="button is-fullwidth is-link"
                     onClick={handleRunClick}
                   >
                     Run
