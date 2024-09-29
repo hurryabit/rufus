@@ -3,6 +3,7 @@ import './App.css';
 import AceEditor from 'react-ace';
 
 import "ace-builds/src-noconflict/mode-ocaml";
+import "ace-builds/src-noconflict/mode-plain_text";
 import "ace-builds/src-noconflict/theme-xcode";
 
 const EXAMPLES_DIR: string = '/rufus/examples';
@@ -18,6 +19,7 @@ type State = {
   wasm: typeof import('rufus-wasm') | null;
   program: string;
   output: string;
+  problems: string;
   result: string;
   examples: Example[];
 }
@@ -27,6 +29,7 @@ export default function App() {
     wasm: null,
     program: '',
     output: '',
+    problems: '',
     result: '',
     examples: [],
   });
@@ -81,7 +84,7 @@ export default function App() {
     setState(function (state) { return { ...state, program }; })
   }
 
-  function runCommand() {
+  function checkProgram() {
     // NOTE(MH): This is the other half of the workaround mentioned above.
     const state = stateRef.current;
     const wasm = state.wasm;
@@ -90,21 +93,14 @@ export default function App() {
       return;
     }
     const result = wasm.exec(state.program);
-    const status = result.status;
-    const value = result.get_value();
-    switch (status) {
-      case wasm.ExecResultStatus.Ok:
-        setState(function (state) { return { ...state, result: value }; });
-        break;
-      case wasm.ExecResultStatus.Err:
-        alert(value);
-        break;
-    }
+    const { output, problems } = result; // We need to read from result before calling free().
+    setState(function (state) { return { ...state, output, problems }; });
+    result.free();
   }
 
   function handleRunClick(event: React.SyntheticEvent) {
     event.preventDefault();
-    runCommand();
+    checkProgram();
   }
 
 
@@ -132,6 +128,7 @@ export default function App() {
                 <div className="control">
                   <AceEditor
                     name="editor"
+                    value={state.program}
                     mode="ocaml"
                     theme="xcode"
                     fontSize="1rem"
@@ -140,12 +137,11 @@ export default function App() {
                     width="100%"
                     minLines={EDITOR_ROWS}
                     maxLines={EDITOR_ROWS}
-                    value={state.program}
                     onChange={handleProgramChange}
                     commands={[{
-                      name: 'Run program',
-                      bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
-                      exec: runCommand,
+                      name: 'Check program',
+                      bindKey: { win: 'Ctrl-S', mac: 'Command-S' },
+                      exec: checkProgram,
                     }]}
                     setOptions={{
                       useSoftTabs: true,
@@ -161,9 +157,9 @@ export default function App() {
                 <div className="control">
                   <AceEditor
                     name="output"
+                    value={state.output}
                     readOnly
-                    mode="ocaml"
-                    theme="xcode"
+                    mode="plain_text"
                     fontSize="1rem"
                     showPrintMargin={false}
                     width="100%"
@@ -185,6 +181,7 @@ export default function App() {
                 className="textarea has-fixed-size is-family-code"
                 readOnly
                 rows={4}
+                value={state.problems}
               />
             </div>
           </div>

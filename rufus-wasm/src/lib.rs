@@ -1,54 +1,23 @@
 use wasm_bindgen::prelude::*;
 
-use rufus_core::{cek, humanizer, parser};
+use rufus_core::humanizer;
 
-#[wasm_bindgen]
-#[derive(Clone, Copy)]
-pub enum ExecResultStatus {
-    Ok,
-    Err,
-}
-
-#[wasm_bindgen]
+#[wasm_bindgen(getter_with_clone)]
 #[derive(Clone)]
 pub struct ExecResult {
-    pub status: ExecResultStatus,
-    value: String,
-}
-
-#[wasm_bindgen]
-impl ExecResult {
-    pub fn get_value(self) -> String {
-        self.value
-    }
-}
-
-fn exec_result(program: &str) -> Result<String, String> {
-    let humanizer = humanizer::Humanizer::new(program);
-    let parser = parser::ExprParser::new();
-    let expr = parser
-        .parse(program)
-        .map_err(|err| {
-            let mut msg = err.map_location(|loc| humanizer.run(loc)).to_string();
-            humanizer::sanitize_source_span(&mut msg);
-            msg
-        })?
-        .index()?;
-    let machine = cek::Machine::new(&expr);
-    let value = machine.run()?;
-    Ok(value.to_string())
+    pub output: String,
+    pub problems: String,
 }
 
 #[wasm_bindgen]
 pub fn exec(program: &str) -> ExecResult {
-    match exec_result(program) {
-        Ok(value) => ExecResult {
-            status: ExecResultStatus::Ok,
-            value,
-        },
-        Err(msg) => ExecResult {
-            status: ExecResultStatus::Err,
-            value: msg,
-        },
+    let _humanizer = humanizer::Humanizer::new(program);
+    let parser = rufus_syntax::Parser::new(program);
+    let result = parser.parse(rufus_syntax::rules::root);
+    let output = rufus_syntax::dump_syntax(result.syntax, false);
+    let mut problems = String::new();
+    for error in result.errors {
+        problems.push_str(&format!("{:?}\n", error));
     }
+    ExecResult { output, problems }
 }
